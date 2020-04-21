@@ -119,11 +119,11 @@ function Config(
     var keyboardHelperTimeout = 3000;                               // duration (ms) before removing the keyboard helper
 
     // display
-    var defaultResize = browserResizeEnum.SCALE;                    // default action on browser resize (RDP host only)
-    var keepAspectRatio = false;                                    // if scaling the display, preservation of the aspect ratio
+    var defaultResize = browserResizeEnum.NONE;                     // default action on browser resize (RDP host only)
+    var keepAspectRatio = true;                                     // if scaling the display, preservation of the aspect ratio
     var displayMode = displayModeEnum.AUTO;                         // display mode
-    var imageEncoding = imageEncodingEnum.PNG;                      // image encoding
-    var imageQuality = 100;                                         // image quality (%) higher = better; not applicable for PNG (lossless); tweaked dynamically to fit the available bandwidth if using JPEG, AUTO or WEBP encoding. for best user experience, fullscreen updates are always done in higher quality (75%), regardless of this setting and bandwidth
+    var imageEncoding = imageEncodingEnum.JPEG;                     // image encoding
+    var imageQuality = 75;                                          // image quality (%) higher = better; not applicable for PNG (lossless); tweaked dynamically to fit the available bandwidth if using JPEG, AUTO or WEBP encoding. for best user experience, fullscreen updates are always done in higher quality (75%), regardless of this setting and bandwidth
     var imageQuantity = 100;                                        // image quantity (%) less images = lower cpu and bandwidth usage / faster; more = smoother display (skipping images may result in some display inconsistencies). tweaked dynamically to fit the available bandwidth; possible values: 5, 10, 20, 25, 50, 100 (lower = higher drop rate)
     var imageTweakBandwidthLowerThreshold = 50;                     // tweak the image quality & quantity depending on the available bandwidth (%): lower threshold
     var imageTweakBandwidthHigherThreshold = 90;                    // tweak the image quality & quantity depending on the available bandwidth (%): higher threshold
@@ -133,11 +133,11 @@ function Config(
     var imageBlobEnabled = false;                                   // display images from local cached urls using blob objects (HTML5 only, binary mode)
     var imageDebugEnabled = false;                                  // display a red border around images, for debug purpose
     var periodicalFullscreenInterval = 30000;                       // periodical fullscreen update (ms); used to refresh the whole display
-    var adaptiveFullscreenTimeout = 1500;                           // adaptive fullscreen update (ms); requested after a given period of user inactivity (=no input). 0 to disable
+    var adaptiveFullscreenTimeout = 0;                              // adaptive fullscreen update (ms); requested after a given period of user inactivity (=no input). 0 to disable
 
     // audio
-    var audioFormat = audioFormatEnum.WAV;                          // audio format (HTML5); requires websocket enabled and RDP host; IE doesn't support WAV format (MP3 fallback); others: WAV and MP3 support
-    var audioBitrate = 1411;                                        // bitrate (kbps); possible values for WAV: 1411 (44100 Hz, 16 bits stereo); possible values for MP3: 128, 160, 256, 320 (CBR); lower = lesser quality, but also less bandwidth usage (128 kbps is good enough for sound notifications)
+    var audioFormat = audioFormatEnum.MP3;                          // audio format (HTML5); requires websocket enabled and RDP host; IE doesn't support WAV format (MP3 fallback); others: WAV and MP3 support
+    var audioBitrate = 128;                                         // bitrate (kbps); possible values for WAV: 1411 (44100 Hz, 16 bits stereo); possible values for MP3: 128, 160, 256, 320 (CBR); lower = lesser quality, but also less bandwidth usage (128 kbps is good enough for sound notifications)
 
     // network
     var additionalLatency = 0;                                      // simulate a network latency (ms) which adds to the real latency (useful to test various network situations). 0 to disable
