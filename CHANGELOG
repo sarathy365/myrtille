@@ -1,4 +1,11 @@
-﻿2020-01-26 Version 2.8.0 (stable)
+﻿2020-04-20 Version 2.8.1 (stable)
+	changed the default display resize mode from scale to none (config.js); this eliminates a loss of display sharpness when the aspect ratio is not preserved; reconnect is not supported by Windows Server 2019 (see documentation)
+	if using scale on resize, the aspect ratio is now preserved by default (config.js)
+	lowered bandwidth usage: the default display quality is now JPEG 75% (lossy) instead of PNG (lossless) (config.js); this significantly reduces the size of display updates when using graphics applications and JPEG is generated faster
+	lowered bandwidth usage: the adaptive fullscreen update is now disabled (config.js); it's not needed most of the time (unless if the display quality is poor); it's role is to restore the display sharpness and fix potential display issues when the user becomes inactive
+	lowered bandwidth usage: the default audio compression is now MP3 128 kbps instead of WAV 1411 kbps (config.js)
+
+2020-01-26 Version 2.8.0 (stable)
 	pre-requisites change; myrtille now requires Windows 8.1 or Windows Server 2012 R2 or greater
 	the installer is now shipped without bootstraper (Setup.exe); open the myrtille msi file directly instead
 	the installer now installs the myrtille pre-requisites automatically (roles and features); the related powershell scripts can also be run manually from outside the installer, if needed
