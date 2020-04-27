@@ -71,7 +71,7 @@ namespace Myrtille.Services
                 process.StartInfo.FileName = string.Format(@"{0}\WindowsPowerShell\v1.0\powershell.exe", Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess ? Environment.SystemDirectory.ToLower().Replace("system32", "sysnative") : Environment.SystemDirectory);
                 process.StartInfo.Arguments = "-ExecutionPolicy Bypass" +
                     " -Command \"& '" + Path.Combine(Path.GetFullPath(Context.Parameters["targetdir"]), "bin", "Myrtille.Services.Install.ps1") + "'" +
-                    " -BinaryPath '" + Path.Combine(Path.GetFullPath(Context.Parameters["targetdir"]), "bin", "Myrtille.Services.exe") + "'" +
+                    " -BinaryPath '" + Path.Combine(Path.GetFullPath(Context.Parameters["targetdir"]), "bin", "SecurdenRDP.exe") + "'" +
                     " -DebugMode " + (debug ? "1" : "0") +
                     " | Tee-Object -FilePath '" + Path.Combine(Path.GetFullPath(Context.Parameters["targetdir"]), "log", "Myrtille.Services.Install.log") + "'" + "\"";
 
@@ -86,7 +86,7 @@ namespace Myrtille.Services
 
                 // load config
                 var config = new XmlDocument();
-                var configPath = Path.Combine(Path.GetFullPath(Context.Parameters["targetdir"]), "bin", "Myrtille.Services.exe.config");
+                var configPath = Path.Combine(Path.GetFullPath(Context.Parameters["targetdir"]), "bin", "SecurdenRDP.exe.config");
                 config.Load(configPath);
 
                 var navigator = config.CreateNavigator();

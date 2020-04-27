@@ -20,6 +20,9 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
+using System.Net;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -31,6 +34,7 @@ using System.Web.UI.WebControls;
 using Myrtille.Helpers;
 using Myrtille.Services.Contracts;
 using Myrtille.Web.Properties;
+using Newtonsoft.Json.Linq;
 
 namespace Myrtille.Web
 {
@@ -110,7 +114,7 @@ namespace Myrtille.Web
             }
 
             // connect from a login page or url
-            if (!bool.TryParse(ConfigurationManager.AppSettings["LoginEnabled"], out _loginEnabled))
+            if (!bool.TryParse(ConfigurationManager.AppSettings["LoginEnabled"], out _loginEnabled) || Request.RawUrl.Contains("auth_key"))
             {
                 _loginEnabled = true;
             }
@@ -498,6 +502,80 @@ namespace Myrtille.Web
             }
         }
 
+        private static bool TrustCertificate(object sender, X509Certificate x509Certificate, X509Chain x509Chain, SslPolicyErrors sslPolicyErrors)
+        {
+            return true;
+        }
+
+        private static JObject SecurdenWebRequest(string serverUrl, string requestUrl, string requestMethod, JObject requestParams)
+        {
+            requestUrl = serverUrl + requestUrl;
+            JObject result = null;
+            try
+            {
+                if (requestMethod == "GET" && requestParams != null)
+                {
+                    requestUrl += '?';
+                    requestUrl += "LAUNCHER_INPUT=" + requestParams.ToString();
+                }
+
+                ServicePointManager.ServerCertificateValidationCallback = TrustCertificate;
+                var uri = new Uri(requestUrl);
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
+                request.Method = requestMethod;
+                request.UserAgent = "-SECURDEN-LAUNCHER-";
+                if (requestMethod == "POST" && requestParams != null)
+                {
+                    var postData = "LAUNCHER_INPUT=" + requestParams.ToString();
+                    var data = Encoding.UTF8.GetBytes(postData);
+                    request.ContentType = "application/x-www-form-urlencoded";
+                    request.ContentLength = data.Length;
+                    using (var stream = request.GetRequestStream())
+                    {
+                        stream.Write(data, 0, data.Length);
+                    }
+                }
+                var response = (HttpWebResponse)request.GetResponse();
+                var responseString = string.Empty;
+                using (var stream = new StreamReader(response.GetResponseStream()))
+                {
+                    responseString = stream.ReadToEnd();
+                }
+                result = JObject.Parse(responseString);
+                response.Close();
+            }
+            catch (Exception)
+            { }
+            return result;
+        }
+
+        private JObject ProcessLaunchRequest(string serverUrl, string authKey)
+        {
+            JObject returnObj = null;
+            JObject paramObj = new JObject(new JProperty("AUTH_KEY", authKey));
+            JObject response = SecurdenWebRequest(serverUrl, "/launcher/verify_launch_info", "POST", paramObj);
+            if (response == null)
+            {
+                Response.Write("<script>alert('Not able to access Securden web server. Try again.'); window.close();</script>");
+            }
+            else if (response.ContainsKey("type"))
+            {
+                if ((string)response["type"] == "WEB_RDP")
+                {
+                    returnObj = (JObject)response["details"];
+                }
+                else
+                {
+                    Response.Write("<script>alert('Invalid option'); window.close();</script>");
+                }
+            }
+            else
+            {
+                Response.Write("<script>alert('Unable to launch the connection. Try again.'); window.close();</script>");
+            }
+            return returnObj;
+        }
+
         /// <summary>
         /// connect the remote server
         /// </summary>
@@ -518,6 +596,27 @@ namespace Myrtille.Web
             var loginUser = user.Value;
             var loginPassword = string.IsNullOrEmpty(passwordHash.Value) ? password.Value : CryptoHelper.RDP_Decrypt(passwordHash.Value);
             var startProgram = program.Value;
+
+            if (RemoteSession == null && (Request["auth_key"] == null || Request["auth_key"].Trim() == "" || Request["referrer"] == null || Request["referrer"].Trim() == ""))
+            {
+                Response.Write("<script>alert('Invalid command.'); window.close();</script>");
+                return false;
+            }
+            else if (RemoteSession == null)
+            {
+                JObject connectionDetails = ProcessLaunchRequest(Request["referrer"], Request["auth_key"]);
+                if (connectionDetails == null)
+                {
+                    return false;
+                }
+                else
+                {
+                    loginServer = (string)connectionDetails["address"];
+                    loginDomain = "";
+                    loginUser = (string)connectionDetails["username"];
+                    loginPassword = (string)connectionDetails["password"];
+                }
+            }
 
             // allowed features
             var allowRemoteClipboard = _allowRemoteClipboard;

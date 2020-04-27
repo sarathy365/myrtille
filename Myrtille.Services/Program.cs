@@ -94,11 +94,12 @@ namespace Myrtille.Services
             // database (enterprise mode)
             ConfigureEnterpriseDatabase();
 
+            /*
             if (!Environment.UserInteractive)
             {
                 Run(new Program());
             }
-            else
+            else*/
             {
                 var consoleTraceListener = new ConsoleTraceListener();
                 consoleTraceListener.Filter = new EventTypeFilter(SourceLevels.Information);

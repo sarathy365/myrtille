@@ -35,7 +35,7 @@
         <!-- mobile devices -->
         <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0"/>
         
-        <title>Myrtille<%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? " - " + RemoteSession.ServerAddress.ToString() : ""%></title>
+        <title>RDP Session<%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? " - " + RemoteSession.ServerAddress.ToString() : ""%></title>
         
         <link rel="icon" type="image/x-icon" href="favicon.ico"/>
         <link rel="stylesheet" type="text/css" href="<%=BundleTable.Bundles.ResolveBundleUrl("~/css/Default.css", true)%>"/>
@@ -257,43 +257,43 @@
                 <!-- user info -->
                 <input type="text" runat="server" id="userInfo" title="connected user" disabled="disabled"/>
 
-                <!-- stat bar -->
+                <!-- stat bar 
                 <input type="button" id="stat" value="Stat OFF" onclick="toggleStatMode();" title="display network and rendering info"/>
-
-                <!-- debug log -->
+                -->
+                <!-- debug log 
                 <input type="button" id="debug" value="Debug OFF" onclick="toggleDebugMode();" title="display debug info"/>
-
-                <!-- browser mode -->
+                -->
+                <!-- browser mode 
                 <input type="button" id="browser" value="HTML5 OFF" onclick="toggleCompatibilityMode();" title="rendering mode"/>
-
+                -->
                 <!-- scale display -->
                 <input type="button" runat="server" id="scale" value="Scale OFF" onclick="toggleScaleDisplay();" title="scale the remote session to the browser size" disabled="disabled"/>
-
-                <!-- reconnect session -->
+                
+                <!-- reconnect session 
                 <input type="button" runat="server" id="reconnect" value="Reconnect OFF" onclick="toggleReconnectSession();" title="reconnect the remote session to the browser size" disabled="disabled"/>
-
-                <!-- virtual keyboard. on devices without a physical keyboard, forces the device virtual keyboard to pop up -->
+                -->
+                <!-- virtual keyboard. on devices without a physical keyboard, forces the device virtual keyboard to pop up 
                 <input type="button" runat="server" id="keyboard" value="Keyboard" onclick="openPopup('virtualKeyboardPopup', 'VirtualKeyboard.aspx');" title="send some text into the remote session" disabled="disabled"/>
-
+                -->
                 <!-- clipboard synchronization -->
-                <!-- this is a fallback/manual action if the async clipboard API is not supported/enabled/allowed (requires read/write access and HTTPS) -->
+                <!-- this is a fallback/manual action if the async clipboard API is not supported/enabled/allowed (requires read/write access and HTTPS) 
                 <input type="button" runat="server" id="clipboard" value="Clipboard" onclick="openPopup('pasteClipboardPopup', 'PasteClipboard.aspx');" title="send some text into the remote clipboard" disabled="disabled"/>
-
-                <!-- upload/download file(s). only enabled if the connected server is localhost or if a domain is specified (so file(s) can be accessed within the remote session) -->
+                -->
+                <!-- upload/download file(s). only enabled if the connected server is localhost or if a domain is specified (so file(s) can be accessed within the remote session) 
                 <input type="button" runat="server" id="files" value="Files" onclick="openPopup('fileStoragePopup', 'FileStorage.aspx');" title="upload/download files to/from the user documents folder" disabled="disabled"/>
-
+                -->
                 <!-- send ctrl+alt+del. may be useful to change the user password, for example -->
                 <input type="button" runat="server" id="cad" value="Ctrl+Alt+Del" onclick="sendCtrlAltDel();" title="send Ctrl+Alt+Del" disabled="disabled"/>
 
                 <!-- send a right-click on the next touch or left-click action. may be useful on touchpads or iOS devices -->
                 <input type="button" runat="server" id="mrc" value="Right-Click OFF" onclick="toggleRightClick(this);" title="if toggled on, send a Right-Click on the next touch or left-click action" disabled="disabled"/>
 
-                <!-- swipe up/down gesture management for touchscreen devices. emulate vertical scroll in applications -->
+                <!-- swipe up/down gesture management for touchscreen devices. emulate vertical scroll in applications 
                 <input type="button" runat="server" id="vswipe" value="Vertical Swipe ON" onclick="toggleVerticalSwipe(this);" title="if toggled on, allow vertical scroll on swipe (experimental feature, disabled on IE/Edge)" disabled="disabled"/>
-
-                <!-- share session -->
+                -->
+                <!-- share session 
                 <input type="button" runat="server" id="share" value="Share" onclick="openPopup('shareSessionPopup', 'ShareSession.aspx');" title="share session" disabled="disabled"/>
-
+                -->
                 <!-- disconnect -->
                 <input type="button" runat="server" id="disconnect" value="Disconnect" onclick="doDisconnect();" title="disconnect session" disabled="disabled"/>
 
@@ -362,12 +362,12 @@
                             }
 
                             // in addition to having their states also saved into a cookie, stat, debug and compatibility buttons are always available into the toolbar (even for guest(s) if the remote session is shared)
-                            document.getElementById('stat').value = getToggleCookie((parent != null && window.name != '' ? window.name + '_' : '') + 'stat') ? 'Stat ON' : 'Stat OFF';
-                            document.getElementById('debug').value = getToggleCookie((parent != null && window.name != '' ? window.name + '_' : '') + 'debug') ? 'Debug ON' : 'Debug OFF';
-                            document.getElementById('browser').value = getToggleCookie((parent != null && window.name != '' ? window.name + '_' : '') + 'browser') ? 'HTML5 OFF' : 'HTML5 ON';
+                            //document.getElementById('stat').value = getToggleCookie((parent != null && window.name != '' ? window.name + '_' : '') + 'stat') ? 'Stat ON' : 'Stat OFF';
+                            //document.getElementById('debug').value = getToggleCookie((parent != null && window.name != '' ? window.name + '_' : '') + 'debug') ? 'Debug ON' : 'Debug OFF';
+                            //document.getElementById('browser').value = getToggleCookie((parent != null && window.name != '' ? window.name + '_' : '') + 'browser') ? 'HTML5 OFF' : 'HTML5 ON';
 
                             // swipe is disabled on IE/Edge because it emulates mouse events by default (experimental)
-                            document.getElementById('<%=vswipe.ClientID%>').disabled = document.getElementById('<%=vswipe.ClientID%>').disabled || display.isIEBrowser();
+                            //document.getElementById('<%=vswipe.ClientID%>').disabled = document.getElementById('<%=vswipe.ClientID%>').disabled || display.isIEBrowser();
                         }
                     }
                 }
