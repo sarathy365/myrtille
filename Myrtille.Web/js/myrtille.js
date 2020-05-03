@@ -602,7 +602,7 @@ this.sendChar = function(char, release)
     }
 }
 
-this.sendCtrlAltDel = function()
+this.sendCtrlAltDel = function ()
 {
     try
     {
@@ -787,6 +787,7 @@ this.doDisconnect = function()
     {
         disableToolbar();
         network.send(myrtille.getCommandEnum().CLOSE_CLIENT.text);
+        closeTab();
     }
     catch (exc)
     {

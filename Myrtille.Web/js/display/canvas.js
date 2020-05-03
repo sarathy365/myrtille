@@ -51,6 +51,7 @@ function Canvas(base, config, dialog, display)
 
                 // set a tab index so the canvas can be focused
                 canvasObject.setAttribute('tabindex', 0);
+                canvasObject.id = "canvasDisplayEle";
 
                 // disable drag & drop
                 canvasObject.setAttribute('draggable', false);

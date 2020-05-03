@@ -307,6 +307,7 @@ function Websocket(base, config, dialog, display, network)
                 // connected session
                 else if (text == 'connected')
                 {
+                    onSessionConnection();
                     // if running myrtille into an iframe, register the iframe url (into a cookie)
                     // this is necessary to prevent a new http session from being generated when reloading the page, due to the missing http session id into the iframe url (!)
                     // multiple iframes (on the same page), like multiple connections/tabs, requires cookieless="UseUri" for sessionState into web.config
@@ -328,7 +329,8 @@ function Websocket(base, config, dialog, display, network)
                     }
 
                     // back to default page
-                    window.location.href = config.getHttpServerUrl();
+                    onSessionDisconnection();
+                    //window.location.href = config.getHttpServerUrl();
                 }
                 // server ack
                 else if (text.length >= 4 && text.substr(0, 4) == 'ack,')

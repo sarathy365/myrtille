@@ -32,6 +32,9 @@ namespace Myrtille.Web
     {
         public RemoteSessionManager Manager { get; private set; }
 
+        public long UserProfileId;
+        public long UserSessionId;
+
         public Guid Id;
         public RemoteSessionState State;
         public string HostName;

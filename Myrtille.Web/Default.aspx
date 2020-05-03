@@ -35,11 +35,12 @@
         <!-- mobile devices -->
         <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0"/>
         
-        <title>RDP Session<%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? " - " + RemoteSession.ServerAddress.ToString() : ""%></title>
+        <title>RDP Session<%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? (" - " + ((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString() + "@" + RemoteSession.ServerAddress.ToString()) : ""%></title>
         
         <link rel="icon" type="image/x-icon" href="favicon.ico"/>
         <link rel="stylesheet" type="text/css" href="<%=BundleTable.Bundles.ResolveBundleUrl("~/css/Default.css", true)%>"/>
         <link rel="stylesheet" type="text/css" href="<%=BundleTable.Bundles.ResolveBundleUrl("~/css/xterm.css", true)%>"/>
+        <link rel="stylesheet" type="text/css" href="<%=BundleTable.Bundles.ResolveBundleUrl("~/css/securden.css", true)%>"/>
 
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/tools/common.js", true)%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/tools/convert.js", true)%>"></script>
@@ -62,6 +63,7 @@
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/xterm/xterm.js", true)%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/xterm/addons/fit/fit.js", true)%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/audio/audiowebsocket.js", true)%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/securden.js", true)%>"></script>
 
 	</head>
 	
@@ -249,7 +251,7 @@
 			    <img src="img/icons8-menu-horizontal-21.png" alt="show/hide toolbar" width="21px" height="21px" onclick="toggleToolbar();"/>
             </div>
 
-            <div runat="server" id="toolbar" visible="false" style="visibility:hidden;display:none;">
+            <div runat="server" id="toolbar" visible="False" style="visibility:hidden;display:none;">
 
                 <!-- server info -->
                 <input type="text" runat="server" id="serverInfo" title="connected server" disabled="disabled"/>
@@ -311,6 +313,50 @@
             <div id="bgfDiv"></div>
 
         </form>
+
+        <!-- Securden start block -->
+        <form id="dummy_form" action="/" method="post">
+            <input type="hidden" id="dummy_data" value=""/>
+        </form>
+
+        <div runat="server" id="certificateDiv" visible="False">
+            Certificate accepted.
+        </div>
+
+        <div runat="server" id="loadingDiv" visible="False">
+            <div class="sec-loading-wrap">
+                <div class="sec-loading-circle">
+                  <label>●</label>
+                  <label>●</label>
+                  <label>●</label>
+                  <label>●</label>
+                  <label>●</label>
+                  <label>●</label>
+                </div>
+                <div class="loading-text">Loading...</div>
+            </div>
+        </div>
+
+        <div class="container webrdp-container-body" style="display:none;" id="errorMessageDialogEle">
+            <div id="status" class="error-message-div">
+            <span id="webrdp-error-icon" class="webrdp-error-icon"></span>
+            <span id="webrdp-error-text" class="webrdp-error-text">Connection failed.</span>
+            <span id="webrdp-back-home-btn" class="webrdp-back-btn" onclick="window.close();">Close</span>
+            </div>
+        </div>
+
+        <div runat="server" id="remoteOperationsDivWrap" visible="False">
+          <div runat="server" id="remoteOperationsDiv">
+            <div id="remoteOperationsHeader" title="Click to move"><p>. . .</p><p>. . .</p></div>
+            <div class="remote-oper-label-text" onclick="sendCtrlAltDel();">Ctrl+Alt+Delete</div>
+            <div class="remote-oper-label-text" onclick="openPopup('pasteClipboardPopup', 'PasteClipboard.aspx');">Clipboard</div>
+            <div class="remote-oper-label-text" onclick="disconnectSession();">Disconnect</div>
+          </div>
+          <script type="text/javascript">
+            dragElement(document.getElementById("remoteOperationsDiv"));
+          </script>
+        </div>
+        <!-- Securden end block -->
 
         <script type="text/javascript" language="javascript" defer="defer">
 

@@ -42,6 +42,7 @@ namespace Myrtille.Web
             bundles.Add(new Bundle("~/js/xterm/xterm.js").Include("~/js/xterm/xterm.js"));
             bundles.Add(new Bundle("~/js/xterm/addons/fit/fit.js").Include("~/js/xterm/addons/fit/fit.js"));
             bundles.Add(new Bundle("~/js/audio/audiowebsocket.js").Include("~/js/audio/audiowebsocket.js"));
+            bundles.Add(new Bundle("~/js/securden.js").Include("~/js/securden.js"));
 
             // styles
 
@@ -49,6 +50,7 @@ namespace Myrtille.Web
 
             bundles.Add(new Bundle("~/css/Default.css").Include("~/css/Default.css"));
             bundles.Add(new Bundle("~/css/xterm.css").Include("~/css/xterm.css"));
+            bundles.Add(new Bundle("~/css/securden.css").Include("~/css/securden.css"));
         }
     }
 }

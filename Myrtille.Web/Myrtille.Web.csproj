@@ -260,6 +260,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="css\securden.css" />
     <Content Include="css\xterm.css" />
     <Content Include="favicon.ico" />
     <Content Include="GetHash.aspx" />
@@ -274,6 +275,7 @@
     <Content Include="js\display\canvas.js" />
     <Content Include="js\display\divs.js" />
     <Content Include="js\display\terminaldiv.js" />
+    <Content Include="js\securden.js" />
     <Content Include="js\network\websocket.js" />
     <Content Include="js\tools\convert.js" />
     <Content Include="js\tools\common.js" />

@@ -114,7 +114,7 @@ namespace Myrtille.Web
             }
 
             // connect from a login page or url
-            if (!bool.TryParse(ConfigurationManager.AppSettings["LoginEnabled"], out _loginEnabled) || Request.RawUrl.Contains("auth_key"))
+            if (!bool.TryParse(ConfigurationManager.AppSettings["LoginEnabled"], out _loginEnabled) || (Request.RawUrl.Contains("auth_key") && Request.RawUrl.Contains("referrer")))
             {
                 _loginEnabled = true;
             }
@@ -236,6 +236,10 @@ namespace Myrtille.Web
 
                             ClientScript.RegisterClientScriptBlock(GetType(), Guid.NewGuid().ToString(), script, true);
                         }
+                        else
+                        {
+                            Response.Write("<script>alert('Session closed.'); window.close();</script>");
+                        }
 
                         // cleanup
                         Session[HttpSessionStateVariables.RemoteSession.ToString()] = null;
@@ -314,6 +318,11 @@ namespace Myrtille.Web
             // disable the browser cache; in addition to a "noCache" dummy param, with current time, on long-polling and xhr requests
             Response.Cache.SetCacheability(HttpCacheability.NoCache);
             Response.Cache.SetNoStore();
+
+            if (RemoteSession == null && (string.IsNullOrEmpty(Request["auth_key"]) || string.IsNullOrEmpty(Request["referrer"])))
+            {
+                certificateDiv.Visible = true;
+            }
         }
 
         /// <summary>
@@ -341,6 +350,16 @@ namespace Myrtille.Web
             // remote session toolbar
             if (RemoteSession != null && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected))
             {
+                remoteOperationsDivWrap.Visible = true;
+                if (RemoteSession.State == RemoteSessionState.Connecting)
+                {
+                    loadingDiv.Visible = true;
+                    remoteOperationsDiv.Style.Add("display", "none");
+                }
+                else
+                {
+                    remoteOperationsDiv.Style.Add("display", "block");
+                }
                 if (_toolbarEnabled)
                 {
                     // interacting with the remote session is available to guests with control access, but only the remote session owner should have control on the remote session itself
@@ -380,7 +399,7 @@ namespace Myrtille.Web
             else
             {
                 // connection params are sent when the login form is submitted, either through http post (the default form method) or http get (querystring)
-                login.Visible = _loginEnabled;
+                //login.Visible = _loginEnabled;
 
                 // MFA
                 if (_mfaAuthClient.GetState())
@@ -562,11 +581,11 @@ namespace Myrtille.Web
             {
                 if ((string)response["type"] == "WEB_RDP")
                 {
-                    returnObj = (JObject)response["details"];
+                    returnObj = response;
                 }
                 else
                 {
-                    Response.Write("<script>alert('Invalid option'); window.close();</script>");
+                    Response.Write("<script>alert('Invalid option.'); window.close();</script>");
                 }
             }
             else
@@ -602,7 +621,9 @@ namespace Myrtille.Web
                 Response.Write("<script>alert('Invalid command.'); window.close();</script>");
                 return false;
             }
-            else if (RemoteSession == null)
+            long userProfileId = 0;
+            long userSessionId = 0;
+            if (RemoteSession == null)
             {
                 JObject connectionDetails = ProcessLaunchRequest(Request["referrer"], Request["auth_key"]);
                 if (connectionDetails == null)
@@ -611,6 +632,9 @@ namespace Myrtille.Web
                 }
                 else
                 {
+                    //userProfileId = (long)connectionDetails["user_profile_id"];
+                    //userSessionId = (long)connectionDetails["user_session_id"];
+                    connectionDetails = (JObject)connectionDetails["details"];
                     loginServer = (string)connectionDetails["address"];
                     loginDomain = "";
                     loginUser = (string)connectionDetails["username"];
@@ -762,12 +786,16 @@ namespace Myrtille.Web
                     Request["cid"] != null
                 );
 
+                RemoteSession.UserProfileId = userProfileId;
+                RemoteSession.UserSessionId = userSessionId;
+
                 // bind the remote session to the current http session
                 Session[HttpSessionStateVariables.RemoteSession.ToString()] = RemoteSession;
 
                 // register the remote session at the application level
                 var remoteSessions = (IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()];
                 remoteSessions.Add(RemoteSession.Id, RemoteSession);
+
             }
             catch (Exception exc)
             {

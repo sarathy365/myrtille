@@ -165,6 +165,9 @@ function Mouse(base, config, dialog, display, network, user)
             if (!processEvent(e))
                 return false;
 
+            if (e.target.id != "canvasDisplayEle")
+                return false;
+
             user.triggerActivity();
 
             // IE

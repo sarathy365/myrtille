@@ -1,0 +1,237 @@
+﻿.container.webrdp-container-body {
+    position: relative;
+    text-align: center;
+}
+
+span.webrdp-error-icon {
+    position: absolute;
+    width: 27px;
+    height: 27px;
+    opacity: 1;
+    background-color: #ff5353;
+    border-radius: 50px;
+    margin: 11px 0 0 5px;
+    left: 40px;
+    top: 21px;
+}
+
+    span.webrdp-error-icon:before, span.webrdp-error-icon:after {
+        position: absolute;
+        content: ' ';
+        height: 15px;
+        width: .139rem;
+        background-color: #ffffff;
+        top: 6px;
+        left: 12.5px;
+    }
+
+    span.webrdp-error-icon:after {
+        transform: rotate(-45deg);
+    }
+
+    span.webrdp-error-icon:before {
+        transform: rotate(45deg);
+    }
+
+.webrdp-back-btn:hover {
+    background-color: #e92a2a;
+}
+
+.error-message-div {
+    z-index: 100;
+    color: #fff;
+    text-align: center;
+    display: inline-block;
+    margin: 0 auto;
+    position: relative;
+    background-color: #eee;
+    padding: 32px 60px 30px 90px;
+    border-radius: 4px;
+    margin-top: 150px;
+    min-height: 90px;
+    font-size: 18px;
+    border: 1px solid #ccc;
+    box-shadow: 0px 0px 30px rgba(169, 169, 169, .5);
+}
+
+span.webrdp-error-text {
+    display: block;
+    color: #222222;
+    font-weight: 500;
+}
+
+.webrdp-back-btn {
+    margin: 20px 0 0 -30px;
+    background-color: #ff5353;
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.label-text {
+    float: left;
+    line-height: 40px;
+    background-color: #f1f1f1;
+    text-align: center;
+    width: 130px;
+    cursor: pointer;
+}
+
+    .label-text:hover {
+        color: #000000;
+        background-color: #eeeeee;
+    }
+
+.sec-loading-wrap {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translateY(-50%);
+    width: calc(100% - 200px);
+    color: #ffffff;
+    padding: 0 100px;
+    text-align: center;
+    bottom: 0;
+    margin: auto;
+    height: 70px;
+}
+
+.sec-loading-circle {
+  margin-top: 10px;
+}
+
+.sec-loading-circle label {
+  font-size: 20px;
+  opacity: 0;
+  display:inline-block;
+}
+.loading-text {
+    width: 100%;
+    text-align: center;
+    font-size: 22px;
+    margin-top: 10px;
+}
+@keyframes connecting {
+  0% {
+    opacity: 0;
+    transform: translateX(-300px);
+  }
+  33% {
+    opacity: 1;
+    transform: translateX(0px);
+  }
+  66% {
+    opacity: 1;
+    transform: translateX(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(300px);
+  }
+}
+
+@-webkit-keyframes connecting {
+  0% {
+    opacity: 0;
+    -webkit-transform: translateX(-300px);
+  }
+  33% {
+    opacity: 1;
+    -webkit-transform: translateX(0px);
+  }
+  66% {
+    opacity: 1;
+    -webkit-transform: translateX(0px);
+  }
+  100% {
+    opacity: 0;
+    -webkit-transform: translateX(300px);
+  }
+}
+
+.sec-loading-circle label:nth-child(6) {
+  -webkit-animation: connecting 3s infinite ease-in-out;
+  animation: connecting 3s infinite ease-in-out;
+}
+
+.sec-loading-circle label:nth-child(5) {
+  -webkit-animation: connecting 3s 100ms infinite ease-in-out;
+  animation: connecting 3s 100ms infinite ease-in-out;
+}
+
+.sec-loading-circle label:nth-child(4) {
+  -webkit-animation: connecting 3s 200ms infinite ease-in-out;
+  animation: connecting 3s 200ms infinite ease-in-out;
+}
+
+.sec-loading-circle label:nth-child(3) {
+  -webkit-animation: connecting 3s 300ms infinite ease-in-out;
+  animation: connecting 3s 300ms infinite ease-in-out;
+}
+
+.sec-loading-circle label:nth-child(2) {
+  -webkit-animation: connecting 3s 400ms infinite ease-in-out;
+  animation: connecting 3s 400ms infinite ease-in-out;
+}
+
+.sec-loading-circle label:nth-child(1) {
+  -webkit-animation: connecting 3s 500ms infinite ease-in-out;
+  animation: connecting 3s 500ms infinite ease-in-out;
+}
+
+#remoteOperationsDiv {
+    position: absolute;
+    z-index: 1000;
+    text-align: center;
+    border: 1px solid #d3d3d3;
+    width: 125px;
+    top: 10px;
+    opacity: .6;
+    top: 38%;
+    right: 10px;
+}
+
+    #remoteOperationsDiv:hover {
+        opacity: 1;
+    }
+
+#remoteOperationsHeader {
+    padding: 2px 0;
+    cursor: move;
+    z-index: 10;
+    background-color: #2196F3;
+    color: #fff;
+    float: left;
+    height: 24px;
+    box-sizing: border-box;
+    margin-top: -1px;
+    width: 100%;
+    border-bottom: 1px solid #eee;
+}
+
+    #remoteOperationsHeader p {
+        position: relative;
+        float: left;
+        width: 100%;
+        line-height: 7px;
+        padding: 0;
+        margin: 0;
+        letter-spacing: 3px;
+    }
+
+.remote-oper-label-text {
+    float: left;
+    line-height: 40px;
+    background-color: #f1f1f1;
+    text-align: center;
+    width: 100%;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+    .remote-oper-label-text:hover {
+        color: #ffffff;
+        background-color: #2096f3;
+    }

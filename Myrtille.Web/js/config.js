@@ -136,7 +136,7 @@ function Config(
     var adaptiveFullscreenTimeout = 0;                              // adaptive fullscreen update (ms); requested after a given period of user inactivity (=no input). 0 to disable
 
     // audio
-    var audioFormat = audioFormatEnum.MP3;                          // audio format (HTML5); requires websocket enabled and RDP host; IE doesn't support WAV format (MP3 fallback); others: WAV and MP3 support
+    var audioFormat = audioFormatEnum.NONE;                          // audio format (HTML5); requires websocket enabled and RDP host; IE doesn't support WAV format (MP3 fallback); others: WAV and MP3 support
     var audioBitrate = 128;                                         // bitrate (kbps); possible values for WAV: 1411 (44100 Hz, 16 bits stereo); possible values for MP3: 128, 160, 256, 320 (CBR); lower = lesser quality, but also less bandwidth usage (128 kbps is good enough for sound notifications)
 
     // network
