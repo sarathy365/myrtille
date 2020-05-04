@@ -1,4 +1,4 @@
-﻿.web-rdp-session-body {
+﻿.web-rdp-session-body, * {
     font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"
 }
 
@@ -227,7 +227,6 @@ span.webrdp-dialog-message-text {
     position: absolute;
     z-index: 1000;
     text-align: center;
-    border: 1px solid #d3d3d3;
     width: 125px;
     top: 10px;
     opacity: .6;
@@ -240,15 +239,13 @@ span.webrdp-dialog-message-text {
     }
 
 #remoteOperationsHeader {
-    padding: 0 0 1px 0;
     cursor: move;
     z-index: 10;
     background-color: #2196F3;
     color: #fff;
     float: left;
-    height: 19px;
+    height: 21px;
     box-sizing: border-box;
-    margin-top: -1px;
     width: 100%;
     border-bottom: 1px solid #eee;
 }
@@ -279,3 +276,44 @@ span.webrdp-dialog-message-text {
         color: #ffffff;
         background-color: #2096f3;
     }
+
+.remote-clip-span {
+    font-weight: normal !important;
+    height: 50px;
+    display: block;
+    line-height: 50px;
+    box-sizing: border-box;
+    font-size: 14px;
+    text-align: center;
+}
+
+.remote-clip-input {
+    resize: none;
+    width: 520px !important;
+    margin-left: 12px;
+}
+
+.remote-clip-button {
+    float: left;
+    margin: 8px 5px 5px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 2px;
+    cursor: pointer;
+    padding: 5px 15px;
+}
+
+    .remote-clip-button.remote-clip-copy {
+        background-color: #2196F3;
+        margin-left: 210px;
+    }
+
+    .remote-clip-button.remote-clip-close {
+        background-color: #d5d5d5;
+        color: #666;
+    }
+
+#pasteClipboardPopup {
+    width: 550px !important;
+    height: 260px !important;
+}

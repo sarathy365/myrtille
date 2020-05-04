@@ -26,6 +26,8 @@
     <head>
         <title>Myrtille</title>
         <link rel="stylesheet" type="text/css" href="../css/Default.css"/>
+        <link rel="stylesheet" type="text/css" href="../css/securden.css"/>
+
         <script language="javascript" type="text/javascript" src="../js/tools/convert.js"></script>
 	</head>
 
@@ -34,13 +36,15 @@
         <form method="get" runat="server">
             
             <div>
-                <span id="pasteClipboardPopupDesc">
-                    Type or paste some text then click send
-                </span><hr/>
-                <textarea id="pasteClipboardPopupText" rows="10" cols="50"></textarea><br/>
+                <span id="pasteClipboardPopupDesc" class="remote-clip-span">
+                    Type or paste the content to be copied to the clipboard of the remote computer.
+                </span>
+                <textarea id="pasteClipboardPopupText" rows="10" cols="50" class="remote-clip-input"></textarea><br/>
                 <!--<input type="button" id="pasteClipboardButton" value="Paste" onclick="pasteClipboard();"/>-->
-                <input type="button" id="sendClipboardButton" value="Send" onclick="sendClipboard();"/>
-                <input type="button" id="closePopupButton" value="Close" onclick="parent.closePopup();"/>
+                <!--<input type="button" id="sendClipboardButton" value="Copy" onclick="sendClipboard();"/>-->
+                <!--<input type="button" id="closePopupButton" value="Close" onclick="parent.closePopup();"/>-->
+                <div id="sendClipboardButton" onclick="sendClipboard();" class="remote-clip-button remote-clip-copy">Copy</div>
+                <div id="closePopupButton" onclick="parent.closePopup();" class="remote-clip-button remote-clip-close">Close</div>
             </div>
 
         </form>
@@ -102,7 +106,7 @@
                             // working on Edge and every other browsers
                             if (!parent.getMyrtille().getDisplay().isIEBrowser())
                             {
-                                alert('clipboard successfully synchronized');
+                                alert('Text copied to the clipboard of the remote computer.');
                             }
                             else
                             {

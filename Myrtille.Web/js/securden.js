@@ -79,7 +79,7 @@ function onSessionDisconnection() {
 }
 
 function disconnectSession() {
-    if (confirm("Do you want to disconnect the session? Note: The session won't be logged off.")) {
+    if (confirm("Do you want to disconnect? The remote session will be simply disconnected and not logged out.")) {
         doDisconnect();
     }
 }
@@ -89,7 +89,7 @@ function closeTab() {
     window.close();
     hideLoadingDiv();
     hideRemoteOperationsDiv();
-    showErrorMessage("Unexpected Error.", true);
+    setTimeout(function () { showErrorMessage("Unexpected Error.", true); }, 1000);
 }
 
 function dragElement(elmnt) {
@@ -126,8 +126,8 @@ function dragElement(elmnt) {
         pos4 = e.clientY;
         // set the element's new position:
         var topPixel = (elmnt.offsetTop - pos2)
-        if (topPixel > (clientHeight - 143)) {
-            topPixel = clientHeight - 143;
+        if (topPixel > (clientHeight - 145)) {
+            topPixel = clientHeight - 145;
         } else if (topPixel < 0) {
             topPixel = 0;
         }

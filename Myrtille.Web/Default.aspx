@@ -329,14 +329,14 @@
                   <label>●</label>
                   <label>●</label>
                 </div>
-                <div class="loading-text">Loading</div>
+                <div class="loading-text">Launching Connection</div>
             </div>
         </div>
 
         <div class="container webrdp-container-body" style="display:none;" id="errorMessageDialogEle">
             <div id="status" class="dialog-message-div">
             <span id="webrdp-error-icon" class="webrdp-error-icon"></span>
-            <span id="webrdp-error-text" class="webrdp-dialog-message-text">Connection failed.</span>
+            <span id="webrdp-error-text" class="webrdp-dialog-message-text">Unable to establish a connection. Possible reasons: Invalid credentials or remote machine is not reachable.</span>
             <span id="webrdp-back-home-btn" class="webrdp-back-btn" onclick="window.close();">Close</span>
             </div>
         </div>
@@ -344,14 +344,14 @@
         <div runat="server" visible="False" class="container webrdp-container-body" id="certificateDiv">
             <div class="success-message-div dialog-message-div">
             <span class="webrdp-success-icon"></span>
-            <span class="webrdp-dialog-message-text">Certificate Accepted.</span>
+            <span class="webrdp-dialog-message-text">Certificate validated. You can launch web-based RDP connections.</span>
             <span class="webrdp-back-btn" onclick="disableUserClose=false; window.history.back(); window.history.back(); window.close();">Close</span>
             </div>
         </div>
 
         <div runat="server" id="remoteOperationsDivWrap" visible="False">
           <div runat="server" id="remoteOperationsDiv">
-            <div id="remoteOperationsHeader" title="Click to move"><p>. . .</p><p>. . .</p></div>
+            <div id="remoteOperationsHeader" title="Click to drag"><p>. . .</p><p>. . .</p></div>
             <div class="remote-oper-label-text" onclick="sendCtrlAltDel();">Ctrl+Alt+Delete</div>
             <div class="remote-oper-label-text" onclick="openPopup('pasteClipboardPopup', 'PasteClipboard.aspx');">Clipboard</div>
             <div class="remote-oper-label-text" onclick="disconnectSession();">Disconnect</div>

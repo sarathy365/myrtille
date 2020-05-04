@@ -73,7 +73,7 @@
                             // working on Edge and every other browsers
                             if (!parent.getMyrtille().getDisplay().isIEBrowser())
                             {
-                                alert('clipboard successfully synchronized');
+                                alert('Text copied from the clipboard of the remote computer.');
                             }
                             else
                             {
