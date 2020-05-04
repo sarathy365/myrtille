@@ -67,7 +67,7 @@
 
 	</head>
 	
-    <body onload="startMyrtille(
+    <body class="web-rdp-session-body" onload="startMyrtille(
         <%=(RemoteSession != null ? "'" + RemoteSession.State.ToString().ToUpper() + "'" : "null")%>,
         getToggleCookie((parent != null && window.name != '' ? window.name + '_' : '') + 'stat'),
         getToggleCookie((parent != null && window.name != '' ? window.name + '_' : '') + 'debug'),
@@ -319,10 +319,6 @@
             <input type="hidden" id="dummy_data" value=""/>
         </form>
 
-        <div runat="server" id="certificateDiv" visible="False">
-            Certificate accepted.
-        </div>
-
         <div runat="server" id="loadingDiv" visible="False">
             <div class="sec-loading-wrap">
                 <div class="sec-loading-circle">
@@ -333,15 +329,23 @@
                   <label>●</label>
                   <label>●</label>
                 </div>
-                <div class="loading-text">Loading...</div>
+                <div class="loading-text">Loading</div>
             </div>
         </div>
 
         <div class="container webrdp-container-body" style="display:none;" id="errorMessageDialogEle">
-            <div id="status" class="error-message-div">
+            <div id="status" class="dialog-message-div">
             <span id="webrdp-error-icon" class="webrdp-error-icon"></span>
-            <span id="webrdp-error-text" class="webrdp-error-text">Connection failed.</span>
+            <span id="webrdp-error-text" class="webrdp-dialog-message-text">Connection failed.</span>
             <span id="webrdp-back-home-btn" class="webrdp-back-btn" onclick="window.close();">Close</span>
+            </div>
+        </div>
+
+        <div runat="server" visible="False" class="container webrdp-container-body" id="certificateDiv">
+            <div class="success-message-div dialog-message-div">
+            <span class="webrdp-success-icon"></span>
+            <span class="webrdp-dialog-message-text">Certificate Accepted.</span>
+            <span class="webrdp-back-btn" onclick="disableUserClose=false; window.history.back(); window.history.back(); window.close();">Close</span>
             </div>
         </div>
 

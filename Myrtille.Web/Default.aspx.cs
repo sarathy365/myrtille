@@ -632,8 +632,11 @@ namespace Myrtille.Web
                 }
                 else
                 {
-                    //userProfileId = (long)connectionDetails["user_profile_id"];
-                    //userSessionId = (long)connectionDetails["user_session_id"];
+                    if (connectionDetails["user_profile_id"] != null && connectionDetails["user_session_id"] != null)
+                    {
+                        userProfileId = (long)connectionDetails["user_profile_id"];
+                        userSessionId = (long)connectionDetails["user_session_id"];
+                    }
                     connectionDetails = (JObject)connectionDetails["details"];
                     loginServer = (string)connectionDetails["address"];
                     loginDomain = "";

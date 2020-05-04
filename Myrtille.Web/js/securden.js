@@ -107,8 +107,8 @@ function dragElement(elmnt) {
         pos4 = e.clientY;
         // set the element's new position:
         var topPixel = (elmnt.offsetTop - pos2)
-        if (topPixel > (clientHeight - 145)) {
-            topPixel = clientHeight - 145;
+        if (topPixel > (clientHeight - 143)) {
+            topPixel = clientHeight - 143;
         } else if (topPixel < 0) {
             topPixel = 0;
         }
