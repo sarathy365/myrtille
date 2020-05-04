@@ -1,14 +1,33 @@
 var disableUserClose = true;
 var isSessionConnected = false;
 
+this.isIEBrowserExceptEdge = function () {
+    var ua = navigator.userAgent;
+
+    // IE 10 or older
+    var msie = ua.indexOf('MSIE ');
+    if (msie > 0) {
+        return true;
+    }
+
+    // IE 11
+    var trident = ua.indexOf('Trident/');
+    if (trident > 0) {
+        return true;
+    }
+
+    return false;
+};
+
 window.onbeforeunload = function (evt) {
     if (disableUserClose) {
-        return "Do you want to close tab?";
+        if (!isIEBrowserExceptEdge() || isSessionConnected) {
+            return "Do you want to close tab?";
+        }
     }
 }
 
 window.onunload = function (evt) {
-    alert(isSessionConnected);
     if (isSessionConnected) {
         doDisconnect();
     }
