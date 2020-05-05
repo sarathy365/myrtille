@@ -141,10 +141,13 @@ span.webrdp-dialog-message-text {
 }
 
     .sec-loading-circle label {
-        font-size: 20px;
+        font-size: 0px;
         opacity: 0;
         display: inline-block;
-        width: auto;
+        width: 7px;
+        height: 7px;
+        background-color: #fff;
+        border-radius: 50%;
         float: none;
         margin: 0;
     }
@@ -225,57 +228,63 @@ span.webrdp-dialog-message-text {
 
 #remoteOperationsDiv {
     position: absolute;
-    z-index: 1000;
     text-align: center;
-    width: 125px;
-    top: 10px;
-    opacity: .6;
-    top: 38%;
-    right: 10px;
+    height: 56px;
+    top: -56px;
+    left: calc(50% - 240px);
+    opacity: .75;
+    background-color: #26282a;
+    transition: top .5s ease-in-out;
+    z-index: 1000;
 }
 
     #remoteOperationsDiv:hover {
         opacity: 1;
-    }
-
-#remoteOperationsHeader {
-    cursor: move;
-    z-index: 10;
-    background-color: #2196F3;
-    color: #fff;
-    float: left;
-    height: 21px;
-    box-sizing: border-box;
-    width: 100%;
-    border-bottom: 1px solid #eee;
-}
-
-    #remoteOperationsHeader p {
-        position: relative;
-        float: left;
-        width: 100%;
-        line-height: 5px;
-        padding: 0;
-        margin: 0;
-        letter-spacing: 3px;
+        top: 0 !important;
     }
 
 .remote-oper-label-text {
     float: left;
-    line-height: 40px;
-    background-color: #f1f1f1;
     text-align: center;
-    width: 100%;
+    cursor: pointer !important;
     font-size: 13px;
-    cursor: pointer;
-    color: #333333;
-    border-bottom: 1px solid #ddd;
+    color: #ffffff;
+    padding: 10px 20px 0 20px;
+    height: 56px;
+    box-sizing: border-box;
+    width: 120px;
 }
 
-    .remote-oper-label-text:hover {
-        color: #ffffff;
-        background-color: #2096f3;
+    .remote-oper-label-text span {
+        width: 100%;
+        float: left;
+        margin-bottom: 1px;
     }
+
+svg {
+    width: 16px;
+    height: 16px;
+    fill: #ffffff;
+}
+
+.remote-oper-label-text:hover {
+    color: #ffffff;
+    background-color: #2096f3;
+}
+
+.show-icon {
+    position: absolute;
+    width: 50px;
+    height: 24px;
+    bottom: -24px;
+    left: 44%;
+    box-sizing: border-box;
+    padding-top: 5px;
+    top: auto;
+    border-radius: 0 0 3px 3px;
+    background-color: #1c1e1f;
+    cursor: move;
+}
 
 .remote-clip-span {
     font-weight: normal !important;
@@ -312,6 +321,40 @@ span.webrdp-dialog-message-text {
         background-color: #d5d5d5;
         color: #666;
     }
+
+.remote-oper-label-text-icon {
+    height: 20px;
+}
+
+.remote-oper-label-text-val {
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.clipboard-icon svg {
+    height: 16px;
+    width: 16px;
+}
+
+.win-r-icon {
+    margin-top: -1px;
+    margin-bottom: 2px !important;
+}
+
+.win-r-icon svg {
+    height: 20px;
+    width: 20px;
+}
+
+.ctrl-alt-del-icon svg {
+    height: 16px;
+    width: 16px;
+}
+
+.disconnect-icon svg {
+    height: 15px;
+    width: 15px;
+}
 
 #pasteClipboardPopup {
     width: 550px !important;

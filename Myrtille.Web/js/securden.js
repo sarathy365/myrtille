@@ -1,5 +1,6 @@
 var disableUserClose = true;
 var isSessionConnected = false;
+var isCloseTabCalled = false;
 
 this.isIEBrowserExceptEdge = function () {
     var ua = navigator.userAgent;
@@ -80,11 +81,16 @@ function onSessionDisconnection() {
 
 function disconnectSession() {
     if (confirm("Do you want to disconnect? The remote session will be simply disconnected and not logged out.")) {
+        disableUserClose = false;
         doDisconnect();
     }
 }
 
 function closeTab() {
+    if (isCloseTabCalled) {
+        return;
+    }
+    isCloseTabCalled = true;
     disableUserClose = false;
     window.close();
     hideLoadingDiv();
@@ -94,12 +100,10 @@ function closeTab() {
 
 function dragElement(elmnt) {
     var clientWidth = window.innerWidth;
-    var clientHeight = window.innerHeight;
-
     var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-    if (document.getElementById(elmnt.id + "header")) {
+    if (document.getElementById(elmnt.id + "Header")) {
         /* if present, the header is where you move the DIV from:*/
-        document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+        document.getElementById(elmnt.id + "Header").onmousedown = dragMouseDown;
     } else {
         /* otherwise, move the DIV from anywhere inside the DIV:*/
         elmnt.onmousedown = dragMouseDown;
@@ -125,20 +129,14 @@ function dragElement(elmnt) {
         pos3 = e.clientX;
         pos4 = e.clientY;
         // set the element's new position:
-        var topPixel = (elmnt.offsetTop - pos2)
-        if (topPixel > (clientHeight - 145)) {
-            topPixel = clientHeight - 145;
-        } else if (topPixel < 0) {
-            topPixel = 0;
+        var leftPos = elmnt.offsetLeft - pos1;
+        if (leftPos > (clientWidth - elmnt.offsetWidth)) {
+            leftPos = clientWidth - elmnt.offsetWidth;
         }
-        elmnt.style.top = topPixel + "px";
-        var leftPixel = (elmnt.offsetLeft - pos1)
-        if (leftPixel > (clientWidth-127)) {
-            leftPixel = clientWidth - 127;
-        } else if (leftPixel < 0) {
-            leftPixel = 0;
+        if (leftPos < 0) {
+            leftPos = 0;
         }
-        elmnt.style.left = leftPixel + "px";
+        elmnt.style.left = leftPos + "px";
     }
 
     function closeDragElement() {

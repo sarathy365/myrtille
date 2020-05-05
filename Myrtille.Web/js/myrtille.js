@@ -113,7 +113,8 @@ function Myrtille(httpServerUrl, connectionState, statEnabled, debugEnabled, com
         }
         catch (exc)
         {
-            alert('myrtille init error: ' + exc.message);
+            alert('Unexpected Error');
+            console.log('init error: ' + exc.message);
             throw exc;
         }
     };
@@ -314,7 +315,7 @@ function startMyrtille(connectionState, statEnabled, debugEnabled, compatibility
     }
     catch (exc)
     {
-        alert('failed to start myrtille: ' + exc.message);
+        alert('failed to start: ' + exc.message);
         myrtille = null;
     }
 }
@@ -496,7 +497,11 @@ this.writeClipboard = function(text)
         else
         {
             dialog.showDebug('async clipboard API is not supported or clipboard write access is denied (do you use HTTPS?)');
-            openPopup('copyClipboardPopup', 'CopyClipboard.aspx');
+            if (window.clipboardData) {
+                window.clipboardData.setData("Text", text);
+            } else {
+                openPopup('copyClipboardPopup', 'CopyClipboard.aspx');
+            }
         }
     }
     catch (exc)
@@ -548,7 +553,7 @@ this.sendText = function(text)
     }
 }
 
-this.sendKey = function(keyCode, release)
+this.sendKey = function(keyCode, release, secondaryKeyCode)
 {
     try
     {
@@ -562,9 +567,16 @@ this.sendKey = function(keyCode, release)
         var keys = new Array();
 
         keys.push(myrtille.getCommandEnum().SEND_KEY_SCANCODE.text + keyCode + '-1');
+        if (secondaryKeyCode) {
+            keys.push(myrtille.getCommandEnum().SEND_KEY_SCANCODE.text + secondaryKeyCode + '-1');
+        }
 
-        if (release)
+        if (release) {
             keys.push(myrtille.getCommandEnum().SEND_KEY_SCANCODE.text + keyCode + '-0');
+            if (secondaryKeyCode) {
+                keys.push(myrtille.getCommandEnum().SEND_KEY_SCANCODE.text + secondaryKeyCode + '-0');
+            }
+        }
                 
         network.processUserEvent('keyboard', keys.toString());
     }
@@ -632,6 +644,16 @@ this.sendCtrlAltDel = function ()
     }
 }
 
+this.sendWinR = function () {
+    try {
+        // win + r
+        sendKey(91, true, 82);
+    }
+    catch (exc) {
+        dialog.showDebug('myrtille sendWinR error: ' + exc.message);
+    }
+}
+
 this.setKeyCombination = function()
 {
     try
@@ -643,7 +665,7 @@ this.setKeyCombination = function()
     }
     catch (exc)
     {
-        alert('myrtille setKeyCombination error: ' + exc.message);
+        alert('setKeyCombination error: ' + exc.message);
     }
 }
 
@@ -742,7 +764,7 @@ this.downloadPdf = function(name)
     }
 	catch (exc)
 	{
-        alert('myrtille downloadPdf error: ' + exc.message);
+        alert('downloadPdf error: ' + exc.message);
 	}
 }
 
@@ -764,7 +786,7 @@ this.printPdf = function()
     }
 	catch (exc)
 	{
-        alert('myrtille printPdf error: ' + exc.message);
+        alert('printPdf error: ' + exc.message);
 	}
 }
 
@@ -777,7 +799,7 @@ this.writeTerminal = function(data)
     }
     catch (exc)
     {
-        alert('myrtille writeTerminal error: ' + exc.message);
+        alert('writeTerminal error: ' + exc.message);
     }
 }
 
@@ -791,6 +813,6 @@ this.doDisconnect = function()
     }
     catch (exc)
     {
-        dialog.showDebug('myrtille doDisconnect error: ' + exc.message);
+        dialog.showDebug('doDisconnect error: ' + exc.message);
     }
 }

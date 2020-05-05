@@ -110,7 +110,7 @@
                             }
                             else
                             {
-                                alert('IE detected, hit Ctrl+C (Cmd-C on Mac) if you want to synchronize the clipboard');
+                                //alert('IE detected, hit Ctrl+C (Cmd-C on Mac) if you want to synchronize the clipboard');
                             }
                         }
                         else

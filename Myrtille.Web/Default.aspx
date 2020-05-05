@@ -35,7 +35,7 @@
         <!-- mobile devices -->
         <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0"/>
         
-        <title>RDP Session<%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? (" - " + ((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString() + "@" + RemoteSession.ServerAddress.ToString()) : ""%></title>
+        <title><%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? (((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString() + "@" + RemoteSession.ServerAddress.ToString() + " | Securden RDP Session") : "Securden RDP Gateway"%></title>
         
         <link rel="icon" type="image/x-icon" href="favicon.ico"/>
         <link rel="stylesheet" type="text/css" href="<%=BundleTable.Bundles.ResolveBundleUrl("~/css/Default.css", true)%>"/>
@@ -322,12 +322,12 @@
         <div runat="server" id="loadingDiv" visible="False">
             <div class="sec-loading-wrap">
                 <div class="sec-loading-circle">
-                  <label>●</label>
-                  <label>●</label>
-                  <label>●</label>
-                  <label>●</label>
-                  <label>●</label>
-                  <label>●</label>
+                  <label></label>
+                  <label></label>
+                  <label></label>
+                  <label></label>
+                  <label></label>
+                  <label></label>
                 </div>
                 <div class="loading-text">Launching Connection</div>
             </div>
@@ -350,12 +350,63 @@
         </div>
 
         <div runat="server" id="remoteOperationsDivWrap" visible="False">
-          <div runat="server" id="remoteOperationsDiv">
-            <div id="remoteOperationsHeader" title="Click to drag"><p>. . .</p><p>. . .</p></div>
-            <div class="remote-oper-label-text" onclick="sendCtrlAltDel();">Ctrl+Alt+Delete</div>
-            <div class="remote-oper-label-text" onclick="openPopup('pasteClipboardPopup', 'PasteClipboard.aspx');">Clipboard</div>
-            <div class="remote-oper-label-text" onclick="disconnectSession();">Disconnect</div>
-          </div>
+            <div runat="server" id="remoteOperationsDiv">
+                
+                <div class="remote-oper-label-text" onclick="openPopup('pasteClipboardPopup', 'PasteClipboard.aspx');">
+                  <span class="remote-oper-label-text-icon clipboard-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
+                      <g>
+                        <path d="M24.3,4.2h-1.5V3.7c0-0.6-0.5-1.1-1.1-1.1h-2c-0.7-1.5-2.2-2.5-3.9-2.5s-3.2,1-3.9,2.5H9.5c-0.6,0-1.1,0.5-1.1,1.1v0.5H6.9   c-1.8,0-3.3,1.5-3.3,3.2v21.1c0,1.8,1.5,3.2,3.3,3.2h17.5c1.8,0,3.2-1.5,3.2-3.2v-21C27.6,5.7,26.1,4.2,24.3,4.2z M10.6,4.9h2.1   h0.1c0.1,0,0.1,0,0.2,0c0.1,0,0.2-0.1,0.2-0.1c0.1,0,0.1-0.1,0.2-0.1c0.1-0.1,0.1-0.1,0.2-0.2c0-0.1,0.1-0.1,0.1-0.2   s0.1-0.1,0.1-0.2V4c0.2-0.9,1-1.6,2-1.6s1.8,0.7,2,1.6v0.1c0,0.1,0,0.1,0.1,0.2c0,0.1,0.1,0.1,0.1,0.2l0.1,0.1   c0.1,0.1,0.1,0.1,0.2,0.2l0.1,0.1C18.5,5,18.7,5,18.8,5l0,0l0,0h1.7v2.5h-9.9C10.6,7.5,10.6,4.9,10.6,4.9z M25.3,28.5   c0,0.5-0.4,1-1,1H6.9c-0.5,0-1-0.4-1-1v-21c0-0.5,0.4-1,1-1h1.5v2.1c0,0.6,0.5,1.1,1.1,1.1h12.2c0.6,0,1.1-0.5,1.1-1.1V6.5h1.5   c0.5,0,1,0.4,1,1C25.3,7.5,25.3,28.5,25.3,28.5z"></path>
+            
+                      </g>
+                      </svg>
+                  </span>
+                  <span class="remote-oper-label-text-val">Clipboard</span>
+                </div>
+
+                <div class="remote-oper-label-text" onclick="sendWinR();">
+                  <span class="remote-oper-label-text-icon win-r-icon">
+		            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
+		            <g>
+		            <path d="M7.5,5.2L1,26.7h24l6.5-21.6L7.5,5.2L7.5,5.2z M23.5,24.6H4.1l5-17.3h19.4L23.5,24.6z"/>
+		            <path d="M11.9,10.7l-3,10.6h11.7l3-10.6C23.6,10.7,11.9,10.7,11.9,10.7z M20.2,17.2l-8.7,0.1l1.5-4.9h8.6L20.2,17.2z"/>
+		            <polygon points="12.7,16.5 14.8,16.5 15.8,13.4 13.8,13.4  "/>
+		            </g>
+		            </svg>
+                  </span>
+                  <span class="remote-oper-label-text-val">Run (Win+R)</span>
+	            </div>
+
+                <div class="remote-oper-label-text" onclick="sendCtrlAltDel();">
+                  <span class="remote-oper-label-text-icon ctrl-alt-del-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
+                    <g id="Setting_5_">
+                        <path d="M21.2,32c-1.2,0-2.4-0.7-2.9-1.8c-0.3-0.5-0.7-0.7-1.3-0.7c-0.7,0-1.4,0-2.1,0c-0.6,0-1,0.2-1.3,0.6   c-0.8,1.6-2.7,2.2-4.3,1.5c-1.5-0.6-2.3-2.4-1.8-4c0,0,0-0.1,0.1-0.1c0.1-0.4,0-0.9-0.4-1.2c-0.6-0.5-1.1-1-1.5-1.5   c-0.3-0.4-0.8-0.5-1.3-0.4H4.3c-1.6,0.5-3.4-0.3-4-1.9c-0.7-1.6,0-3.5,1.5-4.2C2.3,18,2.5,17.5,2.5,17c0-0.7,0-1.4,0-2.1   c0-0.5-0.2-1-0.6-1.3C0.3,12.8-0.3,11,0.3,9.4C1,7.8,2.8,7,4.4,7.5c0,0,0.1,0,0.1,0.1c0.4,0.1,0.9,0,1.2-0.4c0.5-0.6,1-1.1,1.5-1.5   c0.4-0.3,0.5-0.8,0.4-1.3V4.3C7.2,2.7,8,0.9,9.5,0.3c1.6-0.7,3.5,0,4.2,1.5C14,2.3,14.5,2.5,15,2.5c0.7,0,1.4,0,2.1,0   c0.5,0.1,1-0.2,1.3-0.6c0.8-1.6,2.7-2.2,4.3-1.5c1.5,0.6,2.3,2.4,1.8,4c0,0,0,0.1-0.1,0.1c-0.1,0.4,0,0.9,0.4,1.2   c0.6,0.5,1.1,1,1.5,1.5c0.3,0.4,0.8,0.5,1.3,0.4h0.1c1.6-0.5,3.4,0.3,4,1.9c0.7,1.6,0,3.5-1.5,4.2c-0.5,0.3-0.7,0.7-0.7,1.3l0,0   c0,0.7,0,1.3,0,2c0,0.5,0.2,1,0.6,1.3c1.6,0.8,2.2,2.7,1.5,4.3c-0.7,1.6-2.5,2.4-4.1,1.9h-0.1c-0.5-0.1-1,0-1.3,0.4   c-0.5,0.6-1,1.1-1.5,1.5c-0.4,0.3-0.5,0.8-0.4,1.3c0,0,0,0.1,0.1,0.1c0.5,1.6-0.3,3.4-1.9,4C22,31.9,21.6,32,21.2,32z M17.1,27.4   c1.2,0,2.4,0.7,3,1.8c0.3,0.6,1,0.9,1.6,0.6c0.6-0.2,0.9-0.9,0.7-1.5v-0.1c-0.4-1.3,0-2.6,1-3.5c0.4-0.3,0.8-0.7,1.3-1.2   c0.8-1,2.2-1.4,3.5-1c0.1,0,0.1,0,0.2,0.1c0.5,0.2,1.2-0.1,1.4-0.7c0.3-0.6,0-1.3-0.5-1.6c-1.2-0.7-1.9-1.9-1.8-3.3   c0-0.6,0-1.2,0-1.8c-0.1-1.3,0.6-2.6,1.8-3.2c0.6-0.3,0.9-1,0.6-1.6c-0.2-0.6-0.9-0.9-1.5-0.7h-0.1c-1.3,0.4-2.6,0-3.5-1   c-0.3-0.4-0.7-0.8-1.2-1.3c-1-0.8-1.4-2.2-1-3.5c0-0.1,0-0.1,0.1-0.2c0.2-0.5-0.1-1.2-0.7-1.4c-0.6-0.3-1.3,0-1.6,0.5   C19.6,4,18.3,4.7,17,4.6c-0.6,0-1.2,0-1.8,0C13.9,4.7,12.6,4,12,2.8c-0.3-0.6-1-0.9-1.6-0.6C9.8,2.4,9.5,3.1,9.6,3.7v0.1   c0.4,1.3,0,2.6-1,3.5C8.2,7.6,7.8,8,7.4,8.5c-0.8,1-2.2,1.4-3.5,1c-0.1,0-0.1,0-0.2-0.1c-0.5-0.2-1.2,0.1-1.4,0.7   c-0.3,0.6,0,1.3,0.5,1.6c1.2,0.7,1.9,2,1.8,3.3c0,0.6,0,1.2,0,1.8C4.7,18.1,4,19.4,2.8,20c-0.6,0.3-0.9,1-0.6,1.6   c0.2,0.6,0.9,0.9,1.5,0.7h0.1c1.3-0.4,2.6,0,3.5,1c0.5,0.6,0.8,0.9,1.2,1.3c1,0.8,1.4,2.2,1,3.5c0,0.1,0,0.1-0.1,0.2   c-0.2,0.5,0.1,1.2,0.7,1.4c0.6,0.3,1.3,0,1.6-0.5c0.7-1.2,1.9-1.9,3.3-1.8c0.6,0,1.2,0,1.8,0C16.9,27.4,17,27.4,17.1,27.4z"></path>
+                        <path d="M16,23.6c-4.2,0-7.6-3.4-7.6-7.6s3.4-7.6,7.6-7.6s7.6,3.4,7.6,7.6S20.2,23.6,16,23.6z M16,10.5c-3,0-5.5,2.5-5.5,5.5   s2.5,5.5,5.5,5.5s5.5-2.5,5.5-5.5C21.5,12.9,19,10.5,16,10.5z"></path>
+                    </g>
+                    </svg>
+                  </span>
+                <span class="remote-oper-label-text-val">Ctrl+Alt+Delete</span>
+                </div>
+
+                <div class="remote-oper-label-text" onclick="disconnectSession();">
+                  <span class="remote-oper-label-text-icon disconnect-icon">
+		            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
+		            <g>
+		            <path d="M23.7,23c-0.9,0-1.6,0.7-1.6,1.6v3.6H3.4V5h18.8v2.6c0,0.9,0.7,1.6,1.6,1.6s1.6-0.7,1.6-1.6V3.4c0-0.9-0.7-1.6-1.6-1.6H1.9   C1,1.8,0.3,2.5,0.3,3.4v26.3c0,0.9,0.7,1.6,1.6,1.6h21.9c0.9,0,1.6-0.7,1.6-1.6v-5.2C25.3,23.6,24.6,23,23.7,23z"/>
+		            <polygon points="31.6,16.1 29.5,13.9 29.5,13.9 26,10.4 23.9,12.5 25.9,14.6 12,14.6 12,17.6 25.9,17.6 23.8,19.7 25.9,21.8    29.5,18.2 29.5,18.2 31.6,16.1 31.6,16.1  "/>
+		            </g>
+		            </svg>
+                  </span>
+                  <span class="remote-oper-label-text-val">Disconnect</span>
+              </div>
+
+              <div class="show-icon" id="remoteOperationsDivHeader" title="Click to drag">
+	              <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 64 64" style="enable-background:new 0 0 64 64;" xml:space="preserve">
+	              <polygon points="60.9,20 56.6,15.7 32.6,39.8 8.6,15.7 4.3,20 28.3,44 28.3,44 32.6,48.3 32.6,48.2 32.6,48.3 36.9,44 36.8,44 "></polygon>
+	              </svg>
+              </div>
+            </div>
           <script type="text/javascript">
             dragElement(document.getElementById("remoteOperationsDiv"));
           </script>
@@ -423,7 +474,8 @@
                 }
                 catch (exc)
                 {
-                    alert('myrtille initDisplay error: ' + exc.message);
+                    alert('Unexpected Error');
+                    console.log('initDisplay error: ' + exc.message);
                 }
             }
 
