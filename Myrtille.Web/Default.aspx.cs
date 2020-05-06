@@ -642,6 +642,10 @@ namespace Myrtille.Web
                     loginDomain = "";
                     loginUser = (string)connectionDetails["username"];
                     loginPassword = (string)connectionDetails["password"];
+                    if (connectionDetails.ContainsKey("port"))
+                    {
+                        loginServer += ":" + connectionDetails["port"];
+                    }
                 }
             }
 
