@@ -539,6 +539,7 @@ namespace Myrtille.Web
                 }
 
                 ServicePointManager.ServerCertificateValidationCallback = TrustCertificate;
+                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
                 var uri = new Uri(requestUrl);
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
                 request.Method = requestMethod;
@@ -572,7 +573,20 @@ namespace Myrtille.Web
         {
             JObject returnObj = null;
             JObject paramObj = new JObject(new JProperty("AUTH_KEY", authKey));
-            JObject response = SecurdenWebRequest(serverUrl, "/launcher/verify_launch_info", "POST", paramObj);
+            JObject response = null;
+            if (Request["access_url"] != null && Request["access_url"].Trim() != "")
+            {
+                string accessUrl = Request["access_url"].Trim();
+                if (accessUrl.EndsWith("/"))
+                {
+                    accessUrl = accessUrl.Substring(0, accessUrl.Length - 1);
+                }
+                response = SecurdenWebRequest(accessUrl, "/launcher/verify_launch_info", "POST", paramObj);
+            }
+            if (response == null)
+            {
+                response = SecurdenWebRequest(serverUrl, "/launcher/verify_launch_info", "POST", paramObj);
+            }
             if (response == null)
             {
                 Response.Write("<script>alert('Not able to access Securden web server. Try again.'); window.close();</script>");
