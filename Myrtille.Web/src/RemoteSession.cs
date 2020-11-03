@@ -17,6 +17,7 @@
 */
 
 using System;
+using System.EnterpriseServices.Internal;
 using Myrtille.Services.Contracts;
 
 namespace Myrtille.Web
@@ -71,6 +72,9 @@ namespace Myrtille.Web
         public bool Reconnect;
         public bool ConnectionService;
         public string ClipboardText;                    // clipboard text
+        public string RemoteAppName;
+        public string RemoteAppLocation;
+        public string RemoteAppCommandLine;
 
         public RemoteSession(
             Guid id,
@@ -94,7 +98,10 @@ namespace Myrtille.Web
             bool allowAudioPlayback,
             int maxActiveGuests,
             string ownerSessionID,
-            bool connectionService)
+            bool connectionService,
+            string remoteAppName,
+            string remoteAppLocation,
+            string remoteAppCommandLine)
         {
             Id = id;
             State = RemoteSessionState.NotConnected;
@@ -120,6 +127,9 @@ namespace Myrtille.Web
             MaxActiveGuests = maxActiveGuests;
             OwnerSessionID = ownerSessionID;
             ConnectionService = connectionService;
+            RemoteAppName = remoteAppName;
+            RemoteAppLocation = remoteAppLocation;
+            RemoteAppCommandLine = remoteAppCommandLine;
 
             // default capture API config
             ScreenshotIntervalSecs = 60;

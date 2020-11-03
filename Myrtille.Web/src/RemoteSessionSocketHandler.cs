@@ -102,7 +102,10 @@ namespace Myrtille.Web
                         _remoteSession.ClientHeight,
                         _remoteSession.AllowRemoteClipboard,
                         _remoteSession.AllowPrintDownload,
-                        _remoteSession.AllowAudioPlayback);
+                        _remoteSession.AllowAudioPlayback,
+                        _remoteSession.RemoteAppName,
+                        _remoteSession.RemoteAppLocation,
+                        _remoteSession.RemoteAppCommandLine);
                 }
                 catch (Exception exc)
                 {

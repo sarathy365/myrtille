@@ -593,7 +593,7 @@ namespace Myrtille.Web
             }
             else if (response.ContainsKey("type"))
             {
-                if ((string)response["type"] == "WEB_RDP")
+                if ((string)response["type"] == "WEB_RDP" || (string)response["type"] == "JUMP_SERVER")
                 {
                     returnObj = response;
                 }
@@ -629,6 +629,9 @@ namespace Myrtille.Web
             var loginUser = user.Value;
             var loginPassword = string.IsNullOrEmpty(passwordHash.Value) ? password.Value : CryptoHelper.RDP_Decrypt(passwordHash.Value);
             var startProgram = program.Value;
+            string remoteAppName = null;
+            string remoteAppLocation = null;
+            string remoteAppCommandLine = null;
 
             if (RemoteSession == null && (Request["auth_key"] == null || Request["auth_key"].Trim() == "" || Request["referrer"] == null || Request["referrer"].Trim() == ""))
             {
@@ -651,6 +654,11 @@ namespace Myrtille.Web
                         userProfileId = (long)connectionDetails["user_profile_id"];
                         userSessionId = (long)connectionDetails["user_session_id"];
                     }
+                    bool isJumpServerConnection = false;
+                    if ((string)connectionDetails["type"] == "JUMP_SERVER")
+                    {
+                        isJumpServerConnection = true;
+                    }
                     connectionDetails = (JObject)connectionDetails["details"];
                     loginServer = (string)connectionDetails["address"];
                     loginDomain = "";
@@ -659,6 +667,19 @@ namespace Myrtille.Web
                     if (connectionDetails.ContainsKey("port"))
                     {
                         loginServer += ":" + connectionDetails["port"];
+                    }
+                    if (isJumpServerConnection)
+                    {
+                        JObject launchDetailsForJumpServer = new JObject();
+                        launchDetailsForJumpServer["AUTH_KEY"] = connectionDetails["auth_key"];
+                        launchDetailsForJumpServer["SCREEN_WIDTH"] = int.Parse(width.Value);
+                        launchDetailsForJumpServer["SCREEN_HEIGHT"] = int.Parse(height.Value);
+                        launchDetailsForJumpServer["WORKING_AREA_WIDTH"] = int.Parse(width.Value);
+                        launchDetailsForJumpServer["WORKING_AREA_HEIGHT"] = int.Parse(height.Value);
+
+                        remoteAppName = "Securden Session Launcher";
+                        remoteAppLocation = (string)connectionDetails["remote_app_location"];
+                        remoteAppCommandLine = Convert.ToBase64String(Encoding.UTF8.GetBytes(launchDetailsForJumpServer.ToString()));
                     }
                 }
             }
@@ -804,7 +825,10 @@ namespace Myrtille.Web
                     allowAudioPlayback,
                     maxActiveGuests,
                     Session.SessionID,
-                    Request["cid"] != null
+                    Request["cid"] != null,
+                    remoteAppName,
+                    remoteAppLocation,
+                    remoteAppCommandLine
                 );
 
                 RemoteSession.UserProfileId = userProfileId;
