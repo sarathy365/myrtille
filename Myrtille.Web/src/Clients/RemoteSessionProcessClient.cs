@@ -20,12 +20,19 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
+using System.Text;
 using System.Threading;
 using System.Web;
 using Myrtille.Helpers;
 using Myrtille.Services.Contracts;
 using Myrtille.Web.Properties;
+using Myrtille.Web.src.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace Myrtille.Web
 {
@@ -236,6 +243,7 @@ namespace Myrtille.Web
                 var remoteSessions = (IDictionary<Guid, RemoteSession>)_application[HttpApplicationStateVariables.RemoteSessions.ToString()];
                 if (remoteSessions.ContainsKey(_remoteSessionManager.RemoteSession.Id))
                 {
+                    SecurdenWeb.ManageSessionRequest(_remoteSessionManager.RemoteSession.accessUrl, _remoteSessionManager.RemoteSession.Id.ToString(), false);
                     remoteSessions.Remove(_remoteSessionManager.RemoteSession.Id);
                 }
 

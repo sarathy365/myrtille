@@ -34,6 +34,7 @@ namespace Myrtille.Web
 
         public long UserProfileId;
         public long UserSessionId;
+        public string accessUrl;
 
         public Guid Id;
         public RemoteSessionState State;

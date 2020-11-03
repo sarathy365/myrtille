@@ -214,6 +214,7 @@
     <Compile Include="src\Clients\RemoteSessionProcessClient.cs" />
     <Compile Include="src\RemoteSessionAudioSocketHandler.cs" />
     <Compile Include="src\RemoteSessionSocketHandler.cs" />
+    <Compile Include="src\Utils\WebRequest.cs" />
     <Compile Include="src\WebInstaller.cs">
       <SubType>Component</SubType>
     </Compile>

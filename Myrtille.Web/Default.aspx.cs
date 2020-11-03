@@ -34,6 +34,7 @@ using System.Web.UI.WebControls;
 using Myrtille.Helpers;
 using Myrtille.Services.Contracts;
 using Myrtille.Web.Properties;
+using Myrtille.Web.src.Utils;
 using Newtonsoft.Json.Linq;
 
 namespace Myrtille.Web
@@ -521,94 +522,6 @@ namespace Myrtille.Web
             }
         }
 
-        private static bool TrustCertificate(object sender, X509Certificate x509Certificate, X509Chain x509Chain, SslPolicyErrors sslPolicyErrors)
-        {
-            return true;
-        }
-
-        private static JObject SecurdenWebRequest(string serverUrl, string requestUrl, string requestMethod, JObject requestParams)
-        {
-            requestUrl = serverUrl + requestUrl;
-            JObject result = null;
-            try
-            {
-                if (requestMethod == "GET" && requestParams != null)
-                {
-                    requestUrl += '?';
-                    requestUrl += "LAUNCHER_INPUT=" + requestParams.ToString();
-                }
-
-                ServicePointManager.ServerCertificateValidationCallback = TrustCertificate;
-                ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
-                var uri = new Uri(requestUrl);
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
-                request.Method = requestMethod;
-                request.UserAgent = "-SECURDEN-LAUNCHER-";
-                if (requestMethod == "POST" && requestParams != null)
-                {
-                    var postData = "LAUNCHER_INPUT=" + requestParams.ToString();
-                    var data = Encoding.UTF8.GetBytes(postData);
-                    request.ContentType = "application/x-www-form-urlencoded";
-                    request.ContentLength = data.Length;
-                    using (var stream = request.GetRequestStream())
-                    {
-                        stream.Write(data, 0, data.Length);
-                    }
-                }
-                var response = (HttpWebResponse)request.GetResponse();
-                var responseString = string.Empty;
-                using (var stream = new StreamReader(response.GetResponseStream()))
-                {
-                    responseString = stream.ReadToEnd();
-                }
-                result = JObject.Parse(responseString);
-                response.Close();
-            }
-            catch (Exception)
-            { }
-            return result;
-        }
-
-        private JObject ProcessLaunchRequest(string serverUrl, string authKey)
-        {
-            JObject returnObj = null;
-            JObject paramObj = new JObject(new JProperty("AUTH_KEY", authKey));
-            JObject response = null;
-            if (Request["access_url"] != null && Request["access_url"].Trim() != "")
-            {
-                string accessUrl = Request["access_url"].Trim();
-                if (accessUrl.EndsWith("/"))
-                {
-                    accessUrl = accessUrl.Substring(0, accessUrl.Length - 1);
-                }
-                response = SecurdenWebRequest(accessUrl, "/launcher/verify_launch_info", "POST", paramObj);
-            }
-            if (response == null)
-            {
-                response = SecurdenWebRequest(serverUrl, "/launcher/verify_launch_info", "POST", paramObj);
-            }
-            if (response == null)
-            {
-                Response.Write("<script>alert('Not able to access Securden web server. Try again.'); window.close();</script>");
-            }
-            else if (response.ContainsKey("type"))
-            {
-                if ((string)response["type"] == "WEB_RDP")
-                {
-                    returnObj = response;
-                }
-                else
-                {
-                    Response.Write("<script>alert('Invalid option.'); window.close();</script>");
-                }
-            }
-            else
-            {
-                Response.Write("<script>alert('Unable to launch the connection. Try again.'); window.close();</script>");
-            }
-            return returnObj;
-        }
-
         /// <summary>
         /// connect the remote server
         /// </summary>
@@ -617,6 +530,8 @@ namespace Myrtille.Web
         /// </remarks>
         private bool ConnectRemoteServer()
         {
+            var connectionId = Guid.NewGuid();
+
             // connection parameters
             string loginHostName = null;
             var loginHostType = (HostType)Convert.ToInt32(hostType.Value);
@@ -637,20 +552,96 @@ namespace Myrtille.Web
             }
             long userProfileId = 0;
             long userSessionId = 0;
+            string accessUrl = null;
+
             if (RemoteSession == null)
             {
-                JObject connectionDetails = ProcessLaunchRequest(Request["referrer"], Request["auth_key"]);
+                JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString());
                 if (connectionDetails == null)
                 {
                     return false;
                 }
                 else
                 {
-                    if (connectionDetails["user_profile_id"] != null && connectionDetails["user_session_id"] != null)
+                    userProfileId = (long)connectionDetails["user_profile_id"];
+                    userSessionId = (long)connectionDetails["user_session_id"];
+                    if ((string)connectionDetails["type"] == "SHADOW_SESSION")
                     {
-                        userProfileId = (long)connectionDetails["user_profile_id"];
-                        userSessionId = (long)connectionDetails["user_session_id"];
+                        connectionDetails = (JObject)connectionDetails["details"];
+                        string guestShareId = "";
+                        try
+                        {
+                            Application.Lock();
+
+                            // create a new guest for the remote session
+                            var sharedSessions = (IDictionary<Guid, SharingInfo>)Application[HttpApplicationStateVariables.SharedRemoteSessions.ToString()];
+                            Guid OldConnectionId = new Guid((string)connectionDetails["connection_id"]);
+                            var sharingInfo = new SharingInfo
+                            {
+                                RemoteSession = ((IDictionary<Guid, RemoteSession>) Application[HttpApplicationStateVariables.RemoteSessions.ToString()])[OldConnectionId],
+                                GuestInfo = new GuestInfo
+                                {
+                                    Id = Guid.NewGuid(),
+                                    ConnectionId = OldConnectionId,
+                                    Control = false,
+                                }
+                            };
+
+                            sharedSessions.Add(sharingInfo.GuestInfo.Id, sharingInfo);
+                            guestShareId = sharingInfo.GuestInfo.Id.ToString();
+                        }
+                        catch (ThreadAbortException)
+                        {
+                            // occurs because the response is ended after redirect
+                        }
+                        catch (Exception exc)
+                        {
+                            System.Diagnostics.Trace.TraceError("Failed to generate a session sharing url ({0})", exc);
+                        }
+                        finally
+                        {
+                            Application.UnLock();
+                        }
+                        if (guestShareId != "")
+                        {
+                            Response.Redirect("~/?gid=" + guestShareId, true);
+                        }
+                        else
+                        {
+                            Response.Write("<script>alert('Invalid session.'); window.close();</script>");
+                        }
+                        return false;
                     }
+                    else if ((string) connectionDetails["type"] == "TERMINATE_SESSION")
+                    {
+                        connectionDetails = (JObject)connectionDetails["details"];
+                        bool isTerminated = false;
+                        try
+                        {
+                            Guid OldConnectionId = new Guid((string)connectionDetails["connection_id"]);
+                            RemoteSession = ((IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()])[OldConnectionId];
+                            RemoteSession.Manager.SendCommand(RemoteSessionCommand.CloseClient);
+                            isTerminated = true;
+                        }
+                        catch (ThreadAbortException)
+                        {
+                            // occurs because the response is ended after redirect
+                        }
+                        catch (Exception exc)
+                        {
+                            System.Diagnostics.Trace.TraceError("Failed to terminate the session ({0})", exc);
+                        }
+                        if (isTerminated)
+                        {
+                            Response.Write("<script>alert('Session terminated.'); window.close();</script>");
+                        }
+                        else
+                        {
+                            Response.Write("<script>alert('Invalid session.'); window.close();</script>");
+                        }
+                        return false;
+                    }
+                    accessUrl = (string)connectionDetails["ACCESS_URL"];
                     connectionDetails = (JObject)connectionDetails["details"];
                     loginServer = (string)connectionDetails["address"];
                     loginDomain = "";
@@ -672,8 +663,6 @@ namespace Myrtille.Web
 
             // sharing parameters
             int maxActiveGuests = int.MaxValue;
-
-            var connectionId = Guid.NewGuid();
 
             // connect an host from the hosts list or from a one time session url
             if (_enterpriseSession != null && (!string.IsNullOrEmpty(Request["SD"])))
@@ -809,6 +798,7 @@ namespace Myrtille.Web
 
                 RemoteSession.UserProfileId = userProfileId;
                 RemoteSession.UserSessionId = userSessionId;
+                RemoteSession.accessUrl = accessUrl;
 
                 // bind the remote session to the current http session
                 Session[HttpSessionStateVariables.RemoteSession.ToString()] = RemoteSession;
