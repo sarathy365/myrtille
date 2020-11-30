@@ -35,7 +35,7 @@
         <!-- mobile devices -->
         <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0"/>
         
-        <title><%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? (((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString() + "@" + RemoteSession.ServerAddress.ToString() + " | Securden RDP Session") : "Securden RDP Gateway"%></title>
+        <title><%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? ((RemoteSession.isManageSession? "Session Shadow - " : "") + ((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString() + "@" + RemoteSession.ServerAddress.ToString() + " | Securden RDP Session") : "Securden RDP Gateway"%></title>
         
         <link rel="icon" type="image/x-icon" href="favicon.ico"/>
         <link rel="stylesheet" type="text/css" href="<%=BundleTable.Bundles.ResolveBundleUrl("~/css/Default.css", true)%>"/>
@@ -352,7 +352,7 @@
         <div runat="server" id="remoteOperationsDivWrap" visible="False">
             <div runat="server" id="remoteOperationsDiv">
                 
-                <div class="remote-oper-label-text" onclick="openPopup('pasteClipboardPopup', 'PasteClipboard.aspx');">
+                <div class="remote-oper-label-text" onclick="openPopup('pasteClipboardPopup', 'PasteClipboard.aspx');" id="clipboardOperDiv" runat="server" visible="True">
                   <span class="remote-oper-label-text-icon clipboard-icon">
                       <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
                       <g>
@@ -364,7 +364,7 @@
                   <span class="remote-oper-label-text-val">Clipboard</span>
                 </div>
 
-                <div class="remote-oper-label-text" onclick="sendWinR();">
+                <div class="remote-oper-label-text" onclick="sendWinR();" id="winrOperDiv" runat="server" visible="True">
                   <span class="remote-oper-label-text-icon win-r-icon">
 		            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
 		            <g>
@@ -377,7 +377,7 @@
                   <span class="remote-oper-label-text-val">Run (Win+R)</span>
 	            </div>
 
-                <div class="remote-oper-label-text" onclick="sendCtrlAltDel();">
+                <div class="remote-oper-label-text" onclick="sendCtrlAltDel();" id="ctrlaltdelOperDiv" runat="server" visible="True">
                   <span class="remote-oper-label-text-icon ctrl-alt-del-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
                     <g id="Setting_5_">
@@ -389,7 +389,7 @@
                 <span class="remote-oper-label-text-val">Ctrl+Alt+Delete</span>
                 </div>
 
-                <div class="remote-oper-label-text" onclick="resizeSession();">
+                <div class="remote-oper-label-text" onclick="resizeSession();" id="resizeOperDiv" runat="server" visible="True">
                   <span class="remote-oper-label-text-icon resize-icon">
                     <svg enable-background="new 0 0 458.659 458.659" version="1.1" viewBox="0 0 458.66 458.66" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
                     <g fill="#020202">
@@ -402,7 +402,7 @@
                   <span class="remote-oper-label-text-val">Fit to Screen</span>
               </div>
 
-                <div class="remote-oper-label-text" onclick="disconnectSession();">
+                <div class="remote-oper-label-text" onclick="disconnectSession();" id="disconnectOperDiv" runat="server" visible="True">
                   <span class="remote-oper-label-text-icon disconnect-icon">
 		            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
 		            <g>

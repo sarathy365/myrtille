@@ -63,7 +63,7 @@ namespace Myrtille.Web.src.Utils
 
         public static void ManageSessionRequest(string serverUrl, string connectionId, bool status)
         {
-            if (serverUrl != null)
+            if (serverUrl != null && serverUrl != String.Empty)
             {
                 JObject paramObj = new JObject(new JProperty("CONNECTION_ID", connectionId), new JProperty("STATUS", status));
                 SecurdenWebRequest(serverUrl, "/launcher/manage_web_session", "POST", paramObj);
@@ -75,6 +75,7 @@ namespace Myrtille.Web.src.Utils
             JObject returnObj = null;
             JObject paramObj = new JObject(new JProperty("AUTH_KEY", authKey), new JProperty("CONNECTION_ID", connectionId));
             JObject response = null;
+            string serverAccessUrl = null;
             if (Request["access_url"] != null && Request["access_url"].Trim() != "")
             {
                 string accessUrl = Request["access_url"].Trim();
@@ -83,16 +84,16 @@ namespace Myrtille.Web.src.Utils
                     accessUrl = accessUrl.Substring(0, accessUrl.Length - 1);
                 }
                 response = SecurdenWebRequest(accessUrl, "/launcher/verify_launch_info", "POST", paramObj);
-                if (response != null && ((JObject)response["details"]).ContainsKey("is_remote_session_managed") && (bool)response["details"]["is_remote_session_managed"])
+                if (response != null)
                 {
-                    response["ACCESS_URL"] = accessUrl;
+                    serverAccessUrl = accessUrl;
                 }
-                else if (response == null)
+                else
                 {
                     response = SecurdenWebRequest(serverUrl, "/launcher/verify_launch_info", "POST", paramObj);
-                    if (response != null && ((JObject)response["details"]).ContainsKey("is_remote_session_managed") && (bool)response["details"]["is_remote_session_managed"])
+                    if (response != null)
                     {
-                        response["ACCESS_URL"] = serverUrl;
+                        serverAccessUrl = serverUrl;
                     }
                 }
             }
@@ -104,6 +105,10 @@ namespace Myrtille.Web.src.Utils
             {
                 if ((string)response["type"] == "WEB_RDP" || (string)response["type"] == "SHADOW_SESSION" || (string)response["type"] == "TERMINATE_SESSION")
                 {
+                    if ((string)response["type"] == "SHADOW_SESSION" || (string)response["type"] == "TERMINATE_SESSION" || (((JObject)response["details"]).ContainsKey("is_remote_session_managed") && (bool)response["details"]["is_remote_session_managed"]))
+                    {
+                        response["ACCESS_URL"] = serverAccessUrl;
+                    }
                     returnObj = response;
                 }
                 else

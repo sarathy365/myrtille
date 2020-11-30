@@ -250,6 +250,10 @@ namespace Myrtille.Web
                         }
                         RemoteSession = null;
                     }
+                    else if (Session[HttpSessionStateVariables.GuestInfo.ToString()] != null)
+                    {
+                        remoteOperationsDiv.Visible = false;
+                    }
                 }
                 catch (Exception exc)
                 {
@@ -565,6 +569,7 @@ namespace Myrtille.Web
                 {
                     userProfileId = (long)connectionDetails["user_profile_id"];
                     userSessionId = (long)connectionDetails["user_session_id"];
+                    accessUrl = (string)connectionDetails["ACCESS_URL"];
                     if ((string)connectionDetails["type"] == "SHADOW_SESSION")
                     {
                         connectionDetails = (JObject)connectionDetails["details"];
@@ -586,6 +591,7 @@ namespace Myrtille.Web
                                     Control = false,
                                 }
                             };
+                            sharingInfo.RemoteSession.isManageSession = true;
 
                             sharedSessions.Add(sharingInfo.GuestInfo.Id, sharingInfo);
                             guestShareId = sharingInfo.GuestInfo.Id.ToString();
@@ -608,7 +614,8 @@ namespace Myrtille.Web
                         }
                         else
                         {
-                            Response.Write("<script>alert('Invalid session.'); window.close();</script>");
+                            SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false);
+                            Response.Write("<script>alert('The session has already been closed or terminated.'); window.close();</script>");
                         }
                         return false;
                     }
@@ -637,11 +644,11 @@ namespace Myrtille.Web
                         }
                         else
                         {
-                            Response.Write("<script>alert('Invalid session.'); window.close();</script>");
+                            SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false);
+                            Response.Write("<script>alert('The session has already been closed or terminated.'); window.close();</script>");
                         }
                         return false;
                     }
-                    accessUrl = (string)connectionDetails["ACCESS_URL"];
                     connectionDetails = (JObject)connectionDetails["details"];
                     loginServer = (string)connectionDetails["address"];
                     loginDomain = "";
