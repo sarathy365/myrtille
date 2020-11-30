@@ -389,6 +389,19 @@
                 <span class="remote-oper-label-text-val">Ctrl+Alt+Delete</span>
                 </div>
 
+                <div class="remote-oper-label-text" onclick="resizeSession();">
+                  <span class="remote-oper-label-text-icon resize-icon">
+                    <svg enable-background="new 0 0 458.659 458.659" version="1.1" viewBox="0 0 458.66 458.66" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
+                    <g fill="#020202">
+	                    <path d="m428.28 0h-313.3c-16.073 0-29.116 13.037-29.116 29.124v27.444h30.563v-26.005h310.41v310.4h-23.474v30.563h24.922c16.072 0 29.115-13.035 29.115-29.122v-313.28c0-16.087-13.043-29.124-29.116-29.124z"/>
+	                    <path d="m343.68 87.131h-313.3c-16.071 0-29.114 13.035-29.114 29.124v313.28c0 16.089 13.043 29.124 29.114 29.124h313.3c16.073 0 29.116-13.035 29.116-29.124v-313.28c0-16.089-13.043-29.124-29.116-29.124zm-1.447 340.96h-310.41v-310.4h310.41v310.4z"/>
+	                    <path d="m55.493 409.38 70.706 0.023c2.061 0 3.926-1.246 4.716-3.149 0.792-1.902 0.345-4.097-1.103-5.56l-24.535-24.54 184.63-185.63 24.52 24.527c1.462 1.455 3.656 1.895 5.552 1.103 1.91-0.79 3.15-2.649 3.15-4.708l0.014-70.691c0-2.813-2.283-5.096-5.103-5.096l-70.692-0.023c-2.061 0-3.926 1.245-4.716 3.149-0.792 1.902-0.358 4.096 1.104 5.558l24.563 24.572-184.63 185.62-24.564-24.556c-1.463-1.455-3.642-1.896-5.553-1.104-1.91 0.791-3.147 2.649-3.147 4.708v70.692c1e-3 2.814 2.284 5.097 5.089 5.097z"/>
+                    </g>
+                    </svg>
+                  </span>
+                  <span class="remote-oper-label-text-val">Fit to Screen</span>
+              </div>
+
                 <div class="remote-oper-label-text" onclick="disconnectSession();">
                   <span class="remote-oper-label-text-icon disconnect-icon">
 		            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">

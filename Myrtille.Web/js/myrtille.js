@@ -414,6 +414,15 @@ function toggleCompatibilityMode()
     }
 }
 
+function scaleDisplay() {
+    var width = display.getBrowserWidth();
+    var height = display.getBrowserHeight();
+
+    // send resolution while enabling display scaling
+    network.send(myrtille.getCommandEnum().SET_SCALE_DISPLAY.text + ((config.getKeepAspectRatio() ? '1' : '0') + '|' + width + 'x' + height));
+
+}
+
 function toggleScaleDisplay()
 {
     try

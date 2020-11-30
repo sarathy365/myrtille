@@ -193,6 +193,8 @@ function User(base, config, dialog, display, network)
         if (config.getBrowserResize() == config.getBrowserResizeEnum().NONE)
             return;
 
+        return;
+
         try
         {
             // disable the toolbar while resizing, if needed
