@@ -35,7 +35,7 @@
         <!-- mobile devices -->
         <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0"/>
         
-        <title><%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? ((RemoteSession.isManageSession? "Session Shadow - " : "") + ((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString() + "@" + RemoteSession.ServerAddress.ToString() + " | Securden RDP Session") : "Securden RDP Gateway"%></title>
+        <title><%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? ((RemoteSession.isManageSession? "Shadow Session - " : "") + ((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString() + "@" + RemoteSession.ServerAddress.ToString() + " | Securden RDP Session") : "Securden RDP Gateway"%></title>
         
         <link rel="icon" type="image/x-icon" href="favicon.ico"/>
         <link rel="stylesheet" type="text/css" href="<%=BundleTable.Bundles.ResolveBundleUrl("~/css/Default.css", true)%>"/>
@@ -391,16 +391,17 @@
 
                 <div class="remote-oper-label-text" onclick="resizeSession();" id="resizeOperDiv" runat="server" visible="True">
                   <span class="remote-oper-label-text-icon resize-icon">
-                    <svg enable-background="new 0 0 458.659 458.659" version="1.1" viewBox="0 0 458.66 458.66" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
-                    <g fill="#020202">
-	                    <path d="m428.28 0h-313.3c-16.073 0-29.116 13.037-29.116 29.124v27.444h30.563v-26.005h310.41v310.4h-23.474v30.563h24.922c16.072 0 29.115-13.035 29.115-29.122v-313.28c0-16.087-13.043-29.124-29.116-29.124z"/>
-	                    <path d="m343.68 87.131h-313.3c-16.071 0-29.114 13.035-29.114 29.124v313.28c0 16.089 13.043 29.124 29.114 29.124h313.3c16.073 0 29.116-13.035 29.116-29.124v-313.28c0-16.089-13.043-29.124-29.116-29.124zm-1.447 340.96h-310.41v-310.4h310.41v310.4z"/>
-	                    <path d="m55.493 409.38 70.706 0.023c2.061 0 3.926-1.246 4.716-3.149 0.792-1.902 0.345-4.097-1.103-5.56l-24.535-24.54 184.63-185.63 24.52 24.527c1.462 1.455 3.656 1.895 5.552 1.103 1.91-0.79 3.15-2.649 3.15-4.708l0.014-70.691c0-2.813-2.283-5.096-5.103-5.096l-70.692-0.023c-2.061 0-3.926 1.245-4.716 3.149-0.792 1.902-0.358 4.096 1.104 5.558l24.563 24.572-184.63 185.62-24.564-24.556c-1.463-1.455-3.642-1.896-5.553-1.104-1.91 0.791-3.147 2.649-3.147 4.708v70.692c1e-3 2.814 2.284 5.097 5.089 5.097z"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
+                    <g>
+                    <path d="M3.8,25.3C5.5,23.5,7.3,21.8,9,20c1-1,1.9-1.1,2.7-0.4s0.7,1.8-0.3,2.8C9.7,24.1,8,25.8,6,27.8   c0.9,0,1.4,0,2,0c1.1,0,1.8,0.7,1.8,1.7S9.1,31.2,8,31.2c-2,0-4.1,0-6.1,0c-1.1,0-1.9-0.8-1.9-2c-0.1-2-0.1-3.9,0-5.9   c0-1.2,0.8-1.9,1.7-1.9c1,0,1.7,0.8,1.7,2c0,0.6,0,1.2,0,1.7C3.7,25.3,3.8,25.3,3.8,25.3z"/>
+                    <path d="M25.9,27.8c-2-2-3.7-3.8-5.5-5.5c-0.7-0.7-0.9-1.5-0.4-2.3c0.6-1,1.8-1.1,2.7-0.2c1.8,1.8,3.6,3.7,5.7,5.8   c0-0.9,0-1.6,0-2.2c0-1.1,0.7-1.9,1.7-1.9c0.9,0,1.7,0.7,1.7,1.8c0.1,2,0.1,4.1,0,6.1c0,1.2-0.9,1.9-2,1.9c-2,0-3.9,0-5.9,0   c-1.2,0-1.9-0.7-1.9-1.7s0.8-1.7,1.9-1.7C24.5,27.8,25.1,27.8,25.9,27.8z"/>
+                    <path d="M3.6,6.5c0,0.9,0,1.6,0,2.2c-0.1,1.2-0.7,1.9-1.7,1.9S0.2,9.9,0.2,8.8C0,6.7,0,4.7,0.1,2.7   c0-1.2,0.8-1.9,2-1.9c2,0,3.9,0,5.9,0c1.1,0,1.8,0.7,1.9,1.6c0.1,1-0.6,1.7-1.8,1.8c-0.5,0-1,0-1.8,0C6.7,4.6,6.8,4.9,7,5.1   c1.5,1.5,3,3,4.5,4.5c0.9,1,1,2,0.3,2.7C11,13,10,13,9.1,12C7.3,10.2,5.6,8.5,3.6,6.5z"/>
+                    <path d="M25.7,4.3c-0.9-0.1-1.6-0.1-2.2-0.2c-1-0.1-1.4-0.7-1.5-1.6c0-0.9,0.5-1.7,1.4-1.7c2.3-0.1,4.6-0.1,6.9,0   c0.9,0,1.5,0.8,1.5,1.7c0,2.1,0,4.3,0,6.4c0,0.9-0.7,1.6-1.6,1.6S28.6,9.9,28.5,9c-0.1-0.7,0-1.4,0-2.5c-0.8,0.8-1.3,1.3-1.8,1.8   c-1.3,1.3-2.5,2.6-3.8,3.8c-0.8,0.8-1.9,0.9-2.6,0.2c-0.8-0.7-0.7-1.7,0.1-2.6c1.5-1.5,3-3,4.5-4.5C25,5,25.3,4.7,25.7,4.3z"/>
                     </g>
                     </svg>
                   </span>
-                  <span class="remote-oper-label-text-val">Fit to Screen</span>
-              </div>
+                  <span class="remote-oper-label-text-val">Fit Screen</span>
+                </div>
 
                 <div class="remote-oper-label-text" onclick="disconnectSession();" id="disconnectOperDiv" runat="server" visible="True">
                   <span class="remote-oper-label-text-icon disconnect-icon">
@@ -421,6 +422,9 @@
               </div>
             </div>
           <script type="text/javascript">
+                <% if(RemoteSession.isManageSession) { %>
+                    disableUserClose = false;
+                <% } %>
             dragElement(document.getElementById("remoteOperationsDiv"));
           </script>
         </div>
