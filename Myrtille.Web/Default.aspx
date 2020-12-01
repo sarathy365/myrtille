@@ -400,7 +400,7 @@
                     </g>
                     </svg>
                   </span>
-                  <span class="remote-oper-label-text-val">Fit Screen</span>
+                  <span class="remote-oper-label-text-val">Fit to screen</span>
                 </div>
 
                 <div class="remote-oper-label-text" onclick="disconnectSession();" id="disconnectOperDiv" runat="server" visible="True">
