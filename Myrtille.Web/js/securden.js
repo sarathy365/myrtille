@@ -86,6 +86,12 @@ function disconnectSession() {
     }
 }
 
+function resizeSession() {
+    window.onbeforeunload = null;
+    window.onunload = null;
+    scaleDisplay();
+}
+
 function closeTab() {
     if (isCloseTabCalled) {
         return;

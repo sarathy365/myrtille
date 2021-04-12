@@ -231,7 +231,7 @@ span.webrdp-dialog-message-text {
     text-align: center;
     height: 56px;
     top: -56px;
-    left: calc(50% - 240px);
+    left: calc(50% - 300px);
     opacity: .75;
     background-color: #26282a;
     transition: top .5s ease-in-out;

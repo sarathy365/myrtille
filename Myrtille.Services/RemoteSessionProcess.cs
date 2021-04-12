@@ -164,7 +164,7 @@ namespace Myrtille.Services
                     // see https://github.com/cedrozor/myrtille/blob/master/DOCUMENTATION.md#build for information and steps to build FreeRDP along with myrtille
                     case HostType.RDP:
                         clientFilePath = @"Myrtille.RDP\FreeRDP";
-                        clientFileName = "Securden-RDP-Ancillary.exe"; //"wfreerdp.exe";
+                        clientFileName = "wfreerdp-client.exe"; // "wfreerdp.exe"
                         break;
                     case HostType.SSH:
                         clientFilePath = @"Myrtille.SSH\bin";
