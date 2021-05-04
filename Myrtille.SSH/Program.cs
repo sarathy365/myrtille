@@ -2,7 +2,7 @@
     Myrtille: A native HTML4/5 Remote Desktop and SSH Protocol client.
 
     Copyright(c) 2018 Paul Oliver (Olive Innovations)
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -142,8 +142,8 @@ namespace Myrtille.SSH
                     pipeMessaging.ClosePipes();
                     break;
                 case RemoteSessionCommand.SendKeyUnicode:
-                    WriteOutput(command, string.IsNullOrEmpty(data) ? "," : data);
-                    HandleKeyboardInput(string.IsNullOrEmpty(data) ? "," : data);
+                    WriteOutput(command, data);
+                    HandleKeyboardInput(data);
                     break;
             }
         }

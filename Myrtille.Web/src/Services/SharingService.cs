@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -236,7 +236,7 @@ namespace Myrtille.Web
                             }
 
                             // have the removed guest back to the login page
-                            sharingInfo.RemoteSession.Manager.SendMessage(new RemoteSessionMessage { Type = MessageType.PageReload, Prefix = "reload" });
+                            sharingInfo.RemoteSession.Manager.SendMessage(new RemoteSessionMessage { Type = MessageType.PageReload });
                         }
                         sharedSessions.Remove(guestId);
                         success = true;

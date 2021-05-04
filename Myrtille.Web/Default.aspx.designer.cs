@@ -348,6 +348,15 @@ namespace Myrtille.Web
         protected global::System.Web.UI.HtmlControls.HtmlInputButton keyboard;
 
         /// <summary>
+        /// osk control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlInputButton osk;
+        
+        /// <summary>
         /// clipboard control.
         /// </summary>
         /// <remarks>
@@ -409,6 +418,15 @@ namespace Myrtille.Web
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlInputButton disconnect;
+        
+        /// <summary>
+        /// imageQuality control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlInputGenericControl imageQuality;
 
         /// <summary>
         /// loadingDiv control.

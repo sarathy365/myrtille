@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -160,8 +160,8 @@ namespace Myrtille.Services
                 {
                     // see https://github.com/cedrozor/myrtille/blob/master/DOCUMENTATION.md#build for information and steps to build FreeRDP along with myrtille
                     case HostType.RDP:
-                        clientFilePath = @"Myrtille.RDP\FreeRDP";
-                        clientFileName = "wfreerdp-client.exe"; // "wfreerdp.exe"
+                        clientFilePath = @"Myrtille.RDP\bin";
+                        clientFileName = "SecurdenRDPClient.exe"; //"Myrtille.RDP.exe";
                         break;
                     case HostType.SSH:
                         clientFilePath = @"Myrtille.SSH\bin";

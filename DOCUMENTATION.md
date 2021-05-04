@@ -51,6 +51,8 @@ Into the roles and features management, ensure you have enabled **HTTP Activatio
 
 The installer does install myrtille under the IIS default website and creates a custom application pool ("MyrtilleAppPool"). If you want to use another website or application pool, you can change it manually afterward (with the IIS manager).
 
+CAUTION! IIS on Windows client OSes (7, 8, 10) is limited to 10 simultaneous connections only - across all http sessions - and will hang after that! (https://forums.asp.net/t/2062118.aspx?+limit+of+10+simultaneous+connections+imposed+). Use Windows Server editions for production environments.
+
 All releases here: https://github.com/cedrozor/myrtille/releases
 
 ## Docker
@@ -205,7 +207,7 @@ Into the PDF virtual printer settings (bin/Myrtille.Printer.exe.config):
 
 ## Build
 Myrtille uses C#, C++ and vanilla Javascript code (no additional libraries). Microsoft Visual Studio Community 2017 was used as primary development environment, using the .NET 4.5 framework.
-If you want Visual Studio to load the Myrtille setup project, you have to install the (official and free) Microsoft Visual Studio 2017 Installer Projects extension (https://marketplace.visualstudio.com/items?itemName=visualstudioclient.MicrosoftVisualStudio2017InstallerProjects).
+If you want Visual Studio to load the Myrtille setup project, you have to install the (official and free) Microsoft Visual Studio 2017 (or greater) Installer Projects extension (https://marketplace.visualstudio.com/items?itemName=visualstudioclient.MicrosoftVisualStudio2017InstallerProjects).
 
 The Myrtille build have the two classic solution configurations: "Debug" and "Release", on "Any CPU" platform.
 
@@ -279,7 +281,7 @@ In addition to 2fa, an access control could be enforced to allow connections onl
 
 The adapter has been written to use a platform provided by Olive Innovations and named OASIS. It's free to use up to 10 users; to use this service follow these instructions:
 
-- Visit https://www.oliveinnovations.com and register for free
+- Visit https://www.oliveinnovations.com and register for free at https://www.oasis2fa.com
 - Once logged in, create a User Group (into the menu select User Groups), then click New, input a Name (i.e. Myrtille) and save
 - Create a user (choose Users from the menu), then click New, input user details and tick the box to send register by email (**IMPORTANT** the username must be the same as the username you will login with myrtille; when registering via email, the user will have a link to complete the registration) and save. Into the user details page, select the user group created in Step 2
 NOTE: If you have enabled Enterprise Mode and wish to sync your Active Directory with OASIS, visit https://www.oliveinnovations.com, go to download area and download the Gateway application; instructions for configuration can be found into the docs on the same website
@@ -366,6 +368,12 @@ See the Myrtille.Admin.Web **mockup** to see how to implement Myrtille into your
 
 - the clipboard synchronization requires Chrome (or async clipboard API support) and HTTPS connection and is limited to text only and 1MB max
 
+- The left mouse button sometimes doesn't work on Windows Server 2019 (despite the event being sent), when connected to a standard (enhanced mode disabled) Hyper-V console session
+
+- Hyper-V Linux VMs don't support enhanced mode (except if using xRDP with Ubuntu, see https://c-nergy.be/blog/?p=12429)
+
+- When the Hyper-V enhanced mode is disabled, the keyboard mapping is limited to en-US only (using RDP scancodes instead of unicode) and the keyboard layout must therefore be configured in en-US (qwerty) in the remote session
+
 ## Troubleshoot
 First at all, ensure the Myrtille prerequisites are met (see "Installation").
 
@@ -424,3 +432,6 @@ Also please read notes and limitations above.
 	- the SSH terminal (xtermjs) becomes laggy after some time; try to refresh or clear ("cls") the screen from time to time
 	- Maybe the default settings are not adapted to your configuration. You can tweak the "js/config.js" file as you wish (see extensive comments there).
 	- Despite my best efforts to produce quality and efficient code, I may have missed/messed something... Please don't hesitate to tell me or add your contribution! Thanks! :)
+
+- The browser loading icon spins indefinitely when I reload the page (or I get websocket error 1006)
+	- IIS on Windows client OSes (7, 8, 10) is limited to 10 simultaneous connections only - across all http sessions - and will hang after that! (https://forums.asp.net/t/2062118.aspx?+limit+of+10+simultaneous+connections+imposed+). Use Windows Server editions for production environments.

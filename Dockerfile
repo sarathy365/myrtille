@@ -69,6 +69,9 @@ ENTRYPOINT ["C:\\ServiceMonitor.exe", "w3svc"]
 # you also need to provide a network adapter able to download the service monitor during the build. Optionally, you can add a version tag to the image (useful to manage different versions of myrtille)
 # docker build --network="<network adapter>" -t myrtille(:tag) .
 
+# to list the images:
+# docker images
+
 # to run an image (in detached mode) and provide the resulting container a network adapter able to connect your hosts:
 # docker run -d --network="<network adapter>" <image name>(:tag)
 

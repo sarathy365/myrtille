@@ -1,7 +1,7 @@
 /*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -113,7 +113,8 @@ namespace Myrtille.Web
                 var url = _enterpriseClient.CreateUserSession(_enterpriseSession.SessionID, _hostId, userName.Value, userPassword.Value, userDomain.Value);
                 if (!string.IsNullOrEmpty(url))
                 {
-                    sessionUrl.Value = Request.Url.Scheme + "://" + Request.Url.Host + (Request.Url.Port != 80 && Request.Url.Port != 443 ? ":" + Request.Url.Port : "")  + Request.ApplicationPath + "/"  + url + "&__EVENTTARGET=&__EVENTARGUMENT=&connect=Connect%21";
+                    bool isSecureConnection = Request.ServerVariables["HTTP_X_FORWARDED_PROTO"] != null ? string.Equals(Request.ServerVariables["HTTP_X_FORWARDED_PROTO"], "https", StringComparison.OrdinalIgnoreCase) : string.Equals(Request.Url.Scheme, "https", StringComparison.OrdinalIgnoreCase);
+                    sessionUrl.Value = (isSecureConnection ? "https" : "http") + "://" + Request.Url.Host + (Request.Url.Port != 80 && Request.Url.Port != 443 ? ":" + Request.Url.Port : "")  + Request.ApplicationPath + "/"  + url + "&__EVENTTARGET=&__EVENTARGUMENT=&connect=Connect%21";
                 }
             }
             catch (Exception exc)

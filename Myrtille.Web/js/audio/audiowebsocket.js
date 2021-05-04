@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ function AudioWebsocket(base, config, dialog, display, network)
                 config.setAudioBitrate(320);
             }
 
-            var wsUrl = config.getHttpServerUrl().replace('http', 'ws') + 'AudioSocketHandler.ashx?type=binary';
+            var wsUrl = config.getHttpServerUrl().replace('http', 'ws') + 'handlers/AudioSocketHandler.ashx?binary=true';
 
             //dialog.showDebug('audio websocket server url: ' + wsUrl);
 

@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ namespace Myrtille.Web
         public int ActiveGuests;                        // number of connected guests
         public int MaxActiveGuests;                     // maximum number of connected guests (0 to disable session sharing)
         public string OwnerSessionID;                   // the http session on which the remote session is bound to
+        public string OwnerClientKey;                   // if the http session is shared between different clients, allows to identify the original owner
         public int ExitCode;
         public bool Reconnect;
         public bool ConnectionService;
@@ -96,6 +97,7 @@ namespace Myrtille.Web
             bool allowAudioPlayback,
             int maxActiveGuests,
             string ownerSessionID,
+            string ownerClientKey,
             bool connectionService)
         {
             Id = id;
@@ -121,6 +123,7 @@ namespace Myrtille.Web
             ActiveGuests = 0;
             MaxActiveGuests = maxActiveGuests;
             OwnerSessionID = ownerSessionID;
+            OwnerClientKey = ownerClientKey;
             ConnectionService = connectionService;
 
             // default capture API config

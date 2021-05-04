@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -50,6 +50,9 @@ namespace Myrtille.Web
             // keys (javascript keycodes) and values (rdp scancodes) are decimals (scancodes are often expressed in hexadecimal). scancode value 0 means there is no available translation (at least for now)
             // see http://protocolsofmatrix.blogspot.com/2007/09/javascript-keycode-reference-table-for.html or http://www.webonweboff.com/tips/js/event_key_codes.aspx for js keycodes
             // see http://www.vmware.com/support/ws55/doc/ws_devices_keymap_vscan.html or https://github.com/neutrinolabs/xrdp/blob/devel/xrdp/rdp-scan-codes.txt for rdp scancodes
+
+            // see http://keycode.info/ for javascript keycodes and more, or https://w3c.github.io/uievents/tools/key-event-viewer.html
+            // see http://kbdlayout.info/ for international keyboard layouts
 
             // the left and right location distinction for key modifiers is not currently done
             // while this is fine for most applications, some of them may need this distinction
@@ -167,7 +170,7 @@ namespace Myrtille.Web
             //MapTable.Add(192, new RdpScanCode(40, false));        // grave accent azerty
             MapTable.Add(219, new RdpScanCode(26, false));          // open bracket
             MapTable.Add(220, new RdpScanCode(43, false));          // back slash
-            MapTable.Add(221, new RdpScanCode(27, false));          // close braket
+            MapTable.Add(221, new RdpScanCode(27, false));          // close bracket
             MapTable.Add(222, new RdpScanCode(40, false));          // single quote qwerty
             //MapTable.Add(222, new RdpScanCode(41, false));        // single quote azerty
             MapTable.Add(223, new RdpScanCode(0, false));           // ?

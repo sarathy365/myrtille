@@ -1,7 +1,7 @@
 /*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ function Keyboard(base, config, dialog, display, network, user)
         if (keyCode == null)
             return false;
 
-        //dialog.showDebug(keyState + ' code: ' + keyCode + ', location: ' + keyLocation + (keyLocation == 1 ? ' (left)' : (keyLocation == 2 ? ' (right)' : '')));
+        //dialog.showDebug(keyState + ' key: ' + e.key + ', code: ' + e.code + ', KeyCode: ' + keyCode + ', location: ' + keyLocation + (keyLocation == 1 ? ' (left)' : (keyLocation == 2 ? ' (right)' : '')));
 
         if (keyCode == 144)     // numlock
             return false;

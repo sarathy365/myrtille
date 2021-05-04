@@ -1,7 +1,7 @@
 /*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ namespace Myrtille.Web
         private bool _allowPrintDownload;
         private bool _allowSessionSharing;
         private bool _allowAudioPlayback;
+        private bool _allowShareSessionUrl;
         private bool _clientIPTracking;
         private bool _toolbarEnabled;
         private bool _loginEnabled;
@@ -100,6 +101,12 @@ namespace Myrtille.Web
             if (!bool.TryParse(ConfigurationManager.AppSettings["AllowAudioPlayback"], out _allowAudioPlayback))
             {
                 _allowAudioPlayback = true;
+            }
+
+            // share session by url (session spoofing protection if disabled)
+            if (!bool.TryParse(ConfigurationManager.AppSettings["AllowShareSessionUrl"], out _allowShareSessionUrl))
+            {
+                _allowShareSessionUrl = true;
             }
 
             // client ip tracking
@@ -160,11 +167,11 @@ namespace Myrtille.Web
             // session spoofing protection
             if (_httpSessionUseUri)
             {
-                if (Request.Cookies["clientKey"] == null)
+                if (Request.Cookies[HttpRequestCookies.ClientKey.ToString()] == null)
                 {
-                    if (Session[HttpSessionStateVariables.ClientKey.ToString()] == null)
+                    if (Session[HttpSessionStateVariables.ClientKey.ToString()] == null || _allowShareSessionUrl)
                     {
-                        var cookie = new HttpCookie("clientKey");
+                        var cookie = new HttpCookie(HttpRequestCookies.ClientKey.ToString());
                         cookie.Value = Guid.NewGuid().ToString();
                         cookie.Path = "/";
                         Response.Cookies.Add(cookie);
@@ -179,12 +186,12 @@ namespace Myrtille.Web
                 }
                 else
                 {
-                    var clientKey = Request.Cookies["clientKey"].Value;
+                    var clientKey = Request.Cookies[HttpRequestCookies.ClientKey.ToString()].Value;
                     if (Session[HttpSessionStateVariables.ClientKey.ToString()] == null)
                     {
                         Session[HttpSessionStateVariables.ClientKey.ToString()] = clientKey;
                     }
-                    else if (!((string)Session[HttpSessionStateVariables.ClientKey.ToString()]).Equals(clientKey))
+                    else if (!((string)Session[HttpSessionStateVariables.ClientKey.ToString()]).Equals(clientKey) && !_allowShareSessionUrl)
                     {
                         System.Diagnostics.Trace.TraceWarning("Failed to validate the client key: key mismatch");
                         _authorizedRequest = false;
@@ -359,7 +366,7 @@ namespace Myrtille.Web
                 if (RemoteSession.State == RemoteSessionState.Connecting)
                 {
                     loadingDiv.Visible = true;
-                    remoteOperationsDiv.Style.Add("display", "none");
+                    remoteOperationsDiv.Style.Add("display", "block");
                 }
                 else
                 {
@@ -379,7 +386,8 @@ namespace Myrtille.Web
                     scale.Disabled = !Session.SessionID.Equals(RemoteSession.OwnerSessionID) || RemoteSession.HostType == HostType.SSH;
                     reconnect.Value = RemoteSession.BrowserResize == BrowserResize.Reconnect ? "Reconnect ON" : "Reconnect OFF";
                     reconnect.Disabled = !Session.SessionID.Equals(RemoteSession.OwnerSessionID) || RemoteSession.HostType == HostType.SSH;
-                    keyboard.Disabled = !controlEnabled;
+                    keyboard.Disabled = !controlEnabled || (!string.IsNullOrEmpty(RemoteSession.VMGuid) && !RemoteSession.VMEnhancedMode);
+                    osk.Disabled = !controlEnabled || RemoteSession.HostType == HostType.SSH;
                     clipboard.Disabled = !controlEnabled || RemoteSession.HostType == HostType.SSH || !RemoteSession.AllowRemoteClipboard || (!string.IsNullOrEmpty(RemoteSession.VMGuid) && !RemoteSession.VMEnhancedMode);
                     files.Disabled = !Session.SessionID.Equals(RemoteSession.OwnerSessionID) || RemoteSession.HostType == HostType.SSH || !RemoteSession.AllowFileTransfer || (RemoteSession.ServerAddress.ToLower() != "localhost" && RemoteSession.ServerAddress != "127.0.0.1" && RemoteSession.ServerAddress != "[::1]" && RemoteSession.ServerAddress != Request.Url.Host && string.IsNullOrEmpty(RemoteSession.UserDomain)) || !string.IsNullOrEmpty(RemoteSession.VMGuid);
                     cad.Disabled = !controlEnabled || RemoteSession.HostType == HostType.SSH;
@@ -387,6 +395,7 @@ namespace Myrtille.Web
                     vswipe.Disabled = !controlEnabled || RemoteSession.HostType == HostType.SSH;
                     share.Disabled = !Session.SessionID.Equals(RemoteSession.OwnerSessionID) || !RemoteSession.AllowSessionSharing;
                     disconnect.Disabled = !Session.SessionID.Equals(RemoteSession.OwnerSessionID);
+                    imageQuality.Disabled = !Session.SessionID.Equals(RemoteSession.OwnerSessionID) || RemoteSession.HostType == HostType.SSH;
                 }
             }
             // hosts list
@@ -787,8 +796,8 @@ namespace Myrtille.Web
                     loginVMGuid,
                     loginVMAddress,
                     loginVMEnhancedMode,
-                    loginDomain,
-                    loginUser,
+                    !string.IsNullOrEmpty(loginDomain) ? loginDomain : AccountHelper.GetDomain(loginUser, loginPassword),
+                    AccountHelper.GetUserName(loginUser),
                     loginPassword,
                     int.Parse(width.Value),
                     int.Parse(height.Value),
@@ -800,6 +809,7 @@ namespace Myrtille.Web
                     allowAudioPlayback,
                     maxActiveGuests,
                     Session.SessionID,
+                    (string)Session[HttpSessionStateVariables.ClientKey.ToString()],
                     Request["cid"] != null
                 );
 
@@ -891,7 +901,7 @@ namespace Myrtille.Web
                     }
                     else if (_enterpriseSession.AuthenticationErrorCode == EnterpriseAuthenticationErrorCode.PASSWORD_EXPIRED)
                     {
-                        ClientScript.RegisterClientScriptBlock(GetType(), Guid.NewGuid().ToString(), string.Format("openPopup('changePasswordPopup', 'EnterpriseChangePassword.aspx?userName={0}" + (_localAdmin ? "&mode=admin');" : "');"), user.Value), true);
+                        ClientScript.RegisterClientScriptBlock(GetType(), Guid.NewGuid().ToString(), "window.onload = function() { " + string.Format("openPopup('changePasswordPopup', 'EnterpriseChangePassword.aspx?userName={0}" + (_localAdmin ? "&mode=admin" : string.Empty) + "');", user.Value) + " }", true);
                     }
                     else
                     {

@@ -1,7 +1,7 @@
 /*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -146,11 +146,12 @@ namespace Myrtille.Helpers
 
         #region Windows Logon
 
-        [DllImport("advapi32.dll", SetLastError = true)]
-        public static extern int LogonUser(
-            string lpszUserName,
-            string lpszDomain,
-            string lpszPassword,
+        [DllImport("advapi32.dll", SetLastError = true, BestFitMapping = false, ThrowOnUnmappableChar = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool LogonUser(
+            [MarshalAs(UnmanagedType.LPStr)] string pszUserName,
+            [MarshalAs(UnmanagedType.LPStr)] string pszDomain,
+            [MarshalAs(UnmanagedType.LPStr)] string pszPassword,
             int dwLogonType,
             int dwLogonProvider,
             ref IntPtr phToken);
@@ -160,18 +161,73 @@ namespace Myrtille.Helpers
             IntPtr handle);
 
         // from winbase.h
-        private const int LOGON32_LOGON_INTERACTIVE = 2;
-        private const int LOGON32_LOGON_NETWORK = 3;
-        private const int LOGON32_LOGON_BATCH = 4;
-        private const int LOGON32_LOGON_SERVICE = 5;
-        private const int LOGON32_LOGON_UNLOCK = 7;
-        private const int LOGON32_LOGON_NETWORK_CLEARTEXT = 8;
-        private const int LOGON32_LOGON_NEW_CREDENTIALS = 9;
+        public enum LogonType
+        {
+            /// <summary>
+            /// This logon type is intended for users who will be interactively using the computer, such as a user being logged on  
+            /// by a terminal server, remote shell, or similar process.
+            /// This logon type has the additional expense of caching logon information for disconnected operations;
+            /// therefore, it is inappropriate for some client/server applications,
+            /// such as a mail server.
+            /// </summary>
+            LOGON32_LOGON_INTERACTIVE = 2,
 
-        private const int LOGON32_PROVIDER_DEFAULT = 0;
-        private const int LOGON32_PROVIDER_WINNT35 = 1;
-        private const int LOGON32_PROVIDER_WINNT40 = 2;
-        private const int LOGON32_PROVIDER_WINNT50 = 3;
+            /// <summary>
+            /// This logon type is intended for high performance servers to authenticate plaintext passwords.
+            /// The LogonUser function does not cache credentials for this logon type.
+            /// </summary>
+            LOGON32_LOGON_NETWORK = 3,
+
+            /// <summary>
+            /// This logon type is intended for batch servers, where processes may be executing on behalf of a user without
+            /// their direct intervention. This type is also for higher performance servers that process many plaintext
+            /// authentication attempts at a time, such as mail or Web servers.
+            /// The LogonUser function does not cache credentials for this logon type.
+            /// </summary>
+            LOGON32_LOGON_BATCH = 4,
+
+            /// <summary>
+            /// Indicates a service-type logon. The account provided must have the service privilege enabled.
+            /// </summary>
+            LOGON32_LOGON_SERVICE = 5,
+
+            /// <summary>
+            /// This logon type is for GINA DLLs that log on users who will be interactively using the computer.
+            /// This logon type can generate a unique audit record that shows when the workstation was unlocked.
+            /// </summary>
+            LOGON32_LOGON_UNLOCK = 7,
+
+            /// <summary>
+            /// This logon type preserves the name and password in the authentication package, which allows the server to make
+            /// connections to other network servers while impersonating the client. A server can accept plaintext credentials
+            /// from a client, call LogonUser, verify that the user can access the system across the network, and still
+            /// communicate with other servers.
+            /// NOTE: Windows NT:  This value is not supported.
+            /// </summary>
+            LOGON32_LOGON_NETWORK_CLEARTEXT = 8,
+
+            /// <summary>
+            /// This logon type allows the caller to clone its current token and specify new credentials for outbound connections.
+            /// The new logon session has the same local identifier but uses different credentials for other network connections.
+            /// NOTE: This logon type is supported only by the LOGON32_PROVIDER_WINNT50 logon provider.
+            /// NOTE: Windows NT:  This value is not supported.
+            /// </summary>
+            LOGON32_LOGON_NEW_CREDENTIALS = 9,
+        }
+
+        public enum LogonProvider
+        {
+            /// <summary>
+            /// Use the standard logon provider for the system.
+            /// The default security provider is negotiate, unless you pass NULL for the domain name and the user name
+            /// is not in UPN format. In this case, the default provider is NTLM.
+            /// NOTE: Windows 2000/NT:   The default security provider is NTLM.
+            /// </summary>
+            LOGON32_PROVIDER_DEFAULT = 0,
+            LOGON32_PROVIDER_WINNT35 = 1,
+            LOGON32_PROVIDER_WINNT40 = 2,
+            LOGON32_PROVIDER_WINNT50 = 3
+        }
 
         #endregion
 
@@ -272,29 +328,34 @@ namespace Myrtille.Helpers
             /// This member is used as the base name of the directory 
             /// in which to store a new profile.
             ///
+            [MarshalAs(UnmanagedType.LPTStr)]
             public string lpUserName;
 
             ///
             /// Pointer to the roaming user profile path.
             /// If the user does not have a roaming profile, this member can be NULL.
             ///
+            [MarshalAs(UnmanagedType.LPTStr)]
             public string lpProfilePath;
 
             ///
             /// Pointer to the default user profile path. This member can be NULL.
             ///
+            [MarshalAs(UnmanagedType.LPTStr)]
             public string lpDefaultPath;
 
             ///
             /// Pointer to the name of the validating domain controller, in NetBIOS format.
             /// If this member is NULL, the Windows NT 4.0-style policy will not be applied.
             ///
+            [MarshalAs(UnmanagedType.LPTStr)]
             public string lpServerName;
 
             ///
             /// Pointer to the path of the Windows NT 4.0-style policy file. 
             /// This member can be NULL.
             ///
+            [MarshalAs(UnmanagedType.LPTStr)]
             public string lpPolicyPath;
 
             ///
@@ -358,12 +419,89 @@ namespace Myrtille.Helpers
         #endregion
 
         /// <summary>
+        /// retrieve a domain fom an UPN
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <param name="userPassword"></param>
+        /// <returns>domain</returns>
+        public static string GetDomain(
+            string userName,
+            string userPassword)
+        {
+            // https://docs.microsoft.com/en-us/windows/win32/secauthn/user-name-formats
+
+            // DOMAIN\username (domain account) or COMPUTER\username (local account)
+            int pos = userName.IndexOf("\\");
+            if (pos != -1)
+            {
+                var name = userName.Substring(0, pos);
+                try
+                {
+                    // check if the name is a domain
+                    var context = new DirectoryContext(DirectoryContextType.Domain, name, userName.Substring(pos + 1), userPassword);
+                    var domain = Domain.GetDomain(context);
+                    // the name is a domain, and the user credentials are valid
+                    return name;
+                }
+                catch (Exception exc)
+                {
+                    // the name isn't a domain or can't be resolved (check DNS configuration) or contacted, or the user credentials are invalid
+                    return string.Empty;
+                }
+            }
+            // username@domain.com
+            else
+            {
+                pos = userName.IndexOf("@");
+                if (pos != -1)
+                {
+                    return userName.Substring(pos + 1);
+                }
+                else
+                {
+                    return string.Empty;
+                }
+            }
+        }
+
+        /// <summary>
+        /// retrieve a username fom an UPN
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <returns>user name</returns>
+        public static string GetUserName(
+            string userName)
+        {
+            // https://docs.microsoft.com/en-us/windows/win32/secauthn/user-name-formats
+
+            // DOMAIN\username (domain account) or COMPUTER\username (local account)
+            int pos = userName.IndexOf("\\");
+            if (pos != -1)
+            {
+                return userName.Substring(pos + 1);
+            }
+            // username@domain.com
+            else
+            {
+                pos = userName.IndexOf("@");
+                if (pos != -1)
+                {
+                    return userName.Substring(0, pos);
+                }
+                else
+                {
+                    return userName;
+                }
+            }
+        }
+
+        /// <summary>
         /// retrieve an user documents folder; also validates the user credentials to prevent unauthorized access to this folder
         /// </summary>
         /// <param name="userDomain"></param>
         /// <param name="userName"></param>
         /// <param name="userPassword"></param>
-        /// <returns>home directory</returns>
+        /// <returns>documents directory</returns>
         public static string GetUserDocumentsFolder(
             string userDomain,
             string userName,
@@ -375,7 +513,7 @@ namespace Myrtille.Helpers
             {
                 // logon the user, domain (if defined) or local otherwise
                 // myrtille must be running on a machine which is part of the domain for it to work
-                if (LogonUser(userName, string.IsNullOrEmpty(userDomain) ? Environment.MachineName : userDomain, userPassword, LOGON32_LOGON_INTERACTIVE, LOGON32_PROVIDER_DEFAULT, ref token) != 0)
+                if (LogonUser(userName, string.IsNullOrEmpty(userDomain) ? Environment.MachineName : userDomain, userPassword, string.IsNullOrEmpty(userDomain) ? (int)LogonType.LOGON32_LOGON_INTERACTIVE : (int)LogonType.LOGON32_LOGON_NETWORK, (int)LogonProvider.LOGON32_PROVIDER_DEFAULT, ref token))
                 {
                     string serverName = null;
                     if (!string.IsNullOrEmpty(userDomain))
@@ -438,6 +576,34 @@ namespace Myrtille.Helpers
                 {
                     CloseHandle(token);
                 }
+            }
+        }
+
+        /// <summary>
+        /// retrieve an user home folder; also validates the user credentials to prevent unauthorized access to this folder
+        /// </summary>
+        /// <param name="userDomain"></param>
+        /// <param name="userName"></param>
+        /// <param name="userPassword"></param>
+        /// <remarks>doesn't works in a reliable way (HomeDirectory is often null)</remarks>
+        /// <returns>home directory</returns>
+        public static string GetUserHomeFolder(
+            string userDomain,
+            string userName,
+            string userPassword)
+        {
+            try
+            {
+                using (var context = new PrincipalContext(ContextType.Domain, userDomain, userName, userPassword))
+                {
+                    var user = UserPrincipal.FindByIdentity(context, IdentityType.SamAccountName, userName);
+                    return user.HomeDirectory;
+                }
+            }
+            catch (Exception exc)
+            {
+                Trace.TraceError("Failed to retrieve user {0} home folder ({1})", userName, exc);
+                throw;
             }
         }
 

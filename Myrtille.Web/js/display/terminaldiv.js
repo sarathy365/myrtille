@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
     Copyright(c) 2018 Olive Innovations
 
     Licensed under the Apache License, Version 2.0 (the "License");
