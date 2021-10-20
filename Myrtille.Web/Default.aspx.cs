@@ -667,6 +667,17 @@ namespace Myrtille.Web
                     {
                         loginServer += ":" + connectionDetails["port"];
                     }
+                    string tempUsername = loginUser;
+                    if (loginUser.Contains(":"))
+                    {
+                        string addressAlone = loginUser.Substring(0, loginUser.IndexOf(":"));
+                        string portUsername = loginUser.Substring(loginUser.IndexOf(":") + 1);
+                        if (portUsername.Contains("\\"))
+                        {
+                            tempUsername = addressAlone + portUsername.Substring(portUsername.IndexOf("\\"));
+                        }
+                    }
+                    loginUser = tempUsername;
                 }
             }
 
