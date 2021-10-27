@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.Default.props" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.Default.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -29,6 +30,8 @@
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <WebGreaseLibPath>..\packages\WebGrease.1.5.2\lib</WebGreaseLibPath>
+    <TypeScriptToolsVersion>3.1</TypeScriptToolsVersion>
+    <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Antlr3.Runtime, Version=3.4.1.9004, Culture=neutral, PublicKeyToken=eb42632606e9261f, processorArchitecture=MSIL">
@@ -98,6 +101,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\BundleConfig.cs" />
+    <Compile Include="handlers\LongPollingHandler.ashx.cs">
+      <DependentUpon>LongPollingHandler.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="handlers\EventSourceHandler.ashx.cs">
+      <DependentUpon>EventSourceHandler.ashx</DependentUpon>
+    </Compile>
     <Compile Include="GetHash.aspx.cs">
       <DependentUpon>GetHash.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -168,6 +177,13 @@
     <Compile Include="popups\ShowDialog.aspx.designer.cs">
       <DependentUpon>ShowDialog.aspx</DependentUpon>
     </Compile>
+    <Compile Include="popups\OnScreenKeyboard.aspx.cs">
+      <DependentUpon>OnScreenKeyboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="popups\OnScreenKeyboard.aspx.designer.cs">
+      <DependentUpon>OnScreenKeyboard.aspx</DependentUpon>
+    </Compile>
     <Compile Include="popups\VirtualKeyboard.aspx.cs">
       <DependentUpon>VirtualKeyboard.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -182,7 +198,7 @@
     <Compile Include="PrintDocument.aspx.designer.cs">
       <DependentUpon>PrintDocument.aspx</DependentUpon>
     </Compile>
-    <Compile Include="AudioSocketHandler.ashx.cs">
+    <Compile Include="handlers\AudioSocketHandler.ashx.cs">
       <DependentUpon>AudioSocketHandler.ashx</DependentUpon>
     </Compile>
     <Compile Include="Properties\Settings.Designer.cs">
@@ -190,13 +206,17 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="SocketHandler.ashx.cs">
+    <Compile Include="handlers\SocketHandler.ashx.cs">
       <DependentUpon>SocketHandler.ashx</DependentUpon>
     </Compile>
     <Compile Include="src\Clients\ApplicationPoolClient.cs" />
     <Compile Include="src\Controllers\DisconnectionController.cs" />
     <Compile Include="src\Controllers\SharingControler.cs" />
+    <Compile Include="src\Handlers\RemoteSessionLongPollingHandler.cs" />
+    <Compile Include="src\JSKeyCodeToRDPScanCodeMapping.cs" />
     <Compile Include="src\Models\SharingInfo.cs" />
+    <Compile Include="src\Handlers\RemoteSessionEventSourceHandler.cs" />
+    <Compile Include="src\RemoteSessionClient.cs" />
     <Compile Include="src\Services\DisconnectionService.cs" />
     <Compile Include="src\Services\SharingService.cs" />
     <Compile Include="src\Services\CaptureService.cs" />
@@ -212,8 +232,8 @@
     <Compile Include="src\RemoteSessionImage.cs" />
     <Compile Include="src\RemoteSessionPipes.cs" />
     <Compile Include="src\Clients\RemoteSessionProcessClient.cs" />
-    <Compile Include="src\RemoteSessionAudioSocketHandler.cs" />
-    <Compile Include="src\RemoteSessionSocketHandler.cs" />
+    <Compile Include="src\Handlers\RemoteSessionAudioSocketHandler.cs" />
+    <Compile Include="src\Handlers\RemoteSessionSocketHandler.cs" />
     <Compile Include="src\Utils\WebRequest.cs" />
     <Compile Include="src\WebInstaller.cs">
       <SubType>Component</SubType>
@@ -243,13 +263,6 @@
     <Compile Include="GetUpdate.aspx.designer.cs">
       <DependentUpon>GetUpdate.aspx</DependentUpon>
     </Compile>
-    <Compile Include="PushUpdates.aspx.cs">
-      <DependentUpon>PushUpdates.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="PushUpdates.aspx.designer.cs">
-      <DependentUpon>PushUpdates.aspx</DependentUpon>
-    </Compile>
     <Compile Include="SendInputs.aspx.cs">
       <DependentUpon>SendInputs.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -257,12 +270,12 @@
     <Compile Include="SendInputs.aspx.designer.cs">
       <DependentUpon>SendInputs.aspx</DependentUpon>
     </Compile>
-    <Compile Include="src\JSKeyCodeToRDPScanCodeMapping.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="css\securden.css" />
     <Content Include="css\xterm.css" />
+    <Content Include="handlers\EventSourceHandler.ashx" />
     <Content Include="favicon.ico" />
     <Content Include="GetHash.aspx" />
     <Content Include="img\bandwidthTest.png" />
@@ -276,6 +289,7 @@
     <Content Include="js\display\canvas.js" />
     <Content Include="js\display\divs.js" />
     <Content Include="js\display\terminaldiv.js" />
+    <Content Include="js\network\eventsource.js" />
     <Content Include="js\securden.js" />
     <Content Include="js\network\websocket.js" />
     <Content Include="js\tools\convert.js" />
@@ -289,6 +303,97 @@
     <Content Include="js\user\touchscreen.js" />
     <Content Include="js\xterm\addons\fit\fit.js" />
     <Content Include="js\xterm\xterm.js" />
+    <Content Include="node_modules\%40interactjs\types\index.js" />
+    <Content Include="node_modules\%40interactjs\types\index.prod.js" />
+    <Content Include="node_modules\%40interactjs\types\NativePointerEventType.js" />
+    <Content Include="node_modules\%40interactjs\types\NativePointerEventType.prod.js" />
+    <Content Include="node_modules\interactjs\dist\api\DropEvent_DropEvent.html" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Bold-webfont.svg" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-BoldItalic-webfont.svg" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Italic-webfont.svg" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Light-webfont.svg" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-LightItalic-webfont.svg" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Regular-webfont.svg" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Semibold-webfont.svg" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-SemiboldItalic-webfont.svg" />
+    <Content Include="node_modules\interactjs\dist\api\global.html" />
+    <Content Include="node_modules\interactjs\dist\api\img\ijs-32.png" />
+    <Content Include="node_modules\interactjs\dist\api\img\ijs-64.png" />
+    <Content Include="node_modules\interactjs\dist\api\img\ijs-anim-short.svg" />
+    <Content Include="node_modules\interactjs\dist\api\img\ijs-anim.svg" />
+    <Content Include="node_modules\interactjs\dist\api\img\ijs-icon.svg" />
+    <Content Include="node_modules\interactjs\dist\api\img\ijs.svg" />
+    <Content Include="node_modules\interactjs\dist\api\index.html" />
+    <Content Include="node_modules\interactjs\dist\api\Interactable.html" />
+    <Content Include="node_modules\interactjs\dist\api\InteractEvent_InteractEvent.html" />
+    <Content Include="node_modules\interactjs\dist\api\Interaction_Interaction.html" />
+    <Content Include="node_modules\interactjs\dist\api\jsdoc_index.md.html" />
+    <Content Include="node_modules\interactjs\dist\api\module-interact.html" />
+    <Content Include="node_modules\interactjs\dist\api\module-modifiers_aspectRatio.html" />
+    <Content Include="node_modules\interactjs\dist\api\module-modifiers_snapEdges.html" />
+    <Content Include="node_modules\interactjs\dist\api\module.exports_module.exports.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_actions_drag_plugin.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_actions_drop_DropEvent.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_actions_drop_plugin.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_actions_gesture_plugin.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_actions_resize_plugin.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_auto-start_base.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_auto-start_InteractableMethods.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_core_BaseEvent.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_core_Interactable.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_core_interactablePreventDefault.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_core_InteractEvent.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_core_Interaction.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_core_InteractStatic.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_modifiers_aspectRatio.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_modifiers_snap_edges.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_pointer-events_PointerEvent.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\packages_%40interactjs_reflow_plugin.ts.html" />
+    <Content Include="node_modules\interactjs\dist\api\scripts\linenumber.js" />
+    <Content Include="node_modules\interactjs\dist\api\scripts\prettify\Apache-License-2.0.txt" />
+    <Content Include="node_modules\interactjs\dist\api\scripts\prettify\lang-css.js" />
+    <Content Include="node_modules\interactjs\dist\api\scripts\prettify\prettify.js" />
+    <Content Include="node_modules\interactjs\dist\api\styles\jsdoc-default.css" />
+    <Content Include="node_modules\interactjs\dist\api\styles\prettify-jsdoc.css" />
+    <Content Include="node_modules\interactjs\dist\api\styles\prettify.css" />
+    <Content Include="node_modules\interactjs\dist\interact.js" />
+    <Content Include="node_modules\interactjs\dist\interact.min.js" />
+    <Content Include="node_modules\interactjs\index.js" />
+    <Content Include="node_modules\interactjs\index.prod.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\index.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\arabic.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\assamese.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\belarusian.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\burmese.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\chinese.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\czech.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\english.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\farsi.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\french.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\georgian.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\german.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\gilaki.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\greek.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\hebrew.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\hindi.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\italian.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\japanese.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\kannada.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\korean.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\nigerian.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\norwegian.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\polish.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\russian.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\sindhi.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\spanish.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\swedish.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\thai.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\turkish.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\ukrainian.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\urdu.js" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\layouts\uyghur.js" />
+    <Content Include="node_modules\simple-keyboard\build\css\index.css" />
+    <Content Include="node_modules\simple-keyboard\build\index.js" />
     <Content Include="popups\PasteClipboard.aspx" />
     <Content Include="popups\CredentialsPrompt.aspx" />
     <Content Include="popups\ShareSession.aspx" />
@@ -298,6 +403,7 @@
     <Content Include="popups\FileStorage.aspx" />
     <Content Include="popups\CopyClipboard.aspx" />
     <Content Include="popups\ShowDialog.aspx" />
+    <Content Include="popups\OnScreenKeyboard.aspx" />
     <Content Include="popups\VirtualKeyboard.aspx" />
     <Content Include="css\Default.css" />
     <Content Include="Global.asax" />
@@ -309,7 +415,6 @@
     <Content Include="js\user\keyboard.js" />
     <Content Include="js\user\mouse.js" />
     <Content Include="PrintDocument.aspx" />
-    <Content Include="PushUpdates.aspx" />
     <Content Include="SendInputs.aspx" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
@@ -317,11 +422,58 @@
     <Content Include="log\README" />
     <Content Include="Myrtille.Web.Install.ps1" />
     <Content Include="Myrtille.Web.Uninstall.ps1" />
+    <Content Include="handlers\LongPollingHandler.ashx" />
+    <Content Include="node_modules\%40interactjs\types\index.js.map" />
+    <Content Include="node_modules\%40interactjs\types\index.prod.js.map" />
+    <Content Include="node_modules\%40interactjs\types\LICENSE" />
+    <Content Include="node_modules\%40interactjs\types\NativePointerEventType.js.map" />
+    <Content Include="node_modules\%40interactjs\types\NativePointerEventType.prod.js.map" />
+    <Content Include="node_modules\%40interactjs\types\package.json" />
+    <Content Include="node_modules\%40interactjs\types\README.md" />
+    <Content Include="node_modules\interactjs\bower.json" />
+    <Content Include="node_modules\interactjs\dist\api\doclets.json" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Bold-webfont.eot" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Bold-webfont.woff" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-BoldItalic-webfont.eot" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-BoldItalic-webfont.woff" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Italic-webfont.eot" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Italic-webfont.woff" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Light-webfont.eot" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Light-webfont.woff" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-LightItalic-webfont.eot" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-LightItalic-webfont.woff" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Regular-webfont.eot" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Regular-webfont.woff" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Semibold-webfont.eot" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Semibold-webfont.ttf" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-Semibold-webfont.woff" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-SemiboldItalic-webfont.eot" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-SemiboldItalic-webfont.ttf" />
+    <Content Include="node_modules\interactjs\dist\api\fonts\OpenSans-SemiboldItalic-webfont.woff" />
+    <Content Include="node_modules\interactjs\dist\interact.js.map" />
+    <Content Include="node_modules\interactjs\dist\interact.min.js.map" />
+    <Content Include="node_modules\interactjs\index.js.map" />
+    <Content Include="node_modules\interactjs\index.prod.js.map" />
+    <Content Include="node_modules\interactjs\LICENSE" />
+    <Content Include="node_modules\interactjs\package.json" />
+    <Content Include="node_modules\interactjs\README.md" />
+    <Content Include="node_modules\simple-keyboard-layouts\build\index.js.map" />
+    <Content Include="node_modules\simple-keyboard-layouts\LICENSE" />
+    <Content Include="node_modules\simple-keyboard-layouts\package.json" />
+    <Content Include="node_modules\simple-keyboard-layouts\README.md" />
+    <Content Include="node_modules\simple-keyboard\build\css\index.css.map" />
+    <Content Include="node_modules\simple-keyboard\build\index.js.map" />
+    <Content Include="node_modules\simple-keyboard\CODE_OF_CONDUCT.md" />
+    <Content Include="node_modules\simple-keyboard\CONTRIBUTING.md" />
+    <Content Include="node_modules\simple-keyboard\LICENSE" />
+    <Content Include="node_modules\simple-keyboard\package.json" />
+    <Content Include="node_modules\simple-keyboard\README.md" />
+    <Content Include="package-lock.json" />
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
-    <Content Include="SocketHandler.ashx" />
-    <Content Include="AudioSocketHandler.ashx" />
+    <Content Include="handlers\SocketHandler.ashx" />
+    <Content Include="handlers\AudioSocketHandler.ashx" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -349,7 +501,15 @@
       <Name>Myrtille.Services.Contracts</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <TypeScriptCompile Include="node_modules\%40interactjs\types\index.d.ts" />
+    <TypeScriptCompile Include="node_modules\%40interactjs\types\typings.d.ts" />
+    <TypeScriptCompile Include="node_modules\interactjs\index.d.ts" />
+    <TypeScriptCompile Include="node_modules\simple-keyboard\build\index.d.ts" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
@@ -366,6 +526,7 @@
     <OutputPath>bin\</OutputPath>
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets')" />
   <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

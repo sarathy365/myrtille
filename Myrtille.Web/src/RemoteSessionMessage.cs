@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-
-using System.Text;
 
 namespace Myrtille.Web
 {
@@ -34,7 +32,6 @@ namespace Myrtille.Web
     public class RemoteSessionMessage
     {
         public MessageType Type;
-        public string Prefix;
         public string Text;
     }
 }

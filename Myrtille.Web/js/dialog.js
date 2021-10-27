@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -181,7 +181,7 @@ function Dialog(config)
             statData.Bandwidth = statBandwidthUsage + '/' + statBandwidthSize + ' (' + (statBandwidthSize > 0 ? Math.round((statBandwidthUsage * 100) / statBandwidthSize) : 0) + '%)';
             statData.PeriodicalFSU = config.getPeriodicalFullscreenInterval() / 1000;
             statData.AdaptiveFSU = config.getAdaptiveFullscreenTimeout() / 1000;
-            statData.NetworkMode = statNetworkMode.text + (statNetworkMode == config.getNetworkModeEnum().LONGPOLLING ? ' (' + config.getLongPollingDuration() / 1000 + 's)' : '');
+            statData.NetworkMode = statNetworkMode.text + (statNetworkMode == config.getNetworkModeEnum().LONGPOLLING ? ' (' + config.getLongPollingDuration() / 1000 + 's)' : (statNetworkMode == config.getNetworkModeEnum().WEBSOCKET ? ' (' + config.getWebsocketCount() + ')' : ''));
             statData.DisplayMode = statDisplayMode.text;
             statData.ImageCount = statImageCount + ' (' + statImageCountPerSec + '/s)';
             statData.ImageIndex = statImageIndex;
@@ -202,7 +202,7 @@ function Dialog(config)
                         this.showDebug('statDiv is undefined');
                         return;
                     }
-                    statDiv.style.display = 'block';
+                    statDiv.style.display = 'inline-block';
                     statDiv.style.visibility = 'visible';
                 }
 
@@ -262,7 +262,7 @@ function Dialog(config)
                     alert('debugDiv is undefined');
                     return;
                 }
-                debugDiv.style.display = 'block';
+                debugDiv.style.display = 'inline-block';
                 debugDiv.style.visibility = 'visible';
             }
 
@@ -446,7 +446,7 @@ function Dialog(config)
 
 var popup = null;
 
-function openPopup(id, src)
+function openPopup(id, src, fade)
 {
     try
     {
@@ -456,25 +456,31 @@ function openPopup(id, src)
             closePopup();
         }
 
-        // lock background
-        var bgfDiv = document.getElementById('bgfDiv');
-        if (bgfDiv != null)
+        if (fade == null || fade)
         {
-            bgfDiv.style.visibility = 'visible';
-            bgfDiv.style.display = 'block';
+            // lock background
+            var bgfDiv = document.getElementById('bgfDiv');
+            if (bgfDiv != null)
+            {
+                bgfDiv.style.visibility = 'visible';
+                bgfDiv.style.display = 'block';
+            }
         }
 
         // add popup
         popup = document.createElement('iframe');
         popup.id = id;
         popup.src = 'popups/' + src;
-        popup.className = 'modalPopup';
 
-        document.body.appendChild(popup);
+        // draggable
+        var dragDiv = document.getElementById('dragDiv');
+        dragDiv.appendChild(popup);
+        dragDiv.style.visibility = 'visible';
+        dragDiv.style.display = 'block';
     }
     catch (exc)
     {
-        this.showDebug('openPopup error: ' + exc.message);
+        console.error('openPopup error: ' + exc.message);
     }
 }
 
@@ -485,7 +491,10 @@ function closePopup()
         // remove popup
         if (popup != null)
         {
-            document.body.removeChild(popup);
+            var dragDiv = document.getElementById('dragDiv');
+            dragDiv.removeChild(popup);
+            dragDiv.style.visibility = 'hidden';
+            dragDiv.style.display = 'none';
             popup = null;
         }
 
@@ -502,7 +511,7 @@ function closePopup()
     }
     catch (exc)
     {
-        this.showDebug('closePopup error: ' + exc.message);
+        console.error('closePopup error: ' + exc.message);
     }
 }
 

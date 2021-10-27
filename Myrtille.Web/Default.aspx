@@ -1,7 +1,7 @@
 ﻿<%--
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/display/terminaldiv.js", true)%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network.js", true)%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/buffer.js", true)%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/eventsource.js", true)%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/longpolling.js", true)%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/websocket.js", true)%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/xmlhttp.js", true)%>"></script>
@@ -64,6 +65,7 @@
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/xterm/addons/fit/fit.js", true)%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/audio/audiowebsocket.js", true)%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/securden.js", true)%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/node_modules/interactjs/dist/interact.js", true)%>"></script>
 
 	</head>
 	
@@ -183,7 +185,7 @@
 
                 <!-- myrtille version -->
                 <div id="version">
-                    <a href="http://cedrozor.github.io/myrtille/" target="_blank" title="myrtille">
+                    <a href="https://www.myrtille.io/" target="_blank" title="myrtille">
                         <img src="img/myrtille.png" alt="myrtille" width="15px" height="15px"/>
                     </a>
                     <span>
@@ -274,12 +276,15 @@
                 <!-- reconnect session 
                 <input type="button" runat="server" id="reconnect" value="Reconnect OFF" onclick="toggleReconnectSession();" title="reconnect the remote session to the browser size" disabled="disabled"/>
                 -->
-                <!-- virtual keyboard. on devices without a physical keyboard, forces the device virtual keyboard to pop up 
-                <input type="button" runat="server" id="keyboard" value="Keyboard" onclick="openPopup('virtualKeyboardPopup', 'VirtualKeyboard.aspx');" title="send some text into the remote session" disabled="disabled"/>
+                <!-- device keyboard. on devices without a physical keyboard, forces the device virtual keyboard to pop up, then allow to send text (a text target must be focused)
+                <input type="button" runat="server" id="keyboard" value="Text" onclick="openPopup('virtualKeyboardPopup', 'VirtualKeyboard.aspx', false);" title="send some text into the remote session" disabled="disabled"/>
+                -->
+                <!-- on-screen keyboard. on devices without a physical keyboard, display an on-screen keyboard, then allow to send characters (a text target must be focused)
+                <input type="button" runat="server" id="osk" value="Keyboard" onclick="openPopup('onScreenKeyboardPopup', 'onScreenKeyboard.aspx', false);" title="on-screen keyboard" disabled="disabled"/>
                 -->
                 <!-- clipboard synchronization -->
                 <!-- this is a fallback/manual action if the async clipboard API is not supported/enabled/allowed (requires read/write access and HTTPS) 
-                <input type="button" runat="server" id="clipboard" value="Clipboard" onclick="openPopup('pasteClipboardPopup', 'PasteClipboard.aspx');" title="send some text into the remote clipboard" disabled="disabled"/>
+                <input type="button" runat="server" id="clipboard" value="Clipboard" onclick="openPopup('pasteClipboardPopup', 'PasteClipboard.aspx', false);" title="send some text into the remote clipboard" disabled="disabled"/>
                 -->
                 <!-- upload/download file(s). only enabled if the connected server is localhost or if a domain is specified (so file(s) can be accessed within the remote session) 
                 <input type="button" runat="server" id="files" value="Files" onclick="openPopup('fileStoragePopup', 'FileStorage.aspx');" title="upload/download files to/from the user documents folder" disabled="disabled"/>
@@ -291,13 +296,22 @@
                 <input type="button" runat="server" id="mrc" value="Right-Click OFF" onclick="toggleRightClick(this);" title="if toggled on, send a Right-Click on the next touch or left-click action" disabled="disabled"/>
 
                 <!-- swipe up/down gesture management for touchscreen devices. emulate vertical scroll in applications 
-                <input type="button" runat="server" id="vswipe" value="Vertical Swipe ON" onclick="toggleVerticalSwipe(this);" title="if toggled on, allow vertical scroll on swipe (experimental feature, disabled on IE/Edge)" disabled="disabled"/>
+                <input type="button" runat="server" id="vswipe" value="VSwipe ON" onclick="toggleVerticalSwipe(this);" title="if toggled on, allow vertical scroll on swipe (experimental feature, disabled on IE/Edge)" disabled="disabled"/>
                 -->
                 <!-- share session 
                 <input type="button" runat="server" id="share" value="Share" onclick="openPopup('shareSessionPopup', 'ShareSession.aspx');" title="share session" disabled="disabled"/>
                 -->
                 <!-- disconnect -->
                 <input type="button" runat="server" id="disconnect" value="Disconnect" onclick="doDisconnect();" title="disconnect session" disabled="disabled"/>
+
+                <!-- image quality -->
+                <input type="range" runat="server" id="imageQuality" min="5" max="90" step="5" onchange="changeImageQuality(this.value);" title="image quality (lower quality = lower bandwidth usage)" disabled="disabled"/>
+
+                <!-- connection info -->
+                <div id="statDiv"></div>
+
+                <!-- debug info -->
+                <div id="debugDiv"></div>
 
             </div>
 
@@ -306,11 +320,14 @@
 
             <!-- remote session helpers -->
             <div id="cacheDiv"></div>
-            <div id="statDiv"></div>
-		    <div id="debugDiv"></div>
             <div id="msgDiv"></div>
             <div id="kbhDiv"></div>
             <div id="bgfDiv"></div>
+
+            <!-- draggable popup -->
+            <div id="dragDiv">
+                <div id="dragHandle"></div>
+            </div>
 
         </form>
 
@@ -432,6 +449,15 @@
 
         <script type="text/javascript" language="javascript" defer="defer">
 
+            var dragDiv = document.getElementById('dragDiv');
+            var dragHandle = document.getElementById('dragHandle');
+
+            interact(dragDiv)
+                .draggable({
+                    allowFrom: dragHandle,
+                    onmove: onDragMove
+                });
+
             initDisplay();
 
             // auto-connect / start program from url
@@ -542,6 +568,7 @@
                 disableControl('<%=scale.ClientID%>');
                 disableControl('<%=reconnect.ClientID%>');
                 disableControl('<%=keyboard.ClientID%>');
+                disableControl('<%=osk.ClientID%>');
                 disableControl('<%=clipboard.ClientID%>');
                 disableControl('<%=files.ClientID%>');
                 disableControl('<%=cad.ClientID%>');
@@ -549,6 +576,7 @@
                 disableControl('<%=vswipe.ClientID%>');
                 disableControl('<%=share.ClientID%>');
                 disableControl('<%=disconnect.ClientID%>');
+                disableControl('<%=imageQuality.ClientID%>');
             }
 
             function toggleToolbar()
@@ -582,6 +610,28 @@
                     return false;
 
                 return (value == '1' ? true : false);
+            }
+
+            function onDragMove(event)
+            {
+                var target = event.target,
+                x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
+                y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+                if ('webkitTransform' in target.style || 'transform' in target.style)
+                {
+                    target.style.webkitTransform =
+                        target.style.transform =
+                        'translate(' + x + 'px, ' + y + 'px)';
+                }
+                else
+                {
+                    target.style.left = x + 'px';
+                    target.style.top = y + 'px';
+                }
+
+                target.setAttribute('data-x', x);
+                target.setAttribute('data-y', y);
             }
 
 		</script>

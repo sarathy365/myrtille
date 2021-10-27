@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,12 +26,15 @@ function Network(base, config, dialog, display)
     var xmlhttp = null;
     this.getXmlhttp = function() { return xmlhttp; };
 
+    // long-polling
+    var longPolling = null;
+
+    // event source
+    var eventsource = null;
+
     // websockets
     var websocket = null;
     var audioWebsocket = null;
-
-    // long-polling
-    var longPolling = null;
 
     // buffer
     var buffer = null;
@@ -65,11 +68,23 @@ function Network(base, config, dialog, display)
     var originalImageEncoding = config.getImageEncoding();
     var originalImageQuality = config.getImageQuality();
     var originalImageQuantity = config.getImageQuantity();
+    var originalMouseMoveSamplingRate = config.getMouseMoveSamplingRate();
+
+    this.getOriginalImageEncoding = function() { return originalImageEncoding; };
+    this.setOriginalImageEncoding = function(encoding) { originalImageEncoding = encoding; };
+
+    this.getOriginalImageQuality = function() { return originalImageQuality; };
+    this.setOriginalImageQuality = function(quality) { originalImageQuality = quality; };
+
+    this.getOriginalMouseMoveSamplingRate = function() { return originalMouseMoveSamplingRate; };
+    this.setOriginalMouseMoveSamplingRate = function(rate) { originalMouseMoveSamplingRate = rate; };
 
     this.init = function()
     {
         try
         {
+            var wsAvailable = (window.WebSocket || window.MozWebSocket) && !config.getCompatibilityMode();
+
             if (config.getHostType() == config.getHostTypeEnum().RDP)
             {
                 /* image mode
@@ -99,7 +114,7 @@ function Network(base, config, dialog, display)
                 */
 
                 var base64Available = display.isBase64Available();
-                var binaryAvailable = (window.WebSocket || window.MozWebSocket) && !config.getCompatibilityMode();
+                var binaryAvailable = wsAvailable;
 
                 switch (config.getImageMode())
                 {
@@ -141,24 +156,35 @@ function Network(base, config, dialog, display)
             pros: reliable; cons: slower in case of high latency connection (due to the roundtrip time and many requests)
 
             LONGPOLLING
-            long-polling is a combination of xhr (to send user inputs) and long lived connection (to receive display updates)
+            long-polling (aka COMET) is a combination of xhr (to send user inputs) and long lived connection (to receive display updates)
             pros: faster than xhr because doesn't rely on roundtrip (and even brings a parallelized processing); cons: some proxies will timeout the connection passed a certain time
+
+            EVENTSOURCE
+            event source is an HTML5 alternative to long-polling; used in combination with websocket (to send data), it creates a persistent connection with an http server, which can send events on it (SSE)
+            pros: it's not an hack but a standard HTML5 web API and it's fast; cons: it can only handle text events, so images must be encoded into base64 (33% overhead!); it's also not supported on old IE/Edge
 
             WEBSOCKET
             websocket is the nowadays preferred communication method
             pros: fast and stateful duplex communication; cons: requires HTML5 (the above 2 methods work with HTML4 browsers) and some proxies may filter/block the (still evolving) websocket protocol
             
             AUTO (default)
-            automatic detection of the best available mode (in order: XHR < LP < WS)
+            automatic detection of the best available mode (in order: XHR < LP < ES < WS)
 
             */
-
-            var wsAvailable = (window.WebSocket || window.MozWebSocket) && !config.getCompatibilityMode();
 
             switch (config.getNetworkMode())
             {
                 case config.getNetworkModeEnum().XHR:
                 case config.getNetworkModeEnum().LONGPOLLING:
+                    config.setImageMode(!display.isBase64Available() ? config.getImageModeEnum().ROUNDTRIP : config.getImageModeEnum().BASE64);
+                    break;
+
+                case config.getNetworkModeEnum().EVENTSOURCE:
+                    if (!wsAvailable)
+                    {
+                        config.setNetworkMode(config.getNetworkModeEnum().LONGPOLLING);
+                    }
+                    config.setImageMode(!display.isBase64Available() ? config.getImageModeEnum().ROUNDTRIP : config.getImageModeEnum().BASE64);
                     break;
 
                 case config.getNetworkModeEnum().WEBSOCKET:
@@ -176,17 +202,25 @@ function Network(base, config, dialog, display)
             xmlhttp = new XmlHttp(base, config, dialog, display, this);
             xmlhttp.init();
 
-            // use websocket if enabled
-            if (config.getNetworkMode() == config.getNetworkModeEnum().WEBSOCKET)
+            // use websocket if enabled or along with event source
+            if (config.getNetworkMode() == config.getNetworkModeEnum().WEBSOCKET || config.getNetworkMode() == config.getNetworkModeEnum().EVENTSOURCE)
             {
-                // display and notifications
+                // inputs, display and notifications if duplex
                 websocket = new Websocket(base, config, dialog, display, this);
                 websocket.init();
+
+                // when using event source, websocket is only used to send inputs and receive acks (not duplex)
+                if (config.getNetworkMode() == config.getNetworkModeEnum().EVENTSOURCE)
+                {
+                    // display and notifications
+                    eventsource = new Eventsource(base, config, dialog, display, this);
+                    eventsource.init();
+                }
             }
 
-            // websocket enabled and functional, RDP host, audio enabled
+            // websocket enabled (or along with event source) and functional, RDP host, audio enabled
             // audio playback can also be switched on the gateway (web.config); this parameter takes precedence over config.js
-            if (config.getNetworkMode() == config.getNetworkModeEnum().WEBSOCKET && config.getHostType() == config.getHostTypeEnum().RDP && config.getAudioFormat() != config.getAudioFormatEnum().NONE)
+            if ((config.getNetworkMode() == config.getNetworkModeEnum().WEBSOCKET || config.getNetworkMode() == config.getNetworkModeEnum().EVENTSOURCE) && config.getHostType() == config.getHostTypeEnum().RDP && config.getAudioFormat() != config.getAudioFormatEnum().NONE)
             {
                 // audio
                 audioWebsocket = new AudioWebsocket(base, config, dialog, display, this);
@@ -205,8 +239,8 @@ function Network(base, config, dialog, display)
                 dialog.showStat(dialog.getShowStatEnum().IMAGE_MODE, config.getImageMode());
             }
             
-            // if not using websocket, use xhr and long-polling (or xhr only if XHR mode is specified)
-            if (config.getNetworkMode() != config.getNetworkModeEnum().WEBSOCKET)
+            // if not using websocket or event source, use xhr and long-polling (or xhr only if XHR mode is specified)
+            if (config.getNetworkMode() != config.getNetworkModeEnum().WEBSOCKET && config.getNetworkMode() != config.getNetworkModeEnum().EVENTSOURCE)
             {
                 // if long-polling is enabled, updates are streamed into a zero sized iframe (with automatic (re)load)
                 // otherwise (xhr only), they are returned within the xhr response
@@ -215,21 +249,14 @@ function Network(base, config, dialog, display)
                     longPolling = new LongPolling(base, config, dialog, display, this);
                     longPolling.init();
                 }
-
-                // if connecting, send any command to the gateway to connect the remote server
-                if (config.getConnectionState() == 'CONNECTING')
+                else
                 {
-                    doSend(base.getCommandEnum().REQUEST_FULLSCREEN_UPDATE.text + 'initial');
-                }
-                // if connected, send the client settings and request a fullscreen update
-                else if (config.getConnectionState() == 'CONNECTED')
-                {
-                    base.initClient();
+                    base.initConnection();
                 }
             }
             else
             {
-                // if using websocket, the connection remains open; there is no real need for a buffer
+                // if using websocket or event source, the connection remains open; there is no real need for a buffer
                 config.setBufferEnabled(false);
             }
 
@@ -302,7 +329,10 @@ function Network(base, config, dialog, display)
                 //dialog.showDebug('checking bandwidth usage');
                 dialog.showStat(dialog.getShowStatEnum().BANDWIDTH_USAGE, Math.ceil(bandwidthUsage / 1024));
 
-                // throttle image quality & quantity depending on the bandwidth usage and average latency
+                //dialog.showDebug('checking image count per second');
+                dialog.showStat(dialog.getShowStatEnum().IMAGE_COUNT_PER_SEC, display.getImgCountPerSec());
+
+                // throttle image quality & quantity depending on the bandwidth usage
                 if (config.getHostType() == config.getHostTypeEnum().RDP)
                 {
                     tweakDisplay();
@@ -310,6 +340,13 @@ function Network(base, config, dialog, display)
 
                 // reset bandwidth usage
                 bandwidthUsage = 0;
+
+                // reset image count per second
+                display.resetImgCountPerSec();
+
+                // dummy call to keep the latency updated even if the user does nothing
+                //dialog.showDebug('updating latency');
+                doSend(null);
             },
             1000);
 
@@ -370,36 +407,39 @@ function Network(base, config, dialog, display)
             dialog.showStat(dialog.getShowStatEnum().LATENCY, roundtripDurationAvg);
 
             // if the "latency" is above a certain limit, display a warning message
-            if (roundtripDurationAvg > config.getRoundtripDurationMax())
+            if (config.getRoundtripDurationMax() > 0)
             {
-                dialog.showMessage('latency warning (> ' + config.getRoundtripDurationMax() + ' ms). Please check your network connection', 0);
-                roundtripDurationWarning = true;
-            }
-            else
-            {
-                if (roundtripDurationWarning)
+                if (roundtripDurationAvg > config.getRoundtripDurationMax())
                 {
-                    roundtripDurationWarning = false;
-                    dialog.hideMessage();
-                }
-                
-                // if using an inputs buffer, update its delay accordingly (the more "latency", the more bufferization... and inversely)
-                if (config.getBufferEnabled())
-                {
-                    if (buffer.getSendEmptyBuffer())
-                    {
-                        buffer.setBufferDelay(config.getBufferDelayEmpty() + Math.round(roundtripDurationAvg / 2));
-                    }
-                    else
-                    {
-                        buffer.setBufferDelay(config.getBufferDelayBase() + Math.round(roundtripDurationAvg / 2));
-                    }
-                    dialog.showStat(dialog.getShowStatEnum().BUFFER, buffer.getBufferDelay());
+                    dialog.showMessage('latency warning (> ' + config.getRoundtripDurationMax() + ' ms). Please check your network connection', 0);
+                    roundtripDurationWarning = true;
                 }
                 else
                 {
-                    dialog.showStat(dialog.getShowStatEnum().BUFFER, 'NONE');
+                    if (roundtripDurationWarning)
+                    {
+                        roundtripDurationWarning = false;
+                        dialog.hideMessage();
+                    }
                 }
+            }
+                
+            // if using an inputs buffer, update its delay accordingly (the more "latency", the more bufferization... and inversely)
+            if (config.getBufferEnabled())
+            {
+                if (buffer.getSendEmptyBuffer())
+                {
+                    buffer.setBufferDelay(config.getBufferDelayEmpty() + Math.round(roundtripDurationAvg / 2));
+                }
+                else
+                {
+                    buffer.setBufferDelay(config.getBufferDelayBase() + Math.round(roundtripDurationAvg / 2));
+                }
+                dialog.showStat(dialog.getShowStatEnum().BUFFER, buffer.getBufferDelay());
+            }
+            else
+            {
+                dialog.showStat(dialog.getShowStatEnum().BUFFER, 'NONE');
             }
         }
         catch (exc)
@@ -422,6 +462,8 @@ function Network(base, config, dialog, display)
             {
                 var endTime = new Date().getTime();
                 var duration = endTime - startTime;
+                // change the value below (i.e. 500KB/s) and comment out the computation line to simulate a bandwidth size
+                //bandwidthSize = 500 * 1024;
                 bandwidthSize = (5087765 * 1000) / duration;
                 //dialog.showDebug('bandwidth check duration (ms): ' + duration + ', size (KB/s): ' + Math.ceil(bandwidthSize / 1024));
                 dialog.showStat(dialog.getShowStatEnum().BANDWIDTH_SIZE, Math.ceil(bandwidthSize / 1024));
@@ -452,7 +494,7 @@ function Network(base, config, dialog, display)
             var commands = new Array();
 
             /*
-            small bandwidth = lower quality and quantity
+            low bandwidth = lower quality, quantity and mouse move sampling rate
             */
 
             var tweak = false;
@@ -472,6 +514,11 @@ function Network(base, config, dialog, display)
                     config.setImageQuantity(25);
                     tweak = true;
                 }
+
+                if (config.getMouseMoveSamplingRate() != 25)
+                {
+                    config.setMouseMoveSamplingRate(25);
+                }
             }
             else if (bandwidthUsageRatio >= config.getImageTweakBandwidthLowerThreshold() && bandwidthUsageRatio < config.getImageTweakBandwidthHigherThreshold())
             {
@@ -486,6 +533,11 @@ function Network(base, config, dialog, display)
                 {
                     config.setImageQuantity(50);
                     tweak = true;
+                }
+
+                if (config.getMouseMoveSamplingRate() != 50)
+                {
+                    config.setMouseMoveSamplingRate(50);
                 }
             }
             else
@@ -502,6 +554,11 @@ function Network(base, config, dialog, display)
                     config.setImageQuantity(originalImageQuantity);
                     tweak = true;
                 }
+
+                if (config.getMouseMoveSamplingRate() != originalMouseMoveSamplingRate)
+                {
+                    config.setMouseMoveSamplingRate(originalMouseMoveSamplingRate);
+                }
             }
 
             if (tweak)
@@ -511,6 +568,7 @@ function Network(base, config, dialog, display)
                 commands.push(base.getCommandEnum().SET_IMAGE_QUALITY.text + config.getImageQuality());
                 //dialog.showDebug('tweaking image quantity: ' + config.getImageQuantity());
                 commands.push(base.getCommandEnum().SET_IMAGE_QUANTITY.text + config.getImageQuantity());
+                commands.push(base.getCommandEnum().REQUEST_FULLSCREEN_UPDATE.text + 'tweak');
             }
 
             if (commands.length > 0)
@@ -561,11 +619,11 @@ function Network(base, config, dialog, display)
             var now = new Date().getTime();
             if (config.getAdditionalLatency() > 0)
             {
-                window.setTimeout(function() { if (config.getNetworkMode() != config.getNetworkModeEnum().WEBSOCKET) { xmlhttp.send(data, now); } else { websocket.send(data, now); } }, Math.round(config.getAdditionalLatency() / 2));
+                window.setTimeout(function() { if (config.getNetworkMode() != config.getNetworkModeEnum().WEBSOCKET && config.getNetworkMode() != config.getNetworkModeEnum().EVENTSOURCE) { xmlhttp.send(data, now); } else { websocket.send(data, now); } }, Math.round(config.getAdditionalLatency() / 2));
             }
             else
             {
-                if (config.getNetworkMode() != config.getNetworkModeEnum().WEBSOCKET) { xmlhttp.send(data, now); } else { websocket.send(data, now); }
+                if (config.getNetworkMode() != config.getNetworkModeEnum().WEBSOCKET && config.getNetworkMode() != config.getNetworkModeEnum().EVENTSOURCE) { xmlhttp.send(data, now); } else { websocket.send(data, now); }
             }
         }
         catch (exc)

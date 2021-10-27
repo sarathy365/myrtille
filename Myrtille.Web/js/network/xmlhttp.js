@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ function XmlHttp(base, config, dialog, display, network)
     var xhrStartTime = null;
     var xhrTimeout = null;
     var xhrTimeoutElapsed = false;
-
-    var fullscreenPending = false;
 
     this.init = function()
     {
@@ -112,7 +110,8 @@ function XmlHttp(base, config, dialog, display, network)
                     data.indexOf(base.getCommandEnum().SEND_BROWSER_PULSE.text) != -1 ||
                     data.indexOf(base.getCommandEnum().SEND_MOUSE_LEFT_BUTTON.text) != -1 ||
                     data.indexOf(base.getCommandEnum().SEND_MOUSE_MIDDLE_BUTTON.text) != -1 ||
-                    data.indexOf(base.getCommandEnum().SEND_MOUSE_RIGHT_BUTTON.text) != -1))
+                    data.indexOf(base.getCommandEnum().SEND_MOUSE_RIGHT_BUTTON.text) != -1 ||
+                    data.indexOf(base.getCommandEnum().CLOSE_CLIENT.text) != -1))
                 {
                     //dialog.showDebug('xhr priority');
                     cleanup(false);
@@ -137,6 +136,7 @@ function XmlHttp(base, config, dialog, display, network)
             xhr.open('GET', config.getHttpServerUrl() + 'SendInputs.aspx' +
                 '?data=' + (data == null ? '' : encodeURIComponent(data)) +
                 '&imgIdx=' + display.getImgIdx() +
+                '&latency=' + network.getRoundtripDurationAvg() +
                 '&imgReturn=' + (config.getNetworkMode() == config.getNetworkModeEnum().XHR ? 1 : 0) +
                 '&noCache=' + startTime);
 
@@ -221,92 +221,55 @@ function XmlHttp(base, config, dialog, display, network)
             {
                 //dialog.showDebug('xhr ok');
                 xhrTimeoutElapsed = false;
-                dialog.hideMessage();
+                //dialog.hideMessage();
             }
 
-            if (text != '')
+            if (text != null && text != '')
             {
-                // reload page
-                if (text == 'reload')
-                {
-                    window.location.href = window.location.href;
-                }
-                // receive terminal data, send to xtermjs
-                else if (text.length >= 5 && text.substr(0, 5) == "term|")
-                {
-                    display.getTerminalDiv().writeTerminal(text.substr(5, text.length - 5));
-                }
-                // remote clipboard
-                else if (text.length >= 10 && text.substr(0, 10) == 'clipboard|')
-                {
-                    writeClipboard(text.substr(10, text.length - 10));
-                }
-                // print job
-                else if (text.length >= 9 && text.substr(0, 9) == 'printjob|')
-                {
-                    downloadPdf(text.substr(9, text.length - 9));
-                }
-                // connected session
-                else if (text == 'connected')
-                {
-                    // if running myrtille into an iframe, register the iframe url (into a cookie)
-                    // this is necessary to prevent a new http session from being generated when reloading the page, due to the missing http session id into the iframe url (!)
-                    // multiple iframes (on the same page), like multiple connections/tabs, requires cookieless="UseUri" for sessionState into web.config
-                    if (parent != null && window.name != '')
-                    {
-                        parent.setCookie(window.name, window.location.href);
-                    }
+                var message = true;
 
-                    // send settings and request a fullscreen update
-                    base.initClient();
-                }
-                // disconnected session
-                else if (text == 'disconnected')
+                if (config.getHostType() == config.getHostTypeEnum().RDP)
                 {
-                    // if running myrtille into an iframe, unregister the iframe url
-                    if (parent != null && window.name != '')
+                    try
                     {
-                        parent.eraseCookie(window.name);
+                        // messages are serialized in JSON, unlike images; check a valid JSON string
+                        JSON.parse(text);
+                        //dialog.showDebug('message data: ' + text);
                     }
-
-                    // back to default page
-                    window.location.href = config.getHttpServerUrl();
+                    catch (exc)
+                    {
+                        message = false;
+                        //dialog.showDebug('image data: ' + text);
+                    }
                 }
-                // new image
                 else
                 {
-                    var imgInfo = text.split(',');
-                        
-                    var idx = parseInt(imgInfo[0]);
-                    var posX = parseInt(imgInfo[1]);
-                    var posY = parseInt(imgInfo[2]);
-                    var width = parseInt(imgInfo[3]);
-                    var height = parseInt(imgInfo[4]);
-                    var format = imgInfo[5];
-                    var quality = parseInt(imgInfo[6]);
-                    var fullscreen = imgInfo[7] == 'true';
-                    var base64Data = imgInfo[8];
+                    //dialog.showDebug('terminal data: ' + text);
+                }
 
-                    // update bandwidth usage
-                    network.setBandwidthUsage(network.getBandwidthUsage() + base64Data.length);
+                // message
+                if (message)
+                {
+                    processMessage(text);
+                }
+                // image
+                else
+                {
+                    var imgInfo, idx, posX, posY, width, height, format, quality, fullscreen, imgData;
 
-                    // if a fullscreen request is pending, release it
-                    if (fullscreen && fullscreenPending)
-                    {
-                        //dialog.showDebug('received a fullscreen update, divs will be cleaned');
-                        fullscreenPending = false;
-                    }
+                    imgInfo = text.split(',');
 
-                    // add image to display
-                    display.addImage(idx, posX, posY, width, height, format, quality, fullscreen, base64Data);
+                    idx = parseInt(imgInfo[0]);
+                    posX = parseInt(imgInfo[1]);
+                    posY = parseInt(imgInfo[2]);
+                    width = parseInt(imgInfo[3]);
+                    height = parseInt(imgInfo[4]);
+                    format = imgInfo[5];
+                    quality = parseInt(imgInfo[6]);
+                    fullscreen = imgInfo[7] == 'true';
+                    imgData = imgInfo[8];
 
-                    // if using divs and count reached a reasonable number, request a fullscreen update
-                    if (config.getDisplayMode() != config.getDisplayModeEnum().CANVAS && display.getImgCount() >= config.getImageCountOk() && !fullscreenPending)
-                    {
-                        //dialog.showDebug('reached a reasonable number of divs, requesting a fullscreen update');
-                        fullscreenPending = true;
-                        network.send(base.getCommandEnum().REQUEST_FULLSCREEN_UPDATE.text + 'cleanup');
-                    }
+                    processImage(idx, posX, posY, width, height, format, quality, fullscreen, imgData);
                 }
             }
 	    }
@@ -323,7 +286,7 @@ function XmlHttp(base, config, dialog, display, network)
         {
             if (timeoutElapsed)
             {
-                dialog.showMessage('xhr timeout (' + config.getXmlHttpTimeout() + ' ms). Please check your network connection', 0);
+                //dialog.showMessage('xhr timeout (' + config.getXmlHttpTimeout() + ' ms). Please check your network connection', 0);
                 xhrTimeoutElapsed = true;
             }
 

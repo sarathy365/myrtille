@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -199,7 +199,7 @@ namespace Myrtille.Web
                         _remoteSessionManager.ClientIdleTimeout = new CancellationTokenSource();
                     }
                     _remoteSessionManager.RemoteSession.State = RemoteSessionState.Connecting;
-                    _remoteSessionManager.SendMessage(new RemoteSessionMessage { Type = MessageType.Disconnected, Prefix = "disconnected" });
+                    _remoteSessionManager.SendMessage(new RemoteSessionMessage { Type = MessageType.Disconnected });
                 }
                 // otherwise, redirect to the login page (or the hosts dashboard in enterprise mode)
                 else
@@ -321,7 +321,7 @@ namespace Myrtille.Web
                     if (!string.IsNullOrEmpty(loginUrl))
                     {
                         // redirect to the custom login page
-                        _remoteSessionManager.SendMessage(new RemoteSessionMessage { Type = MessageType.Disconnected, Prefix = "disconnected" });
+                        _remoteSessionManager.SendMessage(new RemoteSessionMessage { Type = MessageType.Disconnected });
 
                         // give some time for the redirection
                         Thread.Sleep(2000);
@@ -340,13 +340,13 @@ namespace Myrtille.Web
                         Thread.Sleep(2000);
 
                         // redirect to the default login page (empty if login is not enabled)
-                        _remoteSessionManager.SendMessage(new RemoteSessionMessage { Type = MessageType.Disconnected, Prefix = "disconnected" });
+                        _remoteSessionManager.SendMessage(new RemoteSessionMessage { Type = MessageType.Disconnected });
                     }
                 }
                 else
                 {
                     // redirect to the login page (or the hosts dashboard in enterprise mode)
-                    _remoteSessionManager.SendMessage(new RemoteSessionMessage { Type = MessageType.Disconnected, Prefix = "disconnected" });
+                    _remoteSessionManager.SendMessage(new RemoteSessionMessage { Type = MessageType.Disconnected });
                 }
 
                 #endregion

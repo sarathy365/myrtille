@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -66,6 +66,9 @@ namespace Myrtille.Network
 
         public void AddItem(T item)
         {
+            if (!_enabled)
+                return;
+
             lock (_dataLock)
             {
                 _data.Add(item);

@@ -1,4 +1,46 @@
-﻿2020-04-20 Version 2.8.1 (stable)
+﻿2021-03-07 Version 2.9.2
+	FreeRDP is now built as a dll instead of an executable for better modularity and to reduce the risk of false positive detection of wfreerdp.exe by some antiviruses (mostly cloud based)
+	embedded interact.js and simple-keyboard (nodejs modules) into myrtille in order to remove dependencies on external CDNs (ans thus allow myrtille to be used standalone and not subject to external changes)
+	fixed a problem with the creation of the self-signed certificate that prevented Myrtille from installing correctly on Windows Server 2012 R2 (thanks camjcorley)
+	a session can now be shared directly by url (simply copy & paste the page url then share it), with owner rights (web.config, can be disabled for anti-spoofing protection)
+	region updates are now dropped by the gateway if the client latency is above the image cache duration (1 sec); only fullscreen updates are sent
+	display updates can now be distributed across concurrent websockets (round robin load balancing) to reduce lag in case of network issues (config.js, default 5 websockets: 1 up 4 down). CAUTION! IIS on Windows client OSes (7, 8, 10) is limited to 10 simultaneous connections only - across all http sessions - and will hang after that! use Windows Server editions for production environments
+	the mouse move sampling rate is now decreased automatically in case of low bandwidth (default 100%, config.js)
+	refactoring
+
+2021-01-08 Version 2.9.1 (stable)
+	fixed an issue where the installer hangs due to enabling Windows features (via PowerShell) that prompt the user to restart or not while there is no UI to confirm
+	fixed a regression when hiding the toolbar from web.config
+	fixed an issue into FreeRDP with a special copy&paste logic into MS Office applications which disconnected the session after a special paste when pressing the enter key
+	the protocol scheme when sharing a session or creating a session URL is now determined by the HTTP_X_FORWARDED_PROTO http header if available, instead of the current http request, so that https is correctly detected after a redirection by a reverse proxy or a load-balancer
+	now rolling over display updates and audio block indexes if they reach max int value
+	fixed a minor regression which prevented myrtille to work on old IE browsers
+
+2020-09-26 Version 2.9.0 (stable)
+	added a virtual on-screen keyboard (multi-languages)
+	popups are now draggable
+	showing the toolbar no longer shifts the display down
+	the rendering quality can now tweaked from the toolbar (lower quality = lower bandwidth usage), in addition to the default value defined in config.js
+	display updates are now consolidated instead of dropped when the available bandwidth gets low (config.js)
+	websocket can now be configured to handle both user inputs and display updates on the same instance (duplex, default) or use separate instances (dual) [experimental]
+	added support of event source (SSE) as an alternative to long-polling (requires HTML5 and not compatible with old IE/Edge browsers) [experimental]
+	it's now possible to switch automatically from websocket to event source when the latency gets high (the websocket protocol may be filtered or throttled by some network proxies) (config.js) [experimental]
+	disabled the warning messages when the latency gets high (config.js) or in case of xhr timeout (xmlhttp.js)
+	latency is now updated on a 1 sec timer, even if the user does nothing
+	fixed random freezes while requesting fullscreen updates
+	the disconnect command is now given priority in xhr mode
+	long-polling is now an http handler
+	messages are serialized in JSON instead of raw text
+	fixed an issue with messages containing the ";" character
+	fixed an issue with file transfer when using a domain (thanks camjcorley)
+	fixed an issue with file transfer and user profiles containing unicode characters
+	fixed an issue with the tab key in SSH mode (this also fixes shell autocompletion)
+	fixed an issue with the change password popup (enterprise mode / local admin), which wasn't displayed correctly
+	if no domain is defined into the domain input field, myrtille now tries to retrieve the domain from the username (using the standard UPN syntax: DOMAIN\username or username@domain.com)
+	updated the myrtille project url
+	refactoring
+
+2020-04-20 Version 2.8.1 (stable)
 	changed the default display resize mode from scale to none (config.js); this eliminates a loss of display sharpness when the aspect ratio is not preserved; reconnect is not supported by Windows Server 2019 (see documentation)
 	if using scale on resize, the aspect ratio is now preserved by default (config.js)
 	lowered bandwidth usage: the default display quality is now JPEG 75% (lossy) instead of PNG (lossless) (config.js); this significantly reduces the size of display updates when using graphics applications and JPEG is generated faster

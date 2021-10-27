@@ -1,7 +1,7 @@
 /*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -179,7 +179,7 @@ function User(base, config, dialog, display, network)
             }
 
             verticalSwipeEnabled = !verticalSwipeEnabled;
-            button.value = verticalSwipeEnabled ? 'Vertical Swipe ON' : 'Vertical Swipe OFF';
+            button.value = verticalSwipeEnabled ? 'VSwipe ON' : 'VSwipe OFF';
             //dialog.showDebug('toggling ' + button.value);
         }
         catch (exc)
@@ -197,13 +197,7 @@ function User(base, config, dialog, display, network)
 
         try
         {
-            // disable the toolbar while resizing, if needed
-            var reconnect = document.getElementById('reconnect');
-            var scale = document.getElementById('scale');
-            if (reconnect != null && scale != null && !reconnect.disabled && !scale.disabled)
-            {
-                disableToolbar();
-            }
+            disableToolbar();
 
             var width = display.getBrowserWidth();
             var height = display.getBrowserHeight();

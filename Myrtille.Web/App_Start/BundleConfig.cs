@@ -1,4 +1,22 @@
-﻿using System.Web.Optimization;
+﻿/*
+    Myrtille: A native HTML4/5 Remote Desktop Protocol client.
+
+    Copyright(c) 2014-2021 Cedric Coste
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
+
+using System.Web.Optimization;
 
 namespace Myrtille.Web
 {
@@ -32,6 +50,7 @@ namespace Myrtille.Web
             bundles.Add(new Bundle("~/js/display/terminaldiv.js").Include("~/js/display/terminaldiv.js"));
             bundles.Add(new Bundle("~/js/network.js").Include("~/js/network.js"));
             bundles.Add(new Bundle("~/js/network/buffer.js").Include("~/js/network/buffer.js"));
+            bundles.Add(new Bundle("~/js/network/eventsource.js").Include("~/js/network/eventsource.js"));
             bundles.Add(new Bundle("~/js/network/longpolling.js").Include("~/js/network/longpolling.js"));
             bundles.Add(new Bundle("~/js/network/websocket.js").Include("~/js/network/websocket.js"));
             bundles.Add(new Bundle("~/js/network/xmlhttp.js").Include("~/js/network/xmlhttp.js"));
@@ -44,6 +63,11 @@ namespace Myrtille.Web
             bundles.Add(new Bundle("~/js/audio/audiowebsocket.js").Include("~/js/audio/audiowebsocket.js"));
             bundles.Add(new Bundle("~/js/securden.js").Include("~/js/securden.js"));
 
+            // nodejs modules shouldn't be modified directly, but compute hashes anyway just in case...
+            bundles.Add(new Bundle("~/node_modules/interactjs/dist/interact.js").Include("~/node_modules/interactjs/dist/interact.js"));
+            bundles.Add(new Bundle("~/node_modules/simple-keyboard/build/index.js").Include("~/node_modules/simple-keyboard/build/index.js"));
+            bundles.Add(new Bundle("~/node_modules/simple-keyboard-layouts/build/index.js").Include("~/node_modules/simple-keyboard-layouts/build/index.js"));
+
             // styles
 
             // same comments as above; replace "Bundle" by "StyleBundle" for minification
@@ -51,6 +75,9 @@ namespace Myrtille.Web
             bundles.Add(new Bundle("~/css/Default.css").Include("~/css/Default.css"));
             bundles.Add(new Bundle("~/css/xterm.css").Include("~/css/xterm.css"));
             bundles.Add(new Bundle("~/css/securden.css").Include("~/css/securden.css"));
+
+            // nodejs modules, same remark as above...
+            bundles.Add(new Bundle("~/node_modules/simple-keyboard/build/css/index.css").Include("~/node_modules/simple-keyboard/build/css/index.css"));
         }
     }
 }

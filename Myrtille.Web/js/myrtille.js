@@ -1,7 +1,7 @@
 /*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -116,6 +116,27 @@ function Myrtille(httpServerUrl, connectionState, statEnabled, debugEnabled, com
             alert('Unexpected Error');
             console.log('init error: ' + exc.message);
             throw exc;
+        }
+    };
+
+    this.initConnection = function()
+    {
+        try
+        {
+            // if connecting, send any command for the gateway to connect the remote server
+            if (config.getConnectionState() == 'CONNECTING')
+            {
+                network.send(this.getCommandEnum().REQUEST_FULLSCREEN_UPDATE.text + 'initial');
+            }
+            // if connected, send the client settings and request a fullscreen update
+            else if (config.getConnectionState() == 'CONNECTED')
+            {
+                this.initClient();
+            }
+        }
+        catch (exc)
+        {
+            dialog.showDebug('myrtille initConnection error: ' + exc.message);
         }
     };
 
@@ -273,6 +294,17 @@ var user = null;
 
 var fullscreenPending = false;
 
+var messageTypeEnum =
+{
+    Connected: 0,
+    Disconnected: 1,
+    PageReload: 2,
+    RemoteClipboard: 3,
+    TerminalOutput: 4,
+    PrintJob: 5,
+    Ack: 6
+};
+
 function startMyrtille(connectionState, statEnabled, debugEnabled, compatibilityMode, browserResize, displayWidth, displayHeight, hostType, vmNotEnhanced)
 {
     try
@@ -320,33 +352,137 @@ function startMyrtille(connectionState, statEnabled, debugEnabled, compatibility
     }
 }
 
-this.inject = function(code)
+function lpInitConnection()
+{
+    myrtille.initConnection();
+}
+
+function lpProcessMessage(text)
+{
+    if (config.getAdditionalLatency() > 0)
+    {
+        window.setTimeout(function() { processMessage(text); }, Math.round(config.getAdditionalLatency() / 2));
+    }
+    else
+    {
+        processMessage(text);
+    }
+}
+
+function lpProcessImage(idx, posX, posY, width, height, format, quality, fullscreen, imgData)
+{
+    if (config.getAdditionalLatency() > 0)
+    {
+        window.setTimeout(function() { processImage(idx, posX, posY, width, height, format, quality, fullscreen, imgData); }, Math.round(config.getAdditionalLatency() / 2));
+    }
+    else
+    {
+        processImage(idx, posX, posY, width, height, format, quality, fullscreen, imgData);
+    }
+}
+
+function processMessage(text)
 {
     try
     {
-        //dialog.showDebug('myrtille inject: ' + code);
+        var message = JSON.parse(text);
 
-        if (config.getAdditionalLatency() > 0)
+        //dialog.showDebug('processing message, type: ' + message.Type + ', text: ' + message.Text);
+
+        switch (message.Type)
         {
-            window.setTimeout(function() { eval(code); }, Math.round(config.getAdditionalLatency() / 2));
-        }
-        else
-        {
-            eval(code);
+            // reload page
+            case messageTypeEnum.PageReload:
+                window.location.href = window.location.href;
+                break;
+
+            // receive terminal data, send to xtermjs
+            case messageTypeEnum.TerminalOutput:
+                /* IE hack!
+
+                for some reason, IE (all versions) is very slow to render the terminal, whatever the connection speed
+                while I was debugging, I found the rendering was way faster after displaying the received data into the debug div (?!)
+                
+                I don't really understand why... perhaps it's due to the fact the data is already into the DOM when the terminal handles it...
+                so I made up an hidden "cache div" and put the data on it before writing to the terminal
+                I didn't found any other solution but it's pretty harmless anyway as the cache div is hidden
+
+                other browsers don't seem to have the same issue, neither benefit from that hack, so IE only for now...
+                also interesting to note, this issue occurs only when using websockets (long-polling and xhr only: ok)
+
+                */
+
+                if (display.isIEBrowser())
+                {
+                    var cacheDiv = document.getElementById('cacheDiv');
+                    if (cacheDiv != null)
+                    {
+                        cacheDiv.innerHTML = message.Text;
+                    }
+                }
+
+                display.getTerminalDiv().writeTerminal(message.Text);
+                break;
+
+            // remote clipboard
+            case messageTypeEnum.RemoteClipboard:
+                writeClipboard(message.Text);
+                break;
+
+            // print job
+            case messageTypeEnum.PrintJob:
+                downloadPdf(message.Text);
+                break;
+
+            // connected session
+            case messageTypeEnum.Connected:
+                // if running myrtille into an iframe, register the iframe url (into a cookie)
+                // this is necessary to prevent a new http session from being generated when reloading the page, due to the missing http session id into the iframe url (!)
+                // multiple iframes (on the same page), like multiple connections/tabs, requires cookieless="UseUri" for sessionState into web.config
+                if (parent != null && window.name != '')
+                {
+                    parent.setCookie(window.name, window.location.href);
+                }
+
+                // send settings and request a fullscreen update
+                myrtille.initClient();
+                break;
+
+            // disconnected session
+            case messageTypeEnum.Disconnected:
+                // if running myrtille into an iframe, unregister the iframe url
+                if (parent != null && window.name != '')
+                {
+                    parent.eraseCookie(window.name);
+                }
+
+                // back to default page
+                window.location.href = config.getHttpServerUrl();
+                break;
+
+            // server ack
+            case messageTypeEnum.Ack:
+                //dialog.showDebug('server ack: ' + message.Text);
+
+                // update the average "latency"
+                network.updateLatency(parseInt(message.Text));
+                break;
         }
     }
     catch (exc)
     {
-        dialog.showDebug('myrtille inject error: ' + exc.message);
+        dialog.showDebug('myrtille processMessage error: ' + exc.message);
     }
 }
 
-function processImage(idx, posX, posY, width, height, format, quality, fullscreen, base64Data)
+function processImage(idx, posX, posY, width, height, format, quality, fullscreen, data)
 {
     try
     {
+        //dialog.showDebug('processing image, idx: ' + idx + ', posX: ' + posX + ', posY: ' + posY + ', width: ' + width + ', height: ' + height + ', format: ' + format + ', quality: ' + quality + ', fullscreen: ' + fullscreen + ', data: ' + data);
+
         // update bandwidth usage
-        network.setBandwidthUsage(network.getBandwidthUsage() + base64Data.length);
+        network.setBandwidthUsage(network.getBandwidthUsage() + data.length);
 
         // if a fullscreen request is pending, release it
         if (fullscreen && fullscreenPending)
@@ -356,7 +492,7 @@ function processImage(idx, posX, posY, width, height, format, quality, fullscree
         }
 
         // add image to display
-        display.addImage(idx, posX, posY, width, height, format, quality, fullscreen, base64Data);
+        display.addImage(idx, posX, posY, width, height, format, quality, fullscreen, data);
 
         // if using divs and count reached a reasonable number, request a fullscreen update
         if (config.getDisplayMode() != config.getDisplayModeEnum().CANVAS && display.getImgCount() >= config.getImageCountOk() && !fullscreenPending)
@@ -477,6 +613,20 @@ function toggleVerticalSwipe(button)
     catch (exc)
     {
         dialog.showDebug('myrtille toggleVerticalSwipe error: ' + exc.message);
+    }
+}
+
+function changeImageQuality(quality)
+{
+    try
+    {
+        // display settings are applied by the network.js "tweakDisplay" function
+        network.setOriginalImageEncoding(config.getImageEncodingEnum().JPEG);
+        network.setOriginalImageQuality(quality <= 90 ? quality : 90);
+    }
+    catch (exc)
+    {
+        dialog.showDebug('myrtille changeImageQuality error: ' + exc.message);
     }
 }
 

@@ -1,7 +1,7 @@
 /*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Web.UI;
+using Newtonsoft.Json;
 using Myrtille.Services.Contracts;
 
 namespace Myrtille.Web
@@ -49,16 +50,31 @@ namespace Myrtille.Web
                 // retrieve the remote session for the current http session
                 remoteSession = (RemoteSession)Session[HttpSessionStateVariables.RemoteSession.ToString()];
 
+                var clientId = Session.SessionID;
+                if (Request.Cookies[HttpRequestCookies.ClientKey.ToString()] != null)
+                {
+                    clientId = Request.Cookies[HttpRequestCookies.ClientKey.ToString()].Value;
+                }
+
+                if (!remoteSession.Manager.Clients.ContainsKey(clientId))
+                {
+                    lock (remoteSession.Manager.ClientsLock)
+                    {
+                        remoteSession.Manager.Clients.Add(clientId, new RemoteSessionClient(clientId));
+                    }
+                }
+
+                var client = remoteSession.Manager.Clients[clientId];
+
                 // filters out the dummy xhr calls (used with websocket to keep the http session alive)
                 if (!string.IsNullOrEmpty(Request.QueryString["data"]))
                 {
-                    // register a message queue for the current http session, if not exists
-                    // the http client is now using HTML4 mode
-                    lock (remoteSession.Manager.MessageQueues.SyncRoot)
+                    lock (client.Lock)
                     {
-                        if (!remoteSession.Manager.MessageQueues.ContainsKey(Session.SessionID))
+                        // register a message queue for the client (now using HTML4)
+                        if (client.MessageQueue == null)
                         {
-                            remoteSession.Manager.MessageQueues.Add(Session.SessionID, new List<RemoteSessionMessage>());
+                            client.MessageQueue = new List<RemoteSessionMessage>();
                         }
                     }
 
@@ -112,6 +128,7 @@ namespace Myrtille.Web
                     // retrieve params
                     var data = Request.QueryString["data"];
                     var imgIdx = int.Parse(Request.QueryString["imgIdx"]);
+                    var latency = int.Parse(Request.QueryString["latency"]);
                     var imgReturn = int.Parse(Request.QueryString["imgReturn"]) == 1;
 
                     // process input(s)
@@ -120,71 +137,62 @@ namespace Myrtille.Web
                         remoteSession.Manager.ProcessInputs(Session, data);
                     }
 
+                    client.ImgIdx = imgIdx;
+                    client.Latency = latency;
+
                     // xhr only
                     if (imgReturn)
                     {
-                        // notifications
-                        var messageQueue = (List<RemoteSessionMessage>)remoteSession.Manager.MessageQueues[Session.SessionID];
-
                         // concatenate text for terminal output to avoid a slow rendering
                         // if another message type is in the queue, it will be given priority over the terminal
                         // the terminal is refreshed often, so it shouldn't be an issue...
                         var msgText = string.Empty;
                         var msgComplete = false;
 
-                        while (messageQueue.Count > 0 && !msgComplete)
+                        if (client.MessageQueue != null)
                         {
-                            var message = messageQueue[0];
-
-                            switch (message.Type)
+                            while (client.MessageQueue.Count > 0 && !msgComplete)
                             {
-                                case MessageType.Connected:
-                                    msgText = "connected";
-                                    msgComplete = true;
-                                    break;
+                                var message = client.MessageQueue[0];
 
-                                case MessageType.Disconnected:
-                                    msgText = "disconnected";
-                                    msgComplete = true;
-                                    break;
+                                switch (message.Type)
+                                {
+                                    case MessageType.TerminalOutput:
+                                        msgText += message.Text;
+                                        break;
 
-                                case MessageType.PageReload:
-                                    msgText = "reload";
-                                    msgComplete = true;
-                                    break;
+                                    default:
+                                        msgText = JsonConvert.SerializeObject(message);
+                                        msgComplete = true;
+                                        break;
+                                }
 
-                                case MessageType.RemoteClipboard:
-                                    msgText = string.Format("clipboard|{0}", message.Text);
-                                    msgComplete = true;
-                                    break;
-
-                                case MessageType.TerminalOutput:
-                                    msgText += string.IsNullOrEmpty(msgText) ? string.Format("term|{0}", message.Text) : message.Text;
-                                    break;
-
-                                case MessageType.PrintJob:
-                                    msgText = string.Format("printjob|{0}", message.Text);
-                                    msgComplete = true;
-                                    break;
-                            }
-
-                            lock (((ICollection)messageQueue).SyncRoot)
-                            {
-                                messageQueue.RemoveAt(0);
+                                lock (((ICollection)client.MessageQueue).SyncRoot)
+                                {
+                                    client.MessageQueue.RemoveAt(0);
+                                }
                             }
                         }
 
+                        // message
                         if (!string.IsNullOrEmpty(msgText))
                         {
-                            Response.Write(msgText);
+                            if (!msgComplete)
+                            {
+                                Response.Write(JsonConvert.SerializeObject(new RemoteSessionMessage { Type = MessageType.TerminalOutput, Text = msgText }));
+                            }
+                            else
+                            {
+                                Response.Write(msgText);
+                            }
                         }
-                        // next update
+                        // image
                         else
                         {
                             var image = remoteSession.Manager.GetNextUpdate(imgIdx);
                             if (image != null)
                             {
-                                System.Diagnostics.Trace.TraceInformation("Returning image {0} ({1}), remote session {2}", image.Idx, (image.Fullscreen ? "screen" : "region"), remoteSession.Id);
+                                System.Diagnostics.Trace.TraceInformation("Returning image {0} ({1}), client {2}, remote session {3}", image.Idx, (image.Fullscreen ? "screen" : "region"), clientId, remoteSession.Id);
 
                                 var imgData =
                                     image.Idx + "," +
@@ -205,7 +213,7 @@ namespace Myrtille.Web
                 }
                 catch (Exception exc)
                 {
-                    System.Diagnostics.Trace.TraceError("Failed to send user input(s), remote session {0} ({1})", remoteSession.Id, exc);
+                    System.Diagnostics.Trace.TraceError("Failed to send user input(s), client {0}, remote session {1} ({2})", clientId, remoteSession.Id, exc);
                 }
             }
             catch (Exception exc)

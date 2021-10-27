@@ -1,7 +1,7 @@
 ﻿/*
     Myrtille: A native HTML4/5 Remote Desktop Protocol client.
 
-    Copyright(c) 2014-2020 Cedric Coste
+    Copyright(c) 2014-2021 Cedric Coste
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -128,15 +128,12 @@ function Display(base, config, dialog)
                     checkWebpSupport();
                 }
 
-                // image count per second; currently just an information but could be used for throttling display, if needed
-                window.setInterval(function()
+                // image quality selector
+                var imageQuality = document.getElementById('imageQuality');
+                if (imageQuality != null)
                 {
-                    //dialog.showDebug('checking image count per second');
-                    dialog.showStat(dialog.getShowStatEnum().IMAGE_COUNT_PER_SEC, imgCountPerSec);
-                    lastImgCountPerSec = imgCountPerSec;
-                    imgCountPerSec = 0;
-                },
-                1000);
+                    imageQuality.value = config.getImageQuality();
+                }
 
                 // reasonable number of images to display when using divs
                 dialog.showStat(dialog.getShowStatEnum().IMAGE_COUNT_OK, (config.getDisplayMode() == config.getDisplayModeEnum().CANVAS ? 'N/A' : config.getImageCountOk()));
@@ -340,10 +337,8 @@ function Display(base, config, dialog)
 
     // number of displayed images per second
     var imgCountPerSec = 0;
-
-    // last number of displayed images per second
-    var lastImgCountPerSec = 0;
-    this.getLastImgCountPerSec = function() { return lastImgCountPerSec; };
+    this.getImgCountPerSec = function() { return imgCountPerSec; };
+    this.resetImgCountPerSec = function() { imgCountPerSec = 0; };
 
     // last displayed image
     var imgIdx = 0;
