@@ -1,4 +1,10 @@
-﻿2021-03-07 Version 2.9.2
+﻿2021-07-22 Version 2.9.3
+	pre-requisites PLEASE READ! Myrtille requires a Windows Server edition (2012 R2 or greater) for itself (remote servers can be whatever OS with RDP enabled). Windows client editions (7, 8, 10 - whatever the version: pro, enterprise, ultimate, etc.) are not suitable for Myrtille due to the limitation to a maximum of 10 simultaneous connections on IIS!
+	a client is now identified by an unique id instead of a cookie based key; this fixes a problem of sharing a session by url within the same browser
+	disabled the share session by url feature (web.config), because it bypasses the share session by guest logic and make it difficult to track the active clients
+	redesigned the adaptive display tweaking logic, based on bandwidth usage
+
+2021-03-07 Version 2.9.2
 	FreeRDP is now built as a dll instead of an executable for better modularity and to reduce the risk of false positive detection of wfreerdp.exe by some antiviruses (mostly cloud based)
 	embedded interact.js and simple-keyboard (nodejs modules) into myrtille in order to remove dependencies on external CDNs (ans thus allow myrtille to be used standalone and not subject to external changes)
 	fixed a problem with the creation of the self-signed certificate that prevented Myrtille from installing correctly on Windows Server 2012 R2 (thanks camjcorley)

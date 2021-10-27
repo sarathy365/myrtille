@@ -234,8 +234,16 @@ function User(base, config, dialog, display, network)
 
             adaptiveFullscreenTimeout = window.setTimeout(function()
             {
-                //dialog.showDebug('adaptive fullscreen update');
-                network.send(base.getCommandEnum().REQUEST_FULLSCREEN_UPDATE.text + 'adaptive');
+                if (!network.getImageTweak())
+                {
+                    //dialog.showDebug('adaptive fullscreen update');
+                    network.send(base.getCommandEnum().REQUEST_FULLSCREEN_UPDATE.text + 'adaptive');
+                }
+                else
+                {
+                    network.tweakDisplay(true);
+                    network.setImageTweak(false);
+                }
             },
             config.getAdaptiveFullscreenTimeout());
         }

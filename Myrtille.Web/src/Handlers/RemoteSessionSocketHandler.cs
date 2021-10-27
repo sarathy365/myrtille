@@ -46,7 +46,7 @@ namespace Myrtille.Web
         public bool Binary { get; private set; }
         public WebSocketDirection Direction { get; private set; }
 
-        public RemoteSessionSocketHandler(HttpContext context, bool binary, WebSocketDirection direction)
+        public RemoteSessionSocketHandler(HttpContext context, bool binary, string clientId, WebSocketDirection direction)
             : base()
         {
             _session = context.Session;
@@ -60,28 +60,21 @@ namespace Myrtille.Web
 
                 // retrieve the remote session for the given http session
                 _remoteSession = (RemoteSession)context.Session[HttpSessionStateVariables.RemoteSession.ToString()];
+
+                if (!_remoteSession.Manager.Clients.ContainsKey(clientId))
+                {
+                    lock (_remoteSession.Manager.ClientsLock)
+                    {
+                        _remoteSession.Manager.Clients.Add(clientId, new RemoteSessionClient(clientId));
+                    }
+                }
+
+                _client = _remoteSession.Manager.Clients[clientId];
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to retrieve the remote session for the http session {0}, ({1})", context.Session.SessionID, exc);
-                return;
+                Trace.TraceError("Failed to initialize socket handler ({0})", exc);
             }
-
-            var clientId = context.Session.SessionID;
-            if (context.Request.Cookies[HttpRequestCookies.ClientKey.ToString()] != null)
-            {
-                clientId = context.Request.Cookies[HttpRequestCookies.ClientKey.ToString()].Value;
-            }
-
-            if (!_remoteSession.Manager.Clients.ContainsKey(clientId))
-            {
-                lock (_remoteSession.Manager.ClientsLock)
-                {
-                    _remoteSession.Manager.Clients.Add(clientId, new RemoteSessionClient(clientId));
-                }
-            }
-
-            _client = _remoteSession.Manager.Clients[clientId];
         }
 
         public override void OnOpen()
@@ -112,7 +105,7 @@ namespace Myrtille.Web
                 }
                 catch (Exception exc)
                 {
-                    Trace.TraceError("Failed to register websocket handler for client {0}, remote session {1} ({2})", _client.Id, _remoteSession.Id, exc);
+                    Trace.TraceError("Failed to register websocket handler for client {0}, remote session {1} ({2})", _client?.Id, _remoteSession?.Id, exc);
                 }
             }
 
@@ -157,14 +150,14 @@ namespace Myrtille.Web
                 }
                 catch (Exception exc)
                 {
-                    Trace.TraceError("Failed to connect the remote session {0} ({1})", _remoteSession.Id, exc);
+                    Trace.TraceError("Failed to connect the remote session {0} ({1})", _remoteSession?.Id, exc);
                 }
             }
             
             // send a disconnect notification
             if (_remoteSession.State == RemoteSessionState.Disconnected)
             {
-                Trace.TraceInformation("Sending disconnected state on websocket, remote session {0}", _remoteSession.Id);
+                Trace.TraceInformation("Sending disconnected state on websocket, remote session {0}", _remoteSession?.Id);
                 Send("disconnected");
             }
         }
@@ -186,15 +179,15 @@ namespace Myrtille.Web
                 }
                 catch (Exception exc)
                 {
-                    Trace.TraceError("Failed to unregister websocket handler for client {0}, remote session {1} ({2})", _client.Id, _remoteSession.Id, exc);
+                    Trace.TraceError("Failed to unregister websocket handler for client {0}, remote session {1} ({2})", _client?.Id, _remoteSession?.Id, exc);
                 }
             }
         }
 
         public override void OnError()
         {
-            Trace.TraceError("Websocket error, client {0}, remote session {1} ({2})", _client.Id, _remoteSession.Id, Error);
             base.OnError();
+            Trace.TraceError("Websocket error, client {0}, remote session {1} ({2})", _client?.Id, _remoteSession?.Id, Error);
         }
 
         public override void OnMessage(string message)
@@ -213,15 +206,16 @@ namespace Myrtille.Web
             {
                 var msgParams = message.Split(new[] { "&" }, StringSplitOptions.None);
 
-                var data = Uri.UnescapeDataString(msgParams[0]);
-                var imgIdx = int.Parse(msgParams[1]);
-                var latency = int.Parse(msgParams[2]);
-                var timestamp = long.Parse(msgParams[3]);
+                var clientId = msgParams[0];
+                var data = Uri.UnescapeDataString(msgParams[1]);
+                var imgIdx = int.Parse(msgParams[2]);
+                var latency = int.Parse(msgParams[3]);
+                var timestamp = long.Parse(msgParams[4]);
 
                 // process input(s)
                 if (!string.IsNullOrEmpty(data))
                 {
-                    _remoteSession.Manager.ProcessInputs(_session, data);
+                    _remoteSession.Manager.ProcessInputs(_session, clientId, data);
                 }
 
                 _client.ImgIdx = imgIdx;
@@ -233,7 +227,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to process websocket message, remote session {0} ({1})", _remoteSession.Id, exc);
+                Trace.TraceError("Failed to process websocket message, remote session {0} ({1})", _remoteSession?.Id, exc);
             }
         }
 

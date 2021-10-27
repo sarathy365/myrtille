@@ -50,11 +50,7 @@ namespace Myrtille.Web
                 // retrieve the remote session for the current http session
                 remoteSession = (RemoteSession)Session[HttpSessionStateVariables.RemoteSession.ToString()];
 
-                var clientId = Session.SessionID;
-                if (Request.Cookies[HttpRequestCookies.ClientKey.ToString()] != null)
-                {
-                    clientId = Request.Cookies[HttpRequestCookies.ClientKey.ToString()].Value;
-                }
+                var clientId = Request.QueryString["clientId"];
 
                 if (!remoteSession.Manager.Clients.ContainsKey(clientId))
                 {
@@ -131,7 +127,7 @@ namespace Myrtille.Web
                     // process input(s)
                     if (!string.IsNullOrEmpty(data))
                     {
-                        remoteSession.Manager.ProcessInputs(Session, data);
+                        remoteSession.Manager.ProcessInputs(Session, clientId, data);
                     }
 
                     client.ImgIdx = imgIdx;
