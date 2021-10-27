@@ -29,7 +29,7 @@ namespace Myrtille.Web
         private RemoteSession _remoteSession;
         private RemoteSessionClient _client;
 
-        public RemoteSessionEventSourceHandler(HttpContext context)
+        public RemoteSessionEventSourceHandler(HttpContext context, string clientId)
         {
             _context = context;
 
@@ -40,28 +40,21 @@ namespace Myrtille.Web
 
                 // retrieve the remote session for the given http session
                 _remoteSession = (RemoteSession)context.Session[HttpSessionStateVariables.RemoteSession.ToString()];
+
+                if (!_remoteSession.Manager.Clients.ContainsKey(clientId))
+                {
+                    lock (_remoteSession.Manager.ClientsLock)
+                    {
+                        _remoteSession.Manager.Clients.Add(clientId, new RemoteSessionClient(clientId));
+                    }
+                }
+
+                _client = _remoteSession.Manager.Clients[clientId];
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to retrieve the remote session for the http session {0}, ({1})", context.Session.SessionID, exc);
-                return;
+                Trace.TraceError("Failed to initialize event source handler ({0})", exc);
             }
-
-            var clientId = context.Session.SessionID;
-            if (context.Request.Cookies[HttpRequestCookies.ClientKey.ToString()] != null)
-            {
-                clientId = context.Request.Cookies[HttpRequestCookies.ClientKey.ToString()].Value;
-            }
-
-            if (!_remoteSession.Manager.Clients.ContainsKey(clientId))
-            {
-                lock (_remoteSession.Manager.ClientsLock)
-                {
-                    _remoteSession.Manager.Clients.Add(clientId, new RemoteSessionClient(clientId));
-                }
-            }
-
-            _client = _remoteSession.Manager.Clients[clientId];
         }
 
         public void Open()
@@ -81,7 +74,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to register event source handler for client {0}, remote session {1} ({2})", _client.Id, _remoteSession.Id, exc);
+                Trace.TraceError("Failed to register event source handler for client {0}, remote session {1} ({2})", _client?.Id, _remoteSession?.Id, exc);
                 throw;
             }
         }
@@ -103,7 +96,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to unregister event source handler for client {0}, remote session {1} ({2})", _client.Id, _remoteSession.Id, exc);
+                Trace.TraceError("Failed to unregister event source handler for client {0}, remote session {1} ({2})", _client?.Id, _remoteSession?.Id, exc);
             }
         }
 
