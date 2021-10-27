@@ -17,7 +17,6 @@
 */
 
 using System;
-using System.EnterpriseServices.Internal;
 using Myrtille.Services.Contracts;
 
 namespace Myrtille.Web
