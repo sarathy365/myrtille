@@ -667,6 +667,10 @@ namespace Myrtille.Web
                     {
                         loginServer += ":" + connectionDetails["port"];
                     }
+                    if (connectionDetails.ContainsKey("clipboard"))
+                    {
+                        _allowRemoteClipboard = (bool)connectionDetails["clipboard"];
+                    }
                     string tempUsername = loginUser;
                     if (loginUser.Contains(":"))
                     {
