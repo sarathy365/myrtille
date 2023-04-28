@@ -35,6 +35,7 @@ namespace Myrtille.Web
         public long UserProfileId;
         public long UserSessionId;
         public string accessUrl;
+        public string serviceOrgId;
         public bool isManageSession;
 
         public Guid Id;

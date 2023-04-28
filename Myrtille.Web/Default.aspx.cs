@@ -122,7 +122,7 @@ namespace Myrtille.Web
             }
 
             // connect from a login page or url
-            if (!bool.TryParse(ConfigurationManager.AppSettings["LoginEnabled"], out _loginEnabled) || (Request.RawUrl.Contains("auth_key") && Request.RawUrl.Contains("referrer")))
+            if (!bool.TryParse(ConfigurationManager.AppSettings["LoginEnabled"], out _loginEnabled) || (Request.RawUrl.Contains("auth_key") && Request.RawUrl.Contains("referrer") && Request.RawUrl.Contains("service_org_id")))
             {
                 _loginEnabled = true;
             }
@@ -331,7 +331,7 @@ namespace Myrtille.Web
             Response.Cache.SetCacheability(HttpCacheability.NoCache);
             Response.Cache.SetNoStore();
 
-            if (RemoteSession == null && (string.IsNullOrEmpty(Request["auth_key"]) || string.IsNullOrEmpty(Request["referrer"])))
+            if (RemoteSession == null && (string.IsNullOrEmpty(Request["auth_key"]) || string.IsNullOrEmpty(Request["referrer"]) || string.IsNullOrEmpty(Request["service_org_id"])))
             {
                 certificateDiv.Visible = true;
             }
@@ -558,7 +558,7 @@ namespace Myrtille.Web
             var loginPassword = string.IsNullOrEmpty(passwordHash.Value) ? password.Value : CryptoHelper.RDP_Decrypt(passwordHash.Value);
             var startProgram = program.Value;
 
-            if (RemoteSession == null && (Request["auth_key"] == null || Request["auth_key"].Trim() == "" || Request["referrer"] == null || Request["referrer"].Trim() == ""))
+            if (RemoteSession == null && (Request["auth_key"] == null || Request["auth_key"].Trim() == "" || Request["referrer"] == null || Request["referrer"].Trim() == "" || Request["service_org_id"] == null || Request["service_org_id"].Trim() == ""))
             {
                 Response.Write("<script>alert('Invalid command.'); window.close();</script>");
                 return false;
@@ -566,10 +566,11 @@ namespace Myrtille.Web
             long userProfileId = 0;
             long userSessionId = 0;
             string accessUrl = null;
+            string serviceOrgId = Request["service_org_id"];
 
             if (RemoteSession == null)
             {
-                JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString());
+                JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString(), serviceOrgId);
                 if (connectionDetails == null)
                 {
                     return false;
@@ -623,7 +624,7 @@ namespace Myrtille.Web
                         }
                         else
                         {
-                            SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false);
+                            SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId);
                             Response.Write("<script>alert('The session has already been closed or terminated.'); window.close();</script>");
                         }
                         return false;
@@ -653,7 +654,7 @@ namespace Myrtille.Web
                         }
                         else
                         {
-                            SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false);
+                            SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId);
                             Response.Write("<script>alert('The session has already been closed or terminated.'); window.close();</script>");
                         }
                         return false;
@@ -831,6 +832,7 @@ namespace Myrtille.Web
                 RemoteSession.UserProfileId = userProfileId;
                 RemoteSession.UserSessionId = userSessionId;
                 RemoteSession.accessUrl = accessUrl;
+                RemoteSession.serviceOrgId = serviceOrgId;
 
                 // bind the remote session to the current http session
                 Session[HttpSessionStateVariables.RemoteSession.ToString()] = RemoteSession;
