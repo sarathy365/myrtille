@@ -9,6 +9,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Web;
 
+
 namespace Myrtille.Web.src.Utils
 {
     public static class SecurdenWeb
@@ -18,7 +19,7 @@ namespace Myrtille.Web.src.Utils
             return true;
         }
 
-        private static JObject SecurdenWebRequest(string serverUrl, string requestUrl, string requestMethod, JObject requestParams)
+        public static JObject SecurdenWebRequest(string serverUrl, string requestUrl, string requestMethod, JObject requestParams)
         {
             requestUrl = serverUrl + requestUrl;
             JObject result = null;
@@ -69,7 +70,7 @@ namespace Myrtille.Web.src.Utils
                 SecurdenWebRequest(serverUrl, "/launcher/manage_web_session", "POST", paramObj);
             }
         }
-
+        
         public static JObject ProcessLaunchRequest(HttpRequest Request, HttpResponse Response, string serverUrl, string authKey, string connectionId)
         {
             JObject returnObj = null;

@@ -330,7 +330,6 @@ namespace Myrtille.Web
             // disable the browser cache; in addition to a "noCache" dummy param, with current time, on long-polling and xhr requests
             Response.Cache.SetCacheability(HttpCacheability.NoCache);
             Response.Cache.SetNoStore();
-
             if (RemoteSession == null && (string.IsNullOrEmpty(Request["auth_key"]) || string.IsNullOrEmpty(Request["referrer"])))
             {
                 certificateDiv.Visible = true;
@@ -457,13 +456,11 @@ namespace Myrtille.Web
         {
             if (!_authorizedRequest)
                 return;
-
             // one time usage enterprise session url
             if (_enterpriseSession == null && Request["SI"] != null && Request["SD"] != null && Request["SK"] != null)
             {
                 CreateEnterpriseSessionFromUrl();
             }
-
             // MFA (OTP passcode)
             if (_enterpriseSession == null && _mfaAuthClient.GetState())
             {
@@ -475,7 +472,6 @@ namespace Myrtille.Web
                     return;
                 }
             }
-
             // enterprise mode from login
             if (_enterpriseSession == null && (_enterpriseClient.GetMode() == EnterpriseMode.Domain || _localAdmin))
             {
@@ -493,7 +489,6 @@ namespace Myrtille.Web
                 {
                     return;
                 }
-
                 // connect
                 if (ConnectRemoteServer())
                 {
@@ -541,10 +536,86 @@ namespace Myrtille.Web
         /// <remarks>
         /// authentication is delegated to the remote server or connection broker (if applicable)
         /// </remarks>
+        /// 
+        public void TerminateSession(HttpRequest Request, HttpResponse Response, string serverUrl, string authKey, Guid connectionId)
+        {
+            try
+            {
+                var remoteSessions = ((IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()]);
+                bool isEmpty = remoteSessions.Count == 0;
+                if (!isEmpty)
+                {
+                    string serverAccessUrl = null;
+                    JObject response = null;
+                    JObject paramObj = new JObject(new JProperty("SESSION_TYPE", 1));
+                    if (Request["access_url"] != null && Request["access_url"].Trim() != "")
+                    {
+                        string accessUrl = Request["access_url"].Trim();
+                        if (accessUrl.EndsWith("/"))
+                        {
+                            accessUrl = accessUrl.Substring(0, accessUrl.Length - 1);
+                        }
+                        response = SecurdenWeb.SecurdenWebRequest(accessUrl, "/launcher/get_terminate_machine_session_ids", "GET", paramObj);
+                        if (response != null)
+                        {
+                            serverAccessUrl = accessUrl;
+                        }
+                        else
+                        {
+                            response = SecurdenWeb.SecurdenWebRequest(serverUrl, "/launcher/get_terminate_machine_session_ids", "GET", paramObj);
+                            if (response != null)
+                            {
+                                serverAccessUrl = serverUrl;
+                            }
+                        }
+                        if (response == null)
+                        {
+                            Response.Write("<script>alert('Not able to access Securden web server. Try again.'); window.close();</script>");
+                        }
+                        else if (response != null)
+                        {
+                            bool isTerminated = false;
+                            try
+                            {
+                                var valueArray = (JArray)response["machine_session_id_list"];
+                                foreach (var eachConnection in valueArray)
+                                {
+                                    var toTerminateConnectionId = eachConnection["connection_id"];
+                                    if (remoteSessions.ContainsKey((Guid)toTerminateConnectionId))
+                                    {
+                                        var RemoteSession = ((IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()])[(Guid)toTerminateConnectionId];
+                                        RemoteSession.Manager.SendCommand(RemoteSessionCommand.CloseClient);
+                                        isTerminated = true;
+                                    }
+                                }
+                            }
+                            catch (ThreadAbortException)
+                            {
+                                // occurs because the response is ended after redirect
+                            }
+                            catch (Exception exc)
+                            {
+                                System.Diagnostics.Trace.TraceError("Failed to terminate the session ({0})", exc);
+                            }
+                            if (isTerminated)
+                            {
+                                Thread.CurrentThread.Abort();
+                                Response.Write("<script>alert('Session terminated.'); window.close();</script>");
+                            }
+                        }
+                    }
+                    Thread.Sleep(5000);
+                    TerminateSession(Request, Response, serverUrl, authKey, connectionId);
+                }
+            }
+            catch (Exception exc)
+            {
+                System.Diagnostics.Trace.TraceError("Failed to terminate the session ({0})", exc);
+            }
+        }
         private bool ConnectRemoteServer()
         {
             var connectionId = Guid.NewGuid();
-
             // connection parameters
             string loginHostName = null;
             var loginHostType = (HostType)Convert.ToInt32(hostType.Value);
@@ -557,7 +628,6 @@ namespace Myrtille.Web
             var loginUser = user.Value;
             var loginPassword = string.IsNullOrEmpty(passwordHash.Value) ? password.Value : CryptoHelper.RDP_Decrypt(passwordHash.Value);
             var startProgram = program.Value;
-
             if (RemoteSession == null && (Request["auth_key"] == null || Request["auth_key"].Trim() == "" || Request["referrer"] == null || Request["referrer"].Trim() == ""))
             {
                 Response.Write("<script>alert('Invalid command.'); window.close();</script>");
@@ -566,7 +636,6 @@ namespace Myrtille.Web
             long userProfileId = 0;
             long userSessionId = 0;
             string accessUrl = null;
-
             if (RemoteSession == null)
             {
                 JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString());
@@ -576,8 +645,14 @@ namespace Myrtille.Web
                 }
                 else
                 {
-                    userProfileId = (long)connectionDetails["user_profile_id"];
-                    userSessionId = (long)connectionDetails["user_session_id"];
+                    if (connectionDetails["user_profile_id"] != null && connectionDetails["user_profile_id"].ToString() != "")
+                    {
+                        userProfileId = (long)connectionDetails["user_profile_id"];
+                    }
+                    if (connectionDetails["user_session_id"] != null && connectionDetails["user_session_id"].ToString() != "")
+                    {
+                        userSessionId = (long)connectionDetails["user_session_id"];
+                    }
                     accessUrl = (string)connectionDetails["ACCESS_URL"];
                     if ((string)connectionDetails["type"] == "SHADOW_SESSION")
                     {
@@ -592,7 +667,7 @@ namespace Myrtille.Web
                             Guid OldConnectionId = new Guid((string)connectionDetails["connection_id"]);
                             var sharingInfo = new SharingInfo
                             {
-                                RemoteSession = ((IDictionary<Guid, RemoteSession>) Application[HttpApplicationStateVariables.RemoteSessions.ToString()])[OldConnectionId],
+                                RemoteSession = ((IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()])[OldConnectionId],
                                 GuestInfo = new GuestInfo
                                 {
                                     Id = Guid.NewGuid(),
@@ -628,7 +703,7 @@ namespace Myrtille.Web
                         }
                         return false;
                     }
-                    else if ((string) connectionDetails["type"] == "TERMINATE_SESSION")
+                    else if ((string)connectionDetails["type"] == "TERMINATE_SESSION")
                     {
                         connectionDetails = (JObject)connectionDetails["details"];
                         bool isTerminated = false;
@@ -684,7 +759,6 @@ namespace Myrtille.Web
                     loginUser = tempUsername;
                 }
             }
-
             // allowed features
             var allowRemoteClipboard = _allowRemoteClipboard;
             var allowFileTransfer = _allowFileTransfer;
@@ -837,7 +911,13 @@ namespace Myrtille.Web
 
                 // register the remote session at the application level
                 var remoteSessions = (IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()];
+                bool isactiveSessionEmpty = remoteSessions.Count == 0;
                 remoteSessions.Add(RemoteSession.Id, RemoteSession);
+                if (isactiveSessionEmpty)
+                {
+                    Thread sessionTerminateThread = new Thread(() => TerminateSession(Request, Response, Request["referrer"], Request["auth_key"], connectionId));
+                    sessionTerminateThread.Start();
+                }
 
             }
             catch (Exception exc)
