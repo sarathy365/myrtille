@@ -537,7 +537,7 @@ namespace Myrtille.Web
         /// authentication is delegated to the remote server or connection broker (if applicable)
         /// </remarks>
         /// 
-        public void TerminateSession(HttpRequest Request, HttpResponse Response, string serverUrl, string authKey, Guid connectionId)
+        public void TerminateSession(HttpRequest Request, HttpResponse Response, string serverUrl, string authKey, Guid connectionId, string serviceOrgId)
         {
             try
             {
@@ -555,14 +555,14 @@ namespace Myrtille.Web
                         {
                             accessUrl = accessUrl.Substring(0, accessUrl.Length - 1);
                         }
-                        response = SecurdenWeb.SecurdenWebRequest(accessUrl, "/launcher/get_terminate_machine_session_ids", "GET", paramObj);
+                        response = SecurdenWeb.SecurdenWebRequest(accessUrl, "/launcher/get_terminate_machine_session_ids", "GET", paramObj, serviceOrgId);
                         if (response != null)
                         {
                             serverAccessUrl = accessUrl;
                         }
                         else
                         {
-                            response = SecurdenWeb.SecurdenWebRequest(serverUrl, "/launcher/get_terminate_machine_session_ids", "GET", paramObj);
+                            response = SecurdenWeb.SecurdenWebRequest(serverUrl, "/launcher/get_terminate_machine_session_ids", "GET", paramObj, serviceOrgId);
                             if (response != null)
                             {
                                 serverAccessUrl = serverUrl;
@@ -605,7 +605,7 @@ namespace Myrtille.Web
                         }
                     }
                     Thread.Sleep(5000);
-                    TerminateSession(Request, Response, serverUrl, authKey, connectionId);
+                    TerminateSession(Request, Response, serverUrl, authKey, connectionId, serviceOrgId);
                 }
             }
             catch (Exception exc)
@@ -917,7 +917,7 @@ namespace Myrtille.Web
                 remoteSessions.Add(RemoteSession.Id, RemoteSession);
                 if (isactiveSessionEmpty)
                 {
-                    Thread sessionTerminateThread = new Thread(() => TerminateSession(Request, Response, Request["referrer"], Request["auth_key"], connectionId));
+                    Thread sessionTerminateThread = new Thread(() => TerminateSession(Request, Response, Request["referrer"], Request["auth_key"], connectionId, serviceOrgId));
                     sessionTerminateThread.Start();
                 }
 
