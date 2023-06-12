@@ -19,7 +19,7 @@ namespace Myrtille.Web.src.Utils
             return true;
         }
 
-        public static JObject SecurdenWebRequest(string serverUrl, string requestUrl, string requestMethod, JObject requestParams)
+        public static JObject SecurdenWebRequest(string serverUrl, string requestUrl, string requestMethod, JObject requestParams, string serviceOrgId)
         {
             requestUrl = serverUrl + requestUrl;
             JObject result = null;
@@ -37,6 +37,15 @@ namespace Myrtille.Web.src.Utils
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
                 request.Method = requestMethod;
                 request.UserAgent = "-SECURDEN-LAUNCHER-";
+                if (request.CookieContainer == null)
+                    request.CookieContainer = new CookieContainer();
+                JObject cookieData = new JObject()
+                {
+                    ["SERVICE_ORG_ID"] = serviceOrgId,
+                };
+                string cookieString = cookieData.ToString();
+                cookieString = Convert.ToBase64String(Encoding.UTF8.GetBytes(cookieString));
+                request.CookieContainer.Add(new Cookie("LAUNCHER_HEADER", cookieString, "/", uri.Host));
                 if (requestMethod == "POST" && requestParams != null)
                 {
                     var postData = "LAUNCHER_INPUT=" + requestParams.ToString();
@@ -62,16 +71,16 @@ namespace Myrtille.Web.src.Utils
             return result;
         }
 
-        public static void ManageSessionRequest(string serverUrl, string connectionId, bool status)
+        public static void ManageSessionRequest(string serverUrl, string connectionId, bool status, string serviceOrgId)
         {
             if (serverUrl != null && serverUrl != String.Empty)
             {
                 JObject paramObj = new JObject(new JProperty("CONNECTION_ID", connectionId), new JProperty("STATUS", status));
-                SecurdenWebRequest(serverUrl, "/launcher/manage_web_session", "POST", paramObj);
+                SecurdenWebRequest(serverUrl, "/launcher/manage_web_session", "POST", paramObj, serviceOrgId);
             }
         }
         
-        public static JObject ProcessLaunchRequest(HttpRequest Request, HttpResponse Response, string serverUrl, string authKey, string connectionId)
+        public static JObject ProcessLaunchRequest(HttpRequest Request, HttpResponse Response, string serverUrl, string authKey, string connectionId, string serviceOrgId)
         {
             JObject returnObj = null;
             JObject paramObj = new JObject(new JProperty("AUTH_KEY", authKey), new JProperty("CONNECTION_ID", connectionId));
@@ -84,14 +93,14 @@ namespace Myrtille.Web.src.Utils
                 {
                     accessUrl = accessUrl.Substring(0, accessUrl.Length - 1);
                 }
-                response = SecurdenWebRequest(accessUrl, "/launcher/verify_launch_info", "POST", paramObj);
+                response = SecurdenWebRequest(accessUrl, "/launcher/verify_launch_info", "POST", paramObj, serviceOrgId);
                 if (response != null)
                 {
                     serverAccessUrl = accessUrl;
                 }
                 else
                 {
-                    response = SecurdenWebRequest(serverUrl, "/launcher/verify_launch_info", "POST", paramObj);
+                    response = SecurdenWebRequest(serverUrl, "/launcher/verify_launch_info", "POST", paramObj, serviceOrgId);
                     if (response != null)
                     {
                         serverAccessUrl = serverUrl;

@@ -162,7 +162,7 @@ namespace Myrtille.Web
                     if (RemoteSession.State == RemoteSessionState.Connecting)
                     {
                         RemoteSession.State = RemoteSessionState.Connected;
-                        SecurdenWeb.ManageSessionRequest(RemoteSession.accessUrl, RemoteSession.Id.ToString(), true);
+                        SecurdenWeb.ManageSessionRequest(RemoteSession.accessUrl, RemoteSession.Id.ToString(), true, RemoteSession.serviceOrgId);
                         SendMessage(new RemoteSessionMessage { Type = MessageType.Connected });
 
                         // in case the remote session was reconnected, send the capture API config
