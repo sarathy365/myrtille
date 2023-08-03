@@ -41,7 +41,7 @@ namespace Myrtille.Web
 {
     public partial class Default : Page
     {
-        private MFAAuthenticationClient _mfaAuthClient =  new MFAAuthenticationClient();
+        private MFAAuthenticationClient _mfaAuthClient = new MFAAuthenticationClient();
         private EnterpriseClient _enterpriseClient = new EnterpriseClient();
         private ConnectionClient _connectionClient = new ConnectionClient(Settings.Default.ConnectionServiceUrl);
 
@@ -597,15 +597,20 @@ namespace Myrtille.Web
                             {
                                 System.Diagnostics.Trace.TraceError("Failed to terminate the session ({0})", exc);
                             }
-                            if (isTerminated)
-                            {
-                                Thread.CurrentThread.Abort();
-                                Response.Write("<script>alert('Session terminated.'); window.close();</script>");
-                            }
+                            // if (isTerminated)
+                            // {
+                               // Thread.CurrentThread.Abort();
+                               // Response.Write("<script>alert('Session terminated.'); window.close();</script>");
+                            // }
                         }
                     }
                     Thread.Sleep(5000);
                     TerminateSession(Request, Response, serverUrl, authKey, connectionId, serviceOrgId);
+                }
+                else
+                {
+                    Thread.CurrentThread.Abort();
+                    Response.Write("<script>alert('Session terminated.'); window.close();</script>");
                 }
             }
             catch (Exception exc)
