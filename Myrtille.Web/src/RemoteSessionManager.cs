@@ -795,7 +795,7 @@ namespace Myrtille.Web
                             {
                                 client.WebSocketsRoundRobinIdx = 0;
                             }
-
+                        }
                         //Trace.TraceInformation("Sending image {0} ({1}) on websocket, client {2}, remote session {3}", image.Idx, (image.Fullscreen ? "screen" : "region"), client.Id, RemoteSession.Id);
                         client.WebSockets[client.WebSocketsRoundRobinIdx++].SendImage(image);
                     }
