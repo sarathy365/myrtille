@@ -90,7 +90,7 @@ namespace Myrtille.Web.src.Utils
             return response;
         }
 
-        public static JObject ProcessLaunchRequest(HttpRequest Request, HttpResponse Response, string serverUrl, string authKey, string connectionId)
+        public static JObject ProcessLaunchRequest(HttpRequest Request, HttpResponse Response, string serverUrl, string authKey, string connectionId, string serviceOrgId)
         {
             JObject returnObj = null;
             JObject paramObj = new JObject(new JProperty("AUTH_KEY", authKey), new JProperty("CONNECTION_ID", connectionId));
