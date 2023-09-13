@@ -111,7 +111,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to create pipes, remote session {0} ({1})", RemoteSession.Id, exc);
+                Trace.TraceError("Failed to create pipes, remote session {0} ({1})", RemoteSession?.Id, exc);
             }
         }
 
@@ -170,7 +170,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to wait for connection on inputs pipe, remote session {0} ({1})", RemoteSession.Id, exc);
+                Trace.TraceError("Failed to wait for connection on inputs pipe, remote session {0} ({1})", RemoteSession?.Id, exc);
             }
         }
 
@@ -186,7 +186,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to wait for connection on updates pipe, remote session {0} ({1})", RemoteSession.Id, exc);
+                Trace.TraceError("Failed to wait for connection on updates pipe, remote session {0} ({1})", RemoteSession?.Id, exc);
             }
         }
 
@@ -202,7 +202,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to wait for connection on audio pipe, remote session {0} ({1})", RemoteSession.Id, exc);
+                Trace.TraceError("Failed to wait for connection on audio pipe, remote session {0} ({1})", RemoteSession?.Id, exc);
             }
         }
 
@@ -223,7 +223,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to read updates pipe, remote session {0} ({1})", RemoteSession.Id, exc);
+                Trace.TraceError("Failed to read updates pipe, remote session {0} ({1})", RemoteSession?.Id, exc);
 
                 // there is a problem with the updates pipe, close the remote session in order to avoid it being stuck
                 RemoteSession.Manager.SendCommand(RemoteSessionCommand.CloseClient);
@@ -247,7 +247,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to read audio pipe, remote session {0} ({1})", RemoteSession.Id, exc);
+                Trace.TraceError("Failed to read audio pipe, remote session {0} ({1})", RemoteSession?.Id, exc);
 
                 // there is a problem with the audio pipe, close the remote session in order to avoid it being stuck
                 RemoteSession.Manager.SendCommand(RemoteSessionCommand.CloseClient);
@@ -271,7 +271,7 @@ namespace Myrtille.Web
                 }
                 catch (Exception exc)
                 {
-                    Trace.TraceError("Failed to close pipe {0}, remote session {1} ({2})", pipeName, RemoteSession.Id, exc);
+                    Trace.TraceError("Failed to close pipe {0}, remote session {1} ({2})", pipeName, RemoteSession?.Id, exc);
                 }
                 finally
                 {

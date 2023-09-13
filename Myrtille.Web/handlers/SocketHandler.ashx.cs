@@ -39,6 +39,7 @@ namespace Myrtille.Web
                     new RemoteSessionSocketHandler(
                         context,
                         string.IsNullOrEmpty(context.Request["binary"]) ? true : context.Request["binary"] == "true",
+                        context.Request["clientId"],
                         direction));
             }
         }

@@ -65,19 +65,46 @@ function Network(base, config, dialog, display)
     var bandwidthSizeInterval = null;
 
     // display tweaking
-    var originalImageEncoding = config.getImageEncoding();
-    var originalImageQuality = config.getImageQuality();
-    var originalImageQuantity = config.getImageQuantity();
-    var originalMouseMoveSamplingRate = config.getMouseMoveSamplingRate();
+    var imageTweak = false;
+    this.getImageTweak = function() { return imageTweak; };
+    this.setImageTweak = function(tweak) { imageTweak = tweak; };
 
+    var originalImageEncoding = config.getImageEncoding();
     this.getOriginalImageEncoding = function() { return originalImageEncoding; };
     this.setOriginalImageEncoding = function(encoding) { originalImageEncoding = encoding; };
 
+    var originalImageQuality = config.getImageQuality();
     this.getOriginalImageQuality = function() { return originalImageQuality; };
     this.setOriginalImageQuality = function(quality) { originalImageQuality = quality; };
 
-    this.getOriginalMouseMoveSamplingRate = function() { return originalMouseMoveSamplingRate; };
-    this.setOriginalMouseMoveSamplingRate = function(rate) { originalMouseMoveSamplingRate = rate; };
+    // browser window/tab unique id (regenerated on each page reload)
+    var clientId = null;
+    this.getClientId = function()
+    {
+        try
+        {
+            if (clientId == null)
+            {
+                clientId = uuidv4();
+                dialog.showDebug('client id: ' + clientId);
+            }
+            return clientId;
+        }
+        catch (exc)
+        {
+            dialog.showDebug('error generating client id: ' + exc.message);
+            throw exc;
+        }
+    };
+
+    function uuidv4()
+    {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c)
+        {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
 
     this.init = function()
     {
@@ -332,10 +359,10 @@ function Network(base, config, dialog, display)
                 //dialog.showDebug('checking image count per second');
                 dialog.showStat(dialog.getShowStatEnum().IMAGE_COUNT_PER_SEC, display.getImgCountPerSec());
 
-                // throttle image quality & quantity depending on the bandwidth usage
+                // throttle image quality depending on the bandwidth usage
                 if (config.getHostType() == config.getHostTypeEnum().RDP)
                 {
-                    tweakDisplay();
+                    doTweakDisplay(false);
                 }
 
                 // reset bandwidth usage
@@ -487,57 +514,34 @@ function Network(base, config, dialog, display)
         }
     }
 
-    function tweakDisplay()
+    this.tweakDisplay = function(fullscreen)
+    {
+        doTweakDisplay(fullscreen);
+    };
+
+    function doTweakDisplay(fullscreen)
     {
         try
         {
+            if (imageTweak && !fullscreen)
+                return;
+
+            //dialog.showDebug('adjusting display depending on bandwidth usage');
+
             var commands = new Array();
 
             /*
-            low bandwidth = lower quality, quantity and mouse move sampling rate
+            low bandwidth = lower image quality only; lowering the image quantity or the mouse move sampling rate does indeed lower the bandwidth usage, but it also degrades the user experience (so better do nothing...)
             */
 
-            var tweak = false;
-
             var bandwidthUsageRatio = bandwidthUsage != null && bandwidthSize != null && bandwidthSize > 0 ? Math.round((bandwidthUsage * 100) / bandwidthSize) : 0;
-            if (bandwidthUsageRatio >= config.getImageTweakBandwidthHigherThreshold())
+            if (bandwidthUsageRatio >= config.getImageTweakBandwidthThreshold())
             {
                 if (config.getImageQuality() != 10)
                 {
                     config.setImageEncoding(config.getImageEncodingEnum().JPEG);
                     config.setImageQuality(10);
-                    tweak = true;
-                }
-
-                if (config.getImageQuantity() != 25)
-                {
-                    config.setImageQuantity(25);
-                    tweak = true;
-                }
-
-                if (config.getMouseMoveSamplingRate() != 25)
-                {
-                    config.setMouseMoveSamplingRate(25);
-                }
-            }
-            else if (bandwidthUsageRatio >= config.getImageTweakBandwidthLowerThreshold() && bandwidthUsageRatio < config.getImageTweakBandwidthHigherThreshold())
-            {
-                if (config.getImageQuality() != 25)
-                {
-                    config.setImageEncoding(config.getImageEncodingEnum().JPEG);
-                    config.setImageQuality(25);
-                    tweak = true;
-                }
-
-                if (config.getImageQuantity() != 50)
-                {
-                    config.setImageQuantity(50);
-                    tweak = true;
-                }
-
-                if (config.getMouseMoveSamplingRate() != 50)
-                {
-                    config.setMouseMoveSamplingRate(50);
+                    imageTweak = true;
                 }
             }
             else
@@ -546,28 +550,19 @@ function Network(base, config, dialog, display)
                 {
                     config.setImageEncoding(originalImageEncoding);
                     config.setImageQuality(originalImageQuality);
-                    tweak = true;
-                }
-
-                if (config.getImageQuantity() != originalImageQuantity)
-                {
-                    config.setImageQuantity(originalImageQuantity);
-                    tweak = true;
-                }
-
-                if (config.getMouseMoveSamplingRate() != originalMouseMoveSamplingRate)
-                {
-                    config.setMouseMoveSamplingRate(originalMouseMoveSamplingRate);
+                    imageTweak = true;
                 }
             }
 
-            if (tweak)
+            if (imageTweak)
             {
                 //dialog.showDebug('tweaking image quality: ' + config.getImageEncoding().text + ', ' + config.getImageQuality());
                 commands.push(base.getCommandEnum().SET_IMAGE_ENCODING.text + config.getImageEncoding().value);
                 commands.push(base.getCommandEnum().SET_IMAGE_QUALITY.text + config.getImageQuality());
-                //dialog.showDebug('tweaking image quantity: ' + config.getImageQuantity());
-                commands.push(base.getCommandEnum().SET_IMAGE_QUANTITY.text + config.getImageQuantity());
+            }
+
+            if (fullscreen)
+            {
                 commands.push(base.getCommandEnum().REQUEST_FULLSCREEN_UPDATE.text + 'tweak');
             }
 

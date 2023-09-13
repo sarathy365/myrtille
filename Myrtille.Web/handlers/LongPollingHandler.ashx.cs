@@ -28,6 +28,7 @@ namespace Myrtille.Web
         public void ProcessRequest(HttpContext context)
         {
             // retrieve params
+            var clientId = context.Request.QueryString["clientId"];
             var longPollingDuration = int.Parse(context.Request.QueryString["longPollingDuration"]);
             var imgIdx = int.Parse(context.Request.QueryString["imgIdx"]);  // if needed
 
@@ -36,7 +37,7 @@ namespace Myrtille.Web
             var startTime = DateTime.Now;
             var remainingTime = longPollingDuration;
 
-            var handler = new RemoteSessionLongPollingHandler(context);
+            var handler = new RemoteSessionLongPollingHandler(context, clientId);
 
             try
             {

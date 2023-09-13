@@ -104,7 +104,7 @@ namespace Myrtille.Web
                 }
                 catch (Exception exc)
                 {
-                    Trace.TraceError("Failed to call service start process, remote session {0} ({1})", _remoteSessionManager.RemoteSession.Id, exc);
+                    Trace.TraceError("Failed to call service start process, remote session {0} ({1})", _remoteSessionManager.RemoteSession?.Id, exc);
                     throw;
                 }
             }
@@ -112,30 +112,28 @@ namespace Myrtille.Web
 
         public void StopProcess()
         {
-            Trace.TraceInformation("Calling service stop process, remote session {0}", _remoteSessionManager.RemoteSession.Id);
-
             try
             {
+                Trace.TraceInformation("Calling service stop process, remote session {0}", _remoteSessionManager.RemoteSession.Id);
                 Channel.StopProcess();
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to call service stop process, remote session {0} ({1})", _remoteSessionManager.RemoteSession.Id, exc);
+                Trace.TraceError("Failed to call service stop process, remote session {0} ({1})", _remoteSessionManager.RemoteSession?.Id, exc);
                 throw;
             }
         }
 
         public string GetProcessIdentity()
         {
-            Trace.TraceInformation("Retrieving service process identity, remote session {0}", _remoteSessionManager.RemoteSession.Id);
-
             try
             {
+                Trace.TraceInformation("Retrieving service process identity, remote session {0}", _remoteSessionManager.RemoteSession.Id);
                 return Channel.GetProcessIdentity();
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to retrieve service process identity, remote session {0} ({1})", _remoteSessionManager.RemoteSession.Id, exc);
+                Trace.TraceError("Failed to retrieve service process identity, remote session {0} ({1})", _remoteSessionManager.RemoteSession?.Id, exc);
                 throw;
             }
         }
@@ -159,10 +157,10 @@ namespace Myrtille.Web
 
         public void ProcessExited(int exitCode)
         {
-            Trace.TraceInformation("Received host client process exit notification, remote session {0}", _remoteSessionManager.RemoteSession.Id);
-
             try
             {
+                Trace.TraceInformation("Received host client process exit notification, remote session {0}", _remoteSessionManager.RemoteSession.Id);
+
                 // remote session is now disconnected
                 _remoteSessionManager.RemoteSession.State = RemoteSessionState.Disconnected;
 
@@ -170,10 +168,10 @@ namespace Myrtille.Web
                 _remoteSessionManager.RemoteSession.ExitCode = exitCode;
 
                 // stop monitoring the remote session owner activity, if enabled
-                if (_remoteSessionManager.ClientIdleTimeout != null)
+                if (_remoteSessionManager.OwnerIdleTimeout != null)
                 {
-                    _remoteSessionManager.ClientIdleTimeout.Cancel();
-                    _remoteSessionManager.ClientIdleTimeout.Dispose();
+                    _remoteSessionManager.OwnerIdleTimeout.Cancel();
+                    _remoteSessionManager.OwnerIdleTimeout.Dispose();
                 }
 
                 // release the communication pipes, if any
@@ -188,9 +186,9 @@ namespace Myrtille.Web
                     _remoteSessionManager.RemoteSession.Reconnect = false;
                     _remoteSessionManager.RemoteSession.BrowserResize = null;
                     _remoteSessionManager.HostClient.ProcessStarted = false;
-                    if (_remoteSessionManager.ClientIdleTimeout != null)
+                    if (_remoteSessionManager.OwnerIdleTimeout != null)
                     {
-                        _remoteSessionManager.ClientIdleTimeout = new CancellationTokenSource();
+                        _remoteSessionManager.OwnerIdleTimeout = new CancellationTokenSource();
                     }
                     _remoteSessionManager.RemoteSession.State = RemoteSessionState.Connecting;
                     _remoteSessionManager.SendMessage(new RemoteSessionMessage { Type = MessageType.Disconnected });
@@ -226,7 +224,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to handle session disconnect, remote session {0} ({1})", _remoteSessionManager.RemoteSession.Id, exc);
+                Trace.TraceError("Failed to handle session disconnect, remote session {0} ({1})", _remoteSessionManager.RemoteSession?.Id, exc);
                 throw;
             }
         }
@@ -347,7 +345,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to cleanup disconnected session, remote session {0} ({1})", _remoteSessionManager.RemoteSession.Id, exc);
+                Trace.TraceError("Failed to cleanup disconnected session, remote session {0} ({1})", _remoteSessionManager.RemoteSession?.Id, exc);
                 throw;
             }
             finally

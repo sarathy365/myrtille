@@ -67,23 +67,27 @@ namespace Myrtille.Web
                 _cache = (Cache)HttpContext.Current.Application[HttpApplicationStateVariables.Cache.ToString()];
 
                 // owner idle timeout
-                if (!int.TryParse(ConfigurationManager.AppSettings["ClientIdleTimeout"], out _clientIdleTimeoutDelay))
+                if (!int.TryParse(ConfigurationManager.AppSettings["OwnerIdleTimeout"], out _ownerIdleTimeoutDelay))
                 {
-                    _clientIdleTimeoutDelay = 0;
+                    _ownerIdleTimeoutDelay = 0;
                 }
 
-                if (_clientIdleTimeoutDelay > 0)
+                if (_ownerIdleTimeoutDelay > 0)
                 {
-                    ClientIdleTimeout = new CancellationTokenSource();
+                    OwnerIdleTimeout = new CancellationTokenSource();
                 }
 
                 // guests idle timeout
                 _guestsIdleTimeout = new Dictionary<string, CancellationTokenSource>();
                 _guestsIdleTimeoutLock = new object();
+
+                // clients idle timeout
+                _clientsIdleTimeout = new Dictionary<string, CancellationTokenSource>();
+                _clientsIdleTimeoutLock = new object();
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to initialize remote session manager, remote session {0} ({1})", RemoteSession.Id, exc);
+                Trace.TraceError("Failed to initialize remote session manager, remote session {0} ({1})", RemoteSession?.Id, exc);
             }
         }
 
@@ -92,13 +96,6 @@ namespace Myrtille.Web
         #region Process
 
         public RemoteSessionProcessClient HostClient { get; private set; }
-
-        #endregion
-
-        #region Clients
-
-        public IDictionary<string, RemoteSessionClient> Clients { get; private set; }
-        public object ClientsLock { get; private set; }
 
         #endregion
 
@@ -177,7 +174,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to process updates pipe message, remote session {0} ({1})", RemoteSession.Id, exc);
+                Trace.TraceError("Failed to process updates pipe message, remote session {0} ({1})", RemoteSession?.Id, exc);
             }
         }
 
@@ -192,7 +189,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to process audio pipe message, remote session {0} ({1})", RemoteSession.Id, exc);
+                Trace.TraceError("Failed to process audio pipe message, remote session {0} ({1})", RemoteSession?.Id, exc);
             }
         }
 
@@ -202,291 +199,293 @@ namespace Myrtille.Web
 
         public void SendCommand(RemoteSessionCommand command, string args = "")
         {
-            if (RemoteSession.State == RemoteSessionState.NotConnected ||
-                RemoteSession.State == RemoteSessionState.Disconnected)
-                return;
-
-            var commandWithArgs = string.Concat((string)RemoteSessionCommandMapping.ToPrefix[command], args);
-
-            switch (command)
+            try
             {
-                // as the process command line can be displayed into the task manager / process explorer, the connection settings (including user credentials) are now passed to the host client through the inputs pipe
-                // their values are set from the login page (using http(s) get or post) and shouldn't be modified at this step
-                case RemoteSessionCommand.SendServerAddress:
-                case RemoteSessionCommand.SendVMGuid:
-                case RemoteSessionCommand.SendUserDomain:
-                case RemoteSessionCommand.SendUserName:
-                case RemoteSessionCommand.SendUserPassword:
-                case RemoteSessionCommand.SendStartProgram:
+                if (RemoteSession.State == RemoteSessionState.NotConnected ||
+                    RemoteSession.State == RemoteSessionState.Disconnected)
+                    return;
 
-                    if (RemoteSession.State != RemoteSessionState.Connecting)
-                        return;
+                var commandWithArgs = string.Concat((string)RemoteSessionCommandMapping.ToPrefix[command], args);
 
-                    break;
+                switch (command)
+                {
+                    // as the process command line can be displayed into the task manager / process explorer, the connection settings (including user credentials) are now passed to the host client through the inputs pipe
+                    // their values are set from the login page (using http(s) get or post) and shouldn't be modified at this step
+                    case RemoteSessionCommand.SendServerAddress:
+                    case RemoteSessionCommand.SendVMGuid:
+                    case RemoteSessionCommand.SendUserDomain:
+                    case RemoteSessionCommand.SendUserName:
+                    case RemoteSessionCommand.SendUserPassword:
+                    case RemoteSessionCommand.SendStartProgram:
 
-                // browser resize
-                case RemoteSessionCommand.SendBrowserResize:
+                        if (RemoteSession.State != RemoteSessionState.Connecting)
+                            return;
 
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
+                        break;
 
-                    if (RemoteSession.BrowserResize == BrowserResize.None)
-                        return;
+                    // browser resize
+                    case RemoteSessionCommand.SendBrowserResize:
 
-                    if (_resizeDelayed)
-                    {
-                        if (_resizeTimeout != null)
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
+
+                        if (RemoteSession.BrowserResize == BrowserResize.None)
+                            return;
+
+                        if (_resizeDelayed)
                         {
-                            _resizeTimeout.Cancel();
-                            _resizeTimeout.Dispose();
+                            if (_resizeTimeout != null)
+                            {
+                                _resizeTimeout.Cancel();
+                                _resizeTimeout.Dispose();
+                            }
+                            _resizeTimeout = new CancellationTokenSource();
+                            Task.Delay(500, _resizeTimeout.Token).ContinueWith(task =>
+                            {
+                                var parts = args.Split(new[] { "|" }, StringSplitOptions.None);
+                                var resolution = parts[1].Split(new[] { "x" }, StringSplitOptions.None);
+                                var width = int.Parse(resolution[0]);
+                                var height = int.Parse(resolution[1]);
+
+                                RemoteSession.ClientWidth = width < 100 ? 100 : width;
+                                RemoteSession.ClientHeight = height < 100 ? 100 : height;
+
+                                if (RemoteSession.BrowserResize == BrowserResize.Reconnect)
+                                {
+                                    RemoteSession.Reconnect = true;
+                                    SendCommand(RemoteSessionCommand.CloseClient);
+                                }
+                                else if (RemoteSession.BrowserResize == BrowserResize.Scale)
+                                {
+                                    _resizeDelayed = false;
+                                    SendCommand(RemoteSessionCommand.SendBrowserResize, args);
+                                }
+                            }, TaskContinuationOptions.NotOnCanceled);
+                            return;
                         }
-                        _resizeTimeout = new CancellationTokenSource();
-                        Task.Delay(500, _resizeTimeout.Token).ContinueWith(task =>
+                        _resizeDelayed = true;
+                        break;
+
+                    // browser pulse
+                    case RemoteSessionCommand.SendBrowserPulse:
+
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
+
+                        break;
+
+                    // keyboard, mouse
+                    case RemoteSessionCommand.SendKeyUnicode:
+                    case RemoteSessionCommand.SendMouseMove:
+                    case RemoteSessionCommand.SendMouseLeftButton:
+                    case RemoteSessionCommand.SendMouseMiddleButton:
+                    case RemoteSessionCommand.SendMouseRightButton:
+                    case RemoteSessionCommand.SendMouseWheelUp:
+                    case RemoteSessionCommand.SendMouseWheelDown:
+
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
+
+                        break;
+
+                    case RemoteSessionCommand.SendKeyScancode:
+
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
+
+                        var keyCodeAndState = args.Split(new[] { "-" }, StringSplitOptions.None);
+
+                        var jsKeyCode = int.Parse(keyCodeAndState[0]);
+                        var keyState = keyCodeAndState[1];
+
+                        var rdpScanCode = JsKeyCodeToRdpScanCodeMapping.MapTable[jsKeyCode] as RdpScanCode;
+                        if (rdpScanCode != null && rdpScanCode.Value != 0)
                         {
-                            var parts = args.Split(new[] { "|" }, StringSplitOptions.None);
-                            var resolution = parts[1].Split(new[] { "x" }, StringSplitOptions.None);
-                            var width = int.Parse(resolution[0]);
-                            var height = int.Parse(resolution[1]);
+                            commandWithArgs = string.Concat((string)RemoteSessionCommandMapping.ToPrefix[command], rdpScanCode.Value + "-" + keyState + "-" + (rdpScanCode.Extend ? "1" : "0"));
+                        }
+                        else
+                        {
+                            return;
+                        }
+                        break;
 
-                            RemoteSession.ClientWidth = width < 100 ? 100 : width;
-                            RemoteSession.ClientHeight = height < 100 ? 100 : height;
+                    // control
+                    case RemoteSessionCommand.SetScaleDisplay:
 
-                            if (RemoteSession.BrowserResize == BrowserResize.Reconnect)
-                            {
-                                RemoteSession.Reconnect = true;
-                                SendCommand(RemoteSessionCommand.CloseClient);
-                            }
-                            else if (RemoteSession.BrowserResize == BrowserResize.Scale)
-                            {
-                                _resizeDelayed = false;
-                                SendCommand(RemoteSessionCommand.SendBrowserResize, args);
-                            }
-                        }, TaskContinuationOptions.NotOnCanceled);
-                        return;
-                    }
-                    _resizeDelayed = true;
-                    break;
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
 
-                // browser pulse
-                case RemoteSessionCommand.SendBrowserPulse:
+                        Trace.TraceInformation("Display scaling {0}, remote session {1}", args != "0" ? args : "OFF", RemoteSession.Id);
+                        RemoteSession.BrowserResize = args != "0" ? BrowserResize.Scale : BrowserResize.None;
+                        break;
 
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
+                    case RemoteSessionCommand.SetReconnectSession:
 
-                    break;
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
 
-                // keyboard, mouse
-                case RemoteSessionCommand.SendKeyUnicode:
-                case RemoteSessionCommand.SendMouseMove:
-                case RemoteSessionCommand.SendMouseLeftButton:
-                case RemoteSessionCommand.SendMouseMiddleButton:
-                case RemoteSessionCommand.SendMouseRightButton:
-                case RemoteSessionCommand.SendMouseWheelUp:
-                case RemoteSessionCommand.SendMouseWheelDown:
+                        Trace.TraceInformation("Session reconnect {0}, remote session {1}", args.StartsWith("1") ? "ON" : "OFF", RemoteSession.Id);
+                        RemoteSession.BrowserResize = args.StartsWith("1") ? BrowserResize.Reconnect : BrowserResize.None;
+                        break;
 
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
+                    case RemoteSessionCommand.SetImageEncoding:
 
-                    break;
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
 
-                case RemoteSessionCommand.SendKeyScancode:
+                        Trace.TraceInformation("Image encoding {0}, remote session {1}", int.Parse(args), RemoteSession.Id);
+                        RemoteSession.ImageEncoding = (ImageEncoding)int.Parse(args);
+                        break;
 
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
+                    case RemoteSessionCommand.SetImageQuality:
 
-                    var keyCodeAndState = args.Split(new[] { "-" }, StringSplitOptions.None);
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
 
-                    var jsKeyCode = int.Parse(keyCodeAndState[0]);
-                    var keyState = keyCodeAndState[1];
+                        Trace.TraceInformation("Image quality {0}, remote session {1}", int.Parse(args), RemoteSession.Id);
+                        RemoteSession.ImageQuality = int.Parse(args);
+                        break;
 
-                    var rdpScanCode = JsKeyCodeToRdpScanCodeMapping.MapTable[jsKeyCode] as RdpScanCode;
-                    if (rdpScanCode != null && rdpScanCode.Value != 0)
-                    {
-                        commandWithArgs = string.Concat((string)RemoteSessionCommandMapping.ToPrefix[command], rdpScanCode.Value + "-" + keyState + "-" + (rdpScanCode.Extend ? "1" : "0"));
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    break;
+                    case RemoteSessionCommand.SetImageQuantity:
 
-                // control
-                case RemoteSessionCommand.SetScaleDisplay:
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
 
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
+                        Trace.TraceInformation("Image quantity {0}, remote session {1}", int.Parse(args), RemoteSession.Id);
+                        RemoteSession.ImageQuantity = int.Parse(args);
+                        break;
 
-                    Trace.TraceInformation("Display scaling {0}, remote session {1}", args != "0" ? args : "OFF", RemoteSession.Id);
-                    RemoteSession.BrowserResize = args != "0" ? BrowserResize.Scale : BrowserResize.None;
-                    break;
+                    case RemoteSessionCommand.SetAudioFormat:
 
-                case RemoteSessionCommand.SetReconnectSession:
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
 
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
+                        Trace.TraceInformation("Audio format {0}, remote session {1}", int.Parse(args), RemoteSession.Id);
+                        RemoteSession.AudioFormat = (AudioFormat)int.Parse(args);
+                        break;
 
-                    Trace.TraceInformation("Session reconnect {0}, remote session {1}", args.StartsWith("1") ? "ON" : "OFF", RemoteSession.Id);
-                    RemoteSession.BrowserResize = args.StartsWith("1") ? BrowserResize.Reconnect : BrowserResize.None;
-                    break;
+                    case RemoteSessionCommand.SetAudioBitrate:
 
-                case RemoteSessionCommand.SetImageEncoding:
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
 
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
+                        Trace.TraceInformation("Audio bitrate {0}, remote session {1}", int.Parse(args), RemoteSession.Id);
+                        RemoteSession.AudioBitrate = int.Parse(args);
+                        break;
 
-                    Trace.TraceInformation("Image encoding {0}, remote session {1}", int.Parse(args), RemoteSession.Id);
-                    RemoteSession.ImageEncoding = (ImageEncoding)int.Parse(args);
-                    break;
+                    case RemoteSessionCommand.SetScreenshotConfig:
 
-                case RemoteSessionCommand.SetImageQuality:
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
 
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
+                        var config = args.Split(new[] { "|" }, StringSplitOptions.None);
+                        RemoteSession.ScreenshotIntervalSecs = int.Parse(config[0]);
+                        RemoteSession.ScreenshotFormat = (CaptureFormat)int.Parse(config[1]);
+                        RemoteSession.ScreenshotPath = config[2];
 
-                    Trace.TraceInformation("Image quality {0}, remote session {1}", int.Parse(args), RemoteSession.Id);
-                    RemoteSession.ImageQuality = int.Parse(args);
-                    break;
+                        Trace.TraceInformation("Screenshot config {0}, remote session {1}", args, RemoteSession.Id);
+                        break;
 
-                case RemoteSessionCommand.SetImageQuantity:
+                    case RemoteSessionCommand.StartTakingScreenshots:
 
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
 
-                    Trace.TraceInformation("Image quantity {0}, remote session {1}", int.Parse(args), RemoteSession.Id);
-                    RemoteSession.ImageQuantity = int.Parse(args);
-                    break;
-
-                case RemoteSessionCommand.SetAudioFormat:
-
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
-
-                    Trace.TraceInformation("Audio format {0}, remote session {1}", int.Parse(args), RemoteSession.Id);
-                    RemoteSession.AudioFormat = (AudioFormat)int.Parse(args);
-                    break;
-
-                case RemoteSessionCommand.SetAudioBitrate:
-
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
-
-                    Trace.TraceInformation("Audio bitrate {0}, remote session {1}", int.Parse(args), RemoteSession.Id);
-                    RemoteSession.AudioBitrate = int.Parse(args);
-                    break;
-
-                case RemoteSessionCommand.SetScreenshotConfig:
-
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
-
-                    var config = args.Split(new[] { "|" }, StringSplitOptions.None);
-                    RemoteSession.ScreenshotIntervalSecs = int.Parse(config[0]);
-                    RemoteSession.ScreenshotFormat = (CaptureFormat)int.Parse(config[1]);
-                    RemoteSession.ScreenshotPath = config[2];
-
-                    Trace.TraceInformation("Screenshot config {0}, remote session {1}", args, RemoteSession.Id);
-                    break;
-
-                case RemoteSessionCommand.StartTakingScreenshots:
-
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
-
-                    if (_screenshotTimeout != null)
-                    {
-                        _screenshotTimeout.Cancel();
-                        _screenshotTimeout.Dispose();
-                    }
-                    _screenshotTimeout = new CancellationTokenSource();
-                    SendCommand(RemoteSessionCommand.TakeScreenshot);
-
-                    Trace.TraceInformation("Starting taking screenshots {0}, remote session {1}", args, RemoteSession.Id);
-                    break;
-
-                case RemoteSessionCommand.StopTakingScreenshots:
-
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
-
-                    if (_screenshotTimeout != null)
-                    {
-                        _screenshotTimeout.Cancel();
-                        _screenshotTimeout.Dispose();
-                    }
-                    _screenshotTimeout = null;
-
-                    Trace.TraceInformation("Stopping taking screenshots {0}, remote session {1}", args, RemoteSession.Id);
-                    break;
-
-                case RemoteSessionCommand.TakeScreenshot:
-
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
-
-                    if (_screenshotTimeout != null)
-                    {
-                        _screenshotTimeout.Cancel();
-                        _screenshotTimeout.Dispose();
+                        if (_screenshotTimeout != null)
+                        {
+                            _screenshotTimeout.Cancel();
+                            _screenshotTimeout.Dispose();
+                        }
                         _screenshotTimeout = new CancellationTokenSource();
-                        Task.Delay(RemoteSession.ScreenshotIntervalSecs * 1000, _screenshotTimeout.Token).ContinueWith(task =>
+                        SendCommand(RemoteSessionCommand.TakeScreenshot);
+
+                        Trace.TraceInformation("Starting taking screenshots {0}, remote session {1}", args, RemoteSession.Id);
+                        break;
+
+                    case RemoteSessionCommand.StopTakingScreenshots:
+
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
+
+                        if (_screenshotTimeout != null)
                         {
-                            SendCommand(RemoteSessionCommand.TakeScreenshot);
-                        }, TaskContinuationOptions.NotOnCanceled);
-                    }
+                            _screenshotTimeout.Cancel();
+                            _screenshotTimeout.Dispose();
+                        }
+                        _screenshotTimeout = null;
 
-                    FullscreenEventPending = true;
+                        Trace.TraceInformation("Stopping taking screenshots {0}, remote session {1}", args, RemoteSession.Id);
+                        break;
 
-                    Trace.TraceInformation("Taking screenshot {0}, remote session {1}", args, RemoteSession.Id);
-                    break;
+                    case RemoteSessionCommand.TakeScreenshot:
 
-                case RemoteSessionCommand.RequestFullscreenUpdate:
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
 
-                    if (RemoteSession.State != RemoteSessionState.Connected)
-                        return;
+                        if (_screenshotTimeout != null)
+                        {
+                            _screenshotTimeout.Cancel();
+                            _screenshotTimeout.Dispose();
+                            _screenshotTimeout = new CancellationTokenSource();
+                            Task.Delay(RemoteSession.ScreenshotIntervalSecs * 1000, _screenshotTimeout.Token).ContinueWith(task =>
+                            {
+                                SendCommand(RemoteSessionCommand.TakeScreenshot);
+                            }, TaskContinuationOptions.NotOnCanceled);
+                        }
 
-                    FullscreenEventPending = true;
+                        FullscreenEventPending = true;
 
-                    Trace.TraceInformation("Requesting fullscreen update, all image(s) will now be discarded while waiting for it, remote session {0}", RemoteSession.Id);
-                    break;
+                        Trace.TraceInformation("Taking screenshot {0}, remote session {1}", args, RemoteSession.Id);
+                        break;
 
-                case RemoteSessionCommand.SendLocalClipboard:
+                    case RemoteSessionCommand.RequestFullscreenUpdate:
 
-                    if ((RemoteSession.State != RemoteSessionState.Connecting) &&
-                        (RemoteSession.State != RemoteSessionState.Connected))
-                        return;
+                        if (RemoteSession.State != RemoteSessionState.Connected)
+                            return;
 
-                    var clipboardText = string.Empty;
+                        FullscreenEventPending = true;
 
-                    // read the clipboard text from unicode code points
-                    var charsCodes = args.Split(new[] { "-" }, StringSplitOptions.None);
-                    foreach (var charCode in charsCodes)
-                    {
-                        clipboardText += char.ConvertFromUtf32(int.Parse(charCode));
-                    }
+                        Trace.TraceInformation("Requesting fullscreen update, all image(s) will now be discarded while waiting for it, remote session {0}", RemoteSession.Id);
+                        break;
 
-                    // truncated above max length, which was normally already enforced client side; re-checking
-                    if (clipboardText.Length > _clipboardMaxLength)
-                    {
-                        clipboardText = clipboardText.Substring(0, _clipboardMaxLength) + "--- TRUNCATED ---";
-                    }
+                    case RemoteSessionCommand.SendLocalClipboard:
 
-                    // set the clipboard text on the gateway; if the remote session is reconnected, it will be sent to the new instance of wfreerdp
-                    RemoteSession.ClipboardText = clipboardText;
+                        if ((RemoteSession.State != RemoteSessionState.Connecting) &&
+                            (RemoteSession.State != RemoteSessionState.Connected))
+                            return;
 
-                    commandWithArgs = string.Concat((string)RemoteSessionCommandMapping.ToPrefix[command], clipboardText);
+                        var clipboardText = string.Empty;
 
-                    Trace.TraceInformation("Sending local clipboard, remote session {0}", RemoteSession.Id);
-                    break;
+                        // read the clipboard text from unicode code points
+                        var charsCodes = args.Split(new[] { "-" }, StringSplitOptions.None);
+                        foreach (var charCode in charsCodes)
+                        {
+                            clipboardText += char.ConvertFromUtf32(int.Parse(charCode));
+                        }
 
-                case RemoteSessionCommand.ConnectClient:
+                        // truncated above max length, which was normally already enforced client side; re-checking
+                        if (clipboardText.Length > _clipboardMaxLength)
+                        {
+                            clipboardText = clipboardText.Substring(0, _clipboardMaxLength) + "--- TRUNCATED ---";
+                        }
 
-                    if (RemoteSession.State != RemoteSessionState.Connecting)
-                        return;
+                        // set the clipboard text on the gateway; if the remote session is reconnected, it will be sent to the new instance of wfreerdp
+                        RemoteSession.ClipboardText = clipboardText;
 
-                    Trace.TraceInformation("Connecting remote session, remote session {0}", RemoteSession.Id);
-                    break;
+                        commandWithArgs = string.Concat((string)RemoteSessionCommandMapping.ToPrefix[command], clipboardText);
 
-                case RemoteSessionCommand.CloseClient:
+                        Trace.TraceInformation("Sending local clipboard, remote session {0}", RemoteSession.Id);
+                        break;
+
+                    case RemoteSessionCommand.ConnectClient:
+
+                        if (RemoteSession.State != RemoteSessionState.Connecting)
+                            return;
+
+                        Trace.TraceInformation("Connecting remote session, remote session {0}", RemoteSession.Id);
+                        break;
+
+                    case RemoteSessionCommand.CloseClient:
 
                     if ((RemoteSession.State != RemoteSessionState.Connecting) &&
                         (RemoteSession.State != RemoteSessionState.Connected))
@@ -496,14 +495,12 @@ namespace Myrtille.Web
                     }
                     RemoteSession.State = RemoteSessionState.Disconnecting;
 
-                    Trace.TraceInformation("disconnecting remote session, remote session {0}", RemoteSession.Id);
-                    break;
-            }
+                        Trace.TraceInformation("disconnecting remote session, remote session {0}", RemoteSession.Id);
+                        break;
+                }
 
-            Trace.TraceInformation("Sending command with args {0}, remote session {1}", commandWithArgs, RemoteSession.Id);
+                Trace.TraceInformation("Sending command with args {0}, remote session {1}", commandWithArgs, RemoteSession.Id);
 
-            try
-            {
                 PipeHelper.WritePipeData(
                     Pipes.InputsPipe,
                     "remotesession_" + RemoteSession.Id + "_inputs",
@@ -511,7 +508,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceWarning("Failed to send command {0}, args {1}, remote session {2} ({3})", command, args, RemoteSession.Id, exc);
+                Trace.TraceWarning("Failed to send command {0}, args {1}, remote session {2} ({3})", command, args, RemoteSession?.Id, exc);
 
                 // there is a problem with the inputs pipe, force close the remote session in order to avoid it being stuck
                 // it's usually not a big deal, some inputs being sent while the pipes are being disconnected when the host client is closed (and thus before the remote session state is set to disconnected), but better take no risk...
@@ -523,7 +520,7 @@ namespace Myrtille.Web
 
         #region Inputs
 
-        public void ProcessInputs(HttpSessionState session, string data)
+        public void ProcessInputs(HttpSessionState session, string clientId, string data)
         {
             if (RemoteSession.State == RemoteSessionState.NotConnected ||
                 RemoteSession.State == RemoteSessionState.Disconnected)
@@ -536,12 +533,12 @@ namespace Myrtille.Web
                 // this comes in addition (but not replace) the session idle timeout which may defined (or not) for the remote server
                 if (session.SessionID.Equals(RemoteSession.OwnerSessionID))
                 {
-                    if (ClientIdleTimeout != null)
+                    if (OwnerIdleTimeout != null)
                     {
-                        ClientIdleTimeout.Cancel();
-                        ClientIdleTimeout.Dispose();
-                        ClientIdleTimeout = new CancellationTokenSource();
-                        Task.Delay(_clientIdleTimeoutDelay, ClientIdleTimeout.Token).ContinueWith(task =>
+                        OwnerIdleTimeout.Cancel();
+                        OwnerIdleTimeout.Dispose();
+                        OwnerIdleTimeout = new CancellationTokenSource();
+                        Task.Delay(_ownerIdleTimeoutDelay, OwnerIdleTimeout.Token).ContinueWith(task =>
                         {
                             if (RemoteSession.State == RemoteSessionState.Connecting ||
                                 RemoteSession.State == RemoteSessionState.Connected)
@@ -598,6 +595,41 @@ namespace Myrtille.Web
                     }
                 }
 
+                // monitor the activity of the remote session client (browser window/tab),
+                // regardless of whether it's the remote session owner or a guest, whose URL is shared or not
+                // idle time is fixed at 1mn
+                if (Clients.ContainsKey(clientId))
+                {
+                    lock (_clientsIdleTimeoutLock)
+                    {
+                        if (!_clientsIdleTimeout.ContainsKey(clientId))
+                        {
+                            _clientsIdleTimeout.Add(clientId, new CancellationTokenSource());
+                        }
+
+                        var clientIdleTimeout = _clientsIdleTimeout[clientId];
+                        if (clientIdleTimeout != null)
+                        {
+                            clientIdleTimeout.Cancel();
+                            clientIdleTimeout.Dispose();
+                        }
+                        clientIdleTimeout = new CancellationTokenSource();
+
+                        Task.Delay(60000, clientIdleTimeout.Token).ContinueWith(task =>
+                        {
+                            if (Clients.ContainsKey(clientId))
+                            {
+                                lock (ClientsLock)
+                                {
+                                    Clients.Remove(clientId);
+                                }
+                            }
+                        }, TaskContinuationOptions.NotOnCanceled);
+
+                        _clientsIdleTimeout[clientId] = clientIdleTimeout;
+                    }
+                }
+
                 var inputs = data.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var input in inputs)
                 {
@@ -632,7 +664,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to process input(s) {0}, remote session {1} ({2})", data, RemoteSession.Id, exc);
+                Trace.TraceError("Failed to process input(s) {0}, remote session {1} ({2})", data, RemoteSession?.Id, exc);
             }
         }
 
@@ -643,8 +675,8 @@ namespace Myrtille.Web
         private bool _resizeDelayed = true;
         private CancellationTokenSource _resizeTimeout;
 
-        private int _clientIdleTimeoutDelay = 0;
-        public CancellationTokenSource ClientIdleTimeout { get; set; }
+        private int _ownerIdleTimeoutDelay = 0;
+        public CancellationTokenSource OwnerIdleTimeout { get; set; }
 
         #endregion
 
@@ -654,6 +686,20 @@ namespace Myrtille.Web
 
         private IDictionary<string, CancellationTokenSource> _guestsIdleTimeout;
         private object _guestsIdleTimeoutLock;
+
+        #endregion
+
+        #region Clients
+
+        // a remote session client is a browser window/tab,
+        // regardless of whether it's the remote session owner or a guest, whose URL is shared or not
+        // it's given an unique id on each page load
+
+        public IDictionary<string, RemoteSessionClient> Clients { get; private set; }
+        public object ClientsLock { get; private set; }
+
+        private IDictionary<string, CancellationTokenSource> _clientsIdleTimeout;
+        private object _clientsIdleTimeoutLock;
 
         #endregion
 
@@ -750,23 +796,22 @@ namespace Myrtille.Web
                                 client.WebSocketsRoundRobinIdx = 0;
                             }
 
-                            Trace.TraceInformation("Sending image {0} ({1}) on websocket, client {2}, remote session {3}", image.Idx, (image.Fullscreen ? "screen" : "region"), client.Id, RemoteSession.Id);
-                            client.WebSockets[client.WebSocketsRoundRobinIdx++].SendImage(image);
-                        }
-                        // event source
-                        else if (client.EventSource != null)
-                        {
-                            Trace.TraceInformation("Sending image {0} ({1}) on event source, client {2}, remote session {3}", image.Idx, (image.Fullscreen ? "screen" : "region"), client.Id, RemoteSession.Id);
-                            client.EventSource.SendImage(image);
-                        }
-                        // long polling
-                        else if (client.LongPolling != null)
-                        {
-                            Trace.TraceInformation("Sending image {0} ({1}) on long polling, client {2}, remote session {3}", image.Idx, (image.Fullscreen ? "screen" : "region"), client.Id, RemoteSession.Id);
-                            client.LongPolling.SendImage(image);
-                        }
-                        // xhr: updates are polled against the cache by the client
+                        //Trace.TraceInformation("Sending image {0} ({1}) on websocket, client {2}, remote session {3}", image.Idx, (image.Fullscreen ? "screen" : "region"), client.Id, RemoteSession.Id);
+                        client.WebSockets[client.WebSocketsRoundRobinIdx++].SendImage(image);
                     }
+                    // event source
+                    else if (client.EventSource != null)
+                    {
+                        //Trace.TraceInformation("Sending image {0} ({1}) on event source, client {2}, remote session {3}", image.Idx, (image.Fullscreen ? "screen" : "region"), client.Id, RemoteSession.Id);
+                        client.EventSource.SendImage(image);
+                    }
+                    // long polling
+                    else if (client.LongPolling != null)
+                    {
+                        //Trace.TraceInformation("Sending image {0} ({1}) on long polling, client {2}, remote session {3}", image.Idx, (image.Fullscreen ? "screen" : "region"), client.Id, RemoteSession.Id);
+                        client.LongPolling.SendImage(image);
+                    }
+                    // xhr: updates are polled against the cache by the client
                 }
 
                 // image event
@@ -785,7 +830,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to process update, remote session {0} ({1})", RemoteSession.Id, exc);
+                Trace.TraceError("Failed to process update, remote session {0} ({1})", RemoteSession?.Id, exc);
             }
         }
 
@@ -805,7 +850,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to retrieve image {0} from cache, remote session {1} ({2})", imageIdx, RemoteSession.Id, exc);
+                Trace.TraceError("Failed to retrieve image {0} from cache, remote session {1} ({2})", imageIdx, RemoteSession?.Id, exc);
             }
 
             return image;
@@ -860,7 +905,7 @@ namespace Myrtille.Web
                 }
                 catch (Exception exc)
                 {
-                    Trace.TraceError("Failed to retrieve next update from index {0}, remote session {1} ({2})", imageIdx, RemoteSession.Id, exc);
+                    Trace.TraceError("Failed to retrieve next update from index {0}, remote session {1} ({2})", imageIdx, RemoteSession?.Id, exc);
                 }
             }
 
@@ -992,7 +1037,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to process audio, remote session {0} ({1})", RemoteSession.Id, exc);
+                Trace.TraceError("Failed to process audio, remote session {0} ({1})", RemoteSession?.Id, exc);
             }
         }
 
@@ -1012,7 +1057,7 @@ namespace Myrtille.Web
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to retrieve audio {0} from cache, remote session {1} ({2})", audioIdx, RemoteSession.Id, exc);
+                Trace.TraceError("Failed to retrieve audio {0} from cache, remote session {1} ({2})", audioIdx, RemoteSession?.Id, exc);
             }
 
             return audio;
