@@ -243,7 +243,7 @@ namespace Myrtille.Web
                 var remoteSessions = (IDictionary<Guid, RemoteSession>)_application[HttpApplicationStateVariables.RemoteSessions.ToString()];
                 if (remoteSessions.ContainsKey(_remoteSessionManager.RemoteSession.Id))
                 {
-                    SecurdenWeb.ManageSessionRequest(_remoteSessionManager.RemoteSession.accessUrl, _remoteSessionManager.RemoteSession.Id.ToString(), false, _remoteSessionManager.RemoteSession.serviceOrgId);
+                    JObject response = SecurdenWeb.ManageSessionRequest(_remoteSessionManager.RemoteSession.accessUrl, _remoteSessionManager.RemoteSession.Id.ToString(), false, _remoteSessionManager.RemoteSession.serviceOrgId);
                     remoteSessions.Remove(_remoteSessionManager.RemoteSession.Id);
                 }
 

@@ -17,6 +17,7 @@
 */
 
 using System;
+using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
@@ -31,6 +32,7 @@ using System.Web.SessionState;
 using Myrtille.Helpers;
 using Myrtille.Services.Contracts;
 using Myrtille.Web.src.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace Myrtille.Web
 {
@@ -162,7 +164,8 @@ namespace Myrtille.Web
                     if (RemoteSession.State == RemoteSessionState.Connecting)
                     {
                         RemoteSession.State = RemoteSessionState.Connected;
-                        SecurdenWeb.ManageSessionRequest(RemoteSession.accessUrl, RemoteSession.Id.ToString(), true, RemoteSession.serviceOrgId);
+                        JObject response = SecurdenWeb.ManageSessionRequest(RemoteSession.accessUrl, RemoteSession.Id.ToString(), true, RemoteSession.serviceOrgId);
+                        RemoteSessionClient.folderLocationAbsolutePath = (string)response["return_dict"]["folder_location_absolute_path"];
                         SendMessage(new RemoteSessionMessage { Type = MessageType.Connected });
 
                         // in case the remote session was reconnected, send the capture API config
@@ -488,7 +491,9 @@ namespace Myrtille.Web
                     if ((RemoteSession.State != RemoteSessionState.Connecting) &&
                         (RemoteSession.State != RemoteSessionState.Connected))
                         return;
-
+                    if (RemoteSessionClient.isRecordingNeeded){
+                        RemoteSessionClient.updateMainMetaFile(RemoteSessionClient.recordingIndex);
+                    }
                     RemoteSession.State = RemoteSessionState.Disconnecting;
 
                     Trace.TraceInformation("disconnecting remote session, remote session {0}", RemoteSession.Id);
@@ -669,11 +674,17 @@ namespace Myrtille.Web
                 // CAUTION! if the remote session is reconnected (i.e.: browser resize), a new instance of wfreerdp is spawned
                 // the image index can no longer be handled by wfreerdp, this must be done by the remote session manager
                 // the image index provided by wfreerdp is relative to its own instance, if needed
-
+                int IdX = _imageIdx == int.MaxValue ? 1 : ++_imageIdx;
+                if (IdX == 1)
+                {
+                    RemoteSessionClient.recordStartTime = DateTime.Now.Ticks;
+                }
+                long ticks = DateTime.Now.Ticks - RemoteSessionClient.recordStartTime;
+                long microseconds = ticks / (TimeSpan.TicksPerMillisecond / 1000);
                 var image = new RemoteSessionImage
                 {
                     //Idx = BitConverter.ToInt32(imgInfo, 0),
-                    Idx = _imageIdx == int.MaxValue ? 1 : ++_imageIdx,
+                    Idx = IdX,
                     PosX = BitConverter.ToInt32(imgInfo, 4),
                     PosY = BitConverter.ToInt32(imgInfo, 8),
                     Width = BitConverter.ToInt32(imgInfo, 12),
@@ -681,11 +692,11 @@ namespace Myrtille.Web
                     Format = (ImageFormat)BitConverter.ToInt32(imgInfo, 20),
                     Quality = BitConverter.ToInt32(imgInfo, 24),
                     Fullscreen = BitConverter.ToInt32(imgInfo, 28) == 1,
-                    Data = new byte[data.Length - 36]
+                    Data = new byte[data.Length - 36],
+                    timestamp = microseconds
                 };
 
                 Array.Copy(data, 36, image.Data, 0, data.Length - 36);
-
                 // cache the image, even if using websocket (used to retrieve the mouse cursor on IE)
                 _cache.Insert(
                     "remoteSessionImage_" + RemoteSession.Id + "_" + image.Idx,
@@ -723,6 +734,10 @@ namespace Myrtille.Web
                 // send update to client(s)
                 foreach (var client in Clients.Values)
                 {
+                    if (RemoteSessionClient.isRecordingNeeded)
+                    {
+                        RemoteSessionClient.imgDataQueue.Enqueue(image);
+                    }
                     // send the update if the client latency is normal or if it's a fullscreen update
                     if (client.Latency <= _imageCacheDuration || image.Fullscreen)
                     {
