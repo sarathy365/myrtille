@@ -704,7 +704,7 @@ namespace Myrtille.Web
                         }
                         else
                         {
-                            SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId);
+                            JObject response = SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId);
                             Response.Write("<script>alert('The session has already been closed or terminated.'); window.close();</script>");
                         }
                         return false;
@@ -734,11 +734,14 @@ namespace Myrtille.Web
                         }
                         else
                         {
-                            SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId);
+                            JObject response = SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId);
                             Response.Write("<script>alert('The session has already been closed or terminated.'); window.close();</script>");
                         }
                         return false;
                     }
+                    RemoteSessionClient.auditId = (long)connectionDetails["audit_id"];
+                    RemoteSessionClient.isRecordingNeeded = (bool)connectionDetails["details"]["is_recording_needed"];
+                    RemoteSessionClient.remoteSessionId = (long)connectionDetails["remote_session_id"];
                     connectionDetails = (JObject)connectionDetails["details"];
                     loginServer = (string)connectionDetails["address"];
                     loginDomain = "";
