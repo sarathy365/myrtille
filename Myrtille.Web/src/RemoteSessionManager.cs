@@ -490,10 +490,6 @@ namespace Myrtille.Web
                     if ((RemoteSession.State != RemoteSessionState.Connecting) &&
                         (RemoteSession.State != RemoteSessionState.Connected))
                         return;
-                    if (RemoteSessionClient.isRecordingNeeded)
-                    {
-                        RemoteSessionClient.updateMainMetaFile(RemoteSessionClient.recordingIndex);
-                    }
                     RemoteSession.State = RemoteSessionState.Disconnecting;
 
                     Trace.TraceInformation("disconnecting remote session, remote session {0}", RemoteSession.Id);

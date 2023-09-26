@@ -231,6 +231,8 @@ namespace Myrtille.Web
             }
         }
 
+        
+
         private void CleanupDisconnectedSession(RemoteSessionExitCode exitCode)
         {
             try
@@ -243,8 +245,17 @@ namespace Myrtille.Web
                 var remoteSessions = (IDictionary<Guid, RemoteSession>)_application[HttpApplicationStateVariables.RemoteSessions.ToString()];
                 if (remoteSessions.ContainsKey(_remoteSessionManager.RemoteSession.Id))
                 {
-                    JObject response = SecurdenWeb.ManageSessionRequest(_remoteSessionManager.RemoteSession.accessUrl, _remoteSessionManager.RemoteSession.Id.ToString(), false, _remoteSessionManager.RemoteSession.serviceOrgId);
                     remoteSessions.Remove(_remoteSessionManager.RemoteSession.Id);
+                    if (RemoteSessionClient.isRecordingNeeded)
+                    {
+                        while (RemoteSessionClient.imgDataQueue.Count != 0)
+                        {
+                            continue;
+                        }
+                        RemoteSessionClient.updateMainMetaFile(RemoteSessionClient.recordingIndex);
+                    }
+                    JObject response = SecurdenWeb.ManageSessionRequest(_remoteSessionManager.RemoteSession.accessUrl, _remoteSessionManager.RemoteSession.Id.ToString(), false, _remoteSessionManager.RemoteSession.serviceOrgId);
+                    
                 }
 
                 #endregion
