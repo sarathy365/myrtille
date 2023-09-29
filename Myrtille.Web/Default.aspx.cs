@@ -604,7 +604,7 @@ namespace Myrtille.Web
                             // }
                         }
                     }
-                    Thread.Sleep(5000);
+                    Thread.Sleep(60000);
                     TerminateSession(Request, Response, serverUrl, authKey, connectionId, serviceOrgId);
                 }
                 else
@@ -642,6 +642,9 @@ namespace Myrtille.Web
             long userSessionId = 0;
             string accessUrl = null;
             string serviceOrgId = Request["service_org_id"];
+            long auditId = 0;
+            bool isRecordingNeeded = false;
+            long remoteSessionId = 0;
             if (RemoteSession == null)
             {
                 JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString(), serviceOrgId);
@@ -704,7 +707,7 @@ namespace Myrtille.Web
                         }
                         else
                         {
-                            JObject response = SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId);
+                            JObject response = SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId, auditId, isRecordingNeeded, remoteSessionId);
                             Response.Write("<script>alert('The session has already been closed or terminated.'); window.close();</script>");
                         }
                         return false;
@@ -734,14 +737,20 @@ namespace Myrtille.Web
                         }
                         else
                         {
-                            JObject response = SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId);
+                            JObject response = SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId, auditId, isRecordingNeeded, remoteSessionId);
                             Response.Write("<script>alert('The session has already been closed or terminated.'); window.close();</script>");
                         }
                         return false;
                     }
-                    RemoteSessionClient.auditId = (long)connectionDetails["audit_id"];
-                    RemoteSessionClient.isRecordingNeeded = (bool)connectionDetails["details"]["is_recording_needed"];
-                    RemoteSessionClient.remoteSessionId = (long)connectionDetails["remote_session_id"];
+                    if (connectionDetails.ContainsKey("audit_id"))
+                    {
+                        auditId = (long)connectionDetails["audit_id"];
+                        isRecordingNeeded = (bool)connectionDetails["details"]["is_recording_needed"];
+                        if (connectionDetails.ContainsKey("remote_session_id"))
+                        {
+                            remoteSessionId = (long)connectionDetails["remote_session_id"];
+                        }
+                    }
                     connectionDetails = (JObject)connectionDetails["details"];
                     loginServer = (string)connectionDetails["address"];
                     loginDomain = "";
@@ -883,7 +892,27 @@ namespace Myrtille.Web
             try
             {
                 Application.Lock();
-
+                if (string.IsNullOrEmpty(loginDomain))
+                {
+                    int pos = loginUser.IndexOf("\\");
+                    if (pos != -1)
+                    {
+                        loginDomain = loginUser.Substring(0, pos);
+                    }
+                    // username@domain.com
+                    else
+                    {
+                        pos = loginUser.IndexOf("@");
+                        if (pos != -1)
+                        {
+                            loginDomain = loginUser.Substring(pos + 1);
+                        }
+                        else
+                        {
+                            loginDomain = "";
+                        }
+                    }
+                }
                 // create the remote session
                 RemoteSession = new RemoteSession(
                     connectionId,
@@ -894,7 +923,7 @@ namespace Myrtille.Web
                     loginVMGuid,
                     loginVMAddress,
                     loginVMEnhancedMode,
-                    !string.IsNullOrEmpty(loginDomain) ? loginDomain : AccountHelper.GetDomain(loginUser, loginPassword),
+                    loginDomain,
                     AccountHelper.GetUserName(loginUser),
                     loginPassword,
                     int.Parse(width.Value),
@@ -915,6 +944,9 @@ namespace Myrtille.Web
                 RemoteSession.UserSessionId = userSessionId;
                 RemoteSession.accessUrl = accessUrl;
                 RemoteSession.serviceOrgId = serviceOrgId;
+                RemoteSession.auditId = auditId;
+                RemoteSession.remoteSessionId = remoteSessionId;
+                RemoteSession.isRecordingNeeded = isRecordingNeeded;
 
                 // bind the remote session to the current http session
                 Session[HttpSessionStateVariables.RemoteSession.ToString()] = RemoteSession;

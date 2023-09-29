@@ -71,7 +71,7 @@ namespace Myrtille.Web.src.Utils
             return result;
         }
 
-        public static JObject ManageSessionRequest(string serverUrl, string connectionId, bool status, string serviceOrgId)
+        public static JObject ManageSessionRequest(string serverUrl, string connectionId, bool status, string serviceOrgId, long auditId, bool isRecordingNeeded, long remoteSessionId)
         {
             JObject response = new JObject();
             if (serverUrl != null && serverUrl != String.Empty)
@@ -79,10 +79,10 @@ namespace Myrtille.Web.src.Utils
                 JObject paramObj = new JObject(
                     new JProperty("CONNECTION_ID", connectionId),
                     new JProperty("STATUS", status),
-                    new JProperty("IS_RECORDING_ENABLED", RemoteSessionClient.isRecordingNeeded),
-                    new JProperty("AUDIT_ID", RemoteSessionClient.auditId),
-                    new JProperty("REMOTE_SESSION_ID", RemoteSessionClient.remoteSessionId),
-                    new JProperty("IS_FILE_CONTENT", RemoteSessionClient.isRecordingNeeded)
+                    new JProperty("IS_RECORDING_ENABLED", isRecordingNeeded),
+                    new JProperty("AUDIT_ID", auditId),
+                    new JProperty("REMOTE_SESSION_ID", remoteSessionId),
+                    new JProperty("IS_FILE_CONTENT", isRecordingNeeded)
                     );
                 response = SecurdenWebRequest(serverUrl, "/launcher/manage_web_session", "POST", paramObj, serviceOrgId);
             }
