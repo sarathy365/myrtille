@@ -17,7 +17,14 @@
 */
 
 using System;
+using System.Web;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
 using Myrtille.Services.Contracts;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using System.Web.Http.Controllers;
 
 namespace Myrtille.Web
 {
@@ -28,6 +35,8 @@ namespace Myrtille.Web
         None = 2
     }
 
+
+
     public class RemoteSession
     {
         public RemoteSessionManager Manager { get; private set; }
@@ -35,7 +44,26 @@ namespace Myrtille.Web
         public long UserProfileId;
         public long UserSessionId;
         public string accessUrl;
+        public string serviceOrgId;
         public bool isManageSession;
+        public Queue<RemoteSessionImage> imgDataQueue;
+        public long recordStartTime;
+        public bool ImageQueueWriteCheck;
+        public int recordingIndex;
+        public bool isUpdateMainMeta;
+        public bool isupdateStartIndex;
+        public string folderLocationAbsolutePath;
+        public long auditId;
+        public long remoteSessionId;
+        public bool isRecordingNeeded = false;
+        public bool firstEnqueueDone = false;
+        private object recordinglockObj = new object();
+        private object recordingMetalockObj = new object();
+        private object recordingMainMetalockObj = new object();
+        public int si;
+        public int ei;
+        public long st;
+        public long et;
 
         public Guid Id;
         public RemoteSessionState State;
@@ -77,6 +105,212 @@ namespace Myrtille.Web
         public string RemoteAppName;
         public string RemoteAppLocation;
         public string RemoteAppCommandLine;
+
+
+        public class MetaDataDetails
+        {
+            public int si;
+            public int ei;
+            public int Idx;
+            public int PosX;
+            public int PosY;
+            public int Width;
+            public int Height;
+            public ImageFormat imageFormat;
+            public int Quality;
+            public bool Fullscreen;
+            public long timeStamp;
+        }
+
+        public class MainMetaDetails
+        {
+            public int si;
+            public int ei;
+            public long st;
+            public long et;
+        }
+
+        public static void MetaFileWrite(RemoteSessionImage image, int si, int ei, RemoteSession remoteSession)
+        {
+            JObject timeStampSeekMapped = new JObject();
+            JArray timeStampList = new JArray();
+            string metafile = remoteSession.folderLocationAbsolutePath + "\\recording_meta.spbf" + remoteSession.recordingIndex.ToString();
+            if (!File.Exists(metafile))
+            {
+                lock (remoteSession.recordingMetalockObj)
+                {
+                    var metaFileCreate = File.Create(metafile);
+                    metaFileCreate.Close();
+                }
+            }
+            var metaDetails = new MetaDataDetails()
+            {
+                si = si,
+                ei = ei,
+                Idx = image.Idx,
+                PosX = image.PosX,
+                PosY = image.PosY,
+                Width = image.Width,
+                Height = image.Height,
+                imageFormat = image.Format,
+                Quality = image.Quality,
+                Fullscreen = image.Fullscreen,
+                timeStamp = image.timestamp
+            };
+            JObject jsonObject = new JObject();
+            string jsonData = "";
+            lock (remoteSession.recordingMetalockObj)
+            {
+                jsonData = File.ReadAllText(metafile);
+            }
+            if (jsonData.Length > 0)
+            {
+                jsonObject = (JObject)JsonConvert.DeserializeObject(jsonData);
+                if (jsonObject.ContainsKey("timestamp_list"))
+                {
+                    timeStampList = (JArray)jsonObject["timestamp_list"];
+                }
+                if (jsonObject.ContainsKey("timestamp_seek_mapped"))
+                {
+                    timeStampSeekMapped = (JObject)jsonObject["timestamp_seek_mapped"];
+                }
+            }
+            JObject imageMetaData = new JObject
+            {
+                ["si"] = si,
+                ["ei"] = ei,
+                ["Idx"] = image.Idx,
+                ["PosX"] = image.PosX,
+                ["PosY"] = image.PosY,
+                ["Width"] = image.Width,
+                ["Height"] = image.Height,
+                ["imageFormat"] = image.Format.ToString(),
+                ["Quality"] = image.Quality,
+                ["Fullscreen"] = image.Fullscreen,
+                ["timeStamp"] = image.timestamp
+            };
+            timeStampList.Add(image.timestamp);
+            jsonObject["timestamp_list"] = timeStampList;
+            var key = image.timestamp.ToString();
+            if (timeStampSeekMapped.ContainsKey(key)){
+                key = (image.timestamp + 1).ToString();
+            }
+            timeStampSeekMapped[key] = imageMetaData;
+            jsonObject["timestamp_seek_mapped"] = timeStampSeekMapped;
+            lock (remoteSession.recordingMetalockObj)
+            {
+                File.WriteAllText(metafile, jsonObject.ToString());
+            }
+        }
+
+        public static void updateMainMetaFile(int fileIndex, RemoteSession remoteSession)
+        {
+            string mainMetaFile = remoteSession.folderLocationAbsolutePath + "\\recording_main_meta.spbf";
+            if (!File.Exists(mainMetaFile))
+            {
+                lock (remoteSession.recordingMainMetalockObj)
+                {
+                    var mainMeta = File.Create(mainMetaFile);
+                    mainMeta.Close();
+                }
+            }
+            string jsonData = "";
+            lock (remoteSession.recordingMainMetalockObj)
+            {
+
+                jsonData = File.ReadAllText(mainMetaFile);
+            }
+            var mainMetaData = JsonConvert.DeserializeObject<Dictionary<string, MainMetaDetails>>(jsonData)
+                                  ?? new Dictionary<string, MainMetaDetails>();
+            var metaDetails = new MainMetaDetails()
+            {
+                si = remoteSession.si,
+                ei = remoteSession.ei,
+                st = remoteSession.st,
+                et = remoteSession.et,
+            };
+            mainMetaData[fileIndex.ToString()] = metaDetails;
+            jsonData = JsonConvert.SerializeObject(mainMetaData);
+            lock (remoteSession.recordingMainMetalockObj)
+            {
+                File.WriteAllText(mainMetaFile, jsonData);
+            }
+        }
+
+        public static void ImageByteFileWrite(RemoteSession remoteSession)
+        {
+            RemoteSessionImage image = remoteSession.imgDataQueue.Dequeue();
+            string recordingFile = remoteSession.folderLocationAbsolutePath + "\\recording.spbf" + remoteSession.recordingIndex.ToString();
+
+            if (!File.Exists(recordingFile))
+            {
+                lock (remoteSession.recordinglockObj)
+                {
+                    var recordingImageFile = File.Create(recordingFile);
+                    recordingImageFile.Close();
+                }
+                remoteSession.isupdateStartIndex = true;
+            }
+            if (new FileInfo(recordingFile).Length > 250000)
+            {
+                remoteSession.recordingIndex++;
+
+                recordingFile = remoteSession.folderLocationAbsolutePath + "\\recording.spbf" + remoteSession.recordingIndex.ToString();
+                lock (remoteSession.recordinglockObj)
+                {
+                    var newrecordingImageFile = File.Create(recordingFile);
+                    newrecordingImageFile.Close();
+                }
+                remoteSession.isUpdateMainMeta = true;
+                remoteSession.isupdateStartIndex = true;
+            }
+            string fileData = "";
+            lock (remoteSession.recordinglockObj)
+            {
+                fileData = File.ReadAllText(recordingFile);
+            }
+
+            int byteStartIndex = fileData.Length;
+            byte[] imageData = image.Data;
+            var base64String = Convert.ToBase64String(imageData, 0, imageData.Length);
+            fileData += base64String;
+            lock (remoteSession.recordinglockObj)
+            {
+                File.WriteAllText(recordingFile, fileData);
+            }
+
+            int byteEndIndex = fileData.Length;
+            if (remoteSession.isUpdateMainMeta)
+            {
+                updateMainMetaFile(remoteSession.recordingIndex - 1, remoteSession);
+                remoteSession.isUpdateMainMeta = false;
+            }
+            if (remoteSession.isupdateStartIndex)
+            {
+                remoteSession.si = byteStartIndex;
+                remoteSession.st = image.timestamp;
+                remoteSession.isupdateStartIndex = false;
+            }
+            remoteSession.ei = byteEndIndex;
+            remoteSession.et = image.timestamp;
+            MetaFileWrite(image, byteStartIndex, byteEndIndex, remoteSession);
+        }
+
+        public static void ImageDataWriteToFile(RemoteSession remoteSession)
+        {
+            while (remoteSession.ImageQueueWriteCheck)
+            {
+                if (remoteSession.imgDataQueue.Count == 0)
+                {
+                    Thread.Sleep(5000);
+                }
+                else
+                {
+                    ImageByteFileWrite(remoteSession);
+                }
+            }
+        }
+
 
         public RemoteSession(
             Guid id,
@@ -139,6 +373,12 @@ namespace Myrtille.Web
             ScreenshotIntervalSecs = 60;
             ScreenshotFormat = CaptureFormat.PNG;
             ScreenshotPath = string.Empty;
+
+            // session default recording config
+            imgDataQueue = new Queue<RemoteSessionImage>();
+            ImageQueueWriteCheck = true;
+            recordingIndex = 0;
+            isUpdateMainMeta = false;
 
             Manager = new RemoteSessionManager(this);
         }

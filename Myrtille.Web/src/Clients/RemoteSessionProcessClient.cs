@@ -247,8 +247,16 @@ namespace Myrtille.Web
                 var remoteSessions = (IDictionary<Guid, RemoteSession>)_application[HttpApplicationStateVariables.RemoteSessions.ToString()];
                 if (remoteSessions.ContainsKey(_remoteSessionManager.RemoteSession.Id))
                 {
-                    SecurdenWeb.ManageSessionRequest(_remoteSessionManager.RemoteSession.accessUrl, _remoteSessionManager.RemoteSession.Id.ToString(), false);
                     remoteSessions.Remove(_remoteSessionManager.RemoteSession.Id);
+                    if (_remoteSessionManager.RemoteSession.isRecordingNeeded)
+                    {
+                        while (_remoteSessionManager.RemoteSession.imgDataQueue.Count != 0)
+                        {
+                            Thread.Sleep(1000);
+                        }
+                        RemoteSession.updateMainMetaFile(_remoteSessionManager.RemoteSession.recordingIndex, _remoteSessionManager.RemoteSession);
+                    }
+                    JObject response = SecurdenWeb.ManageSessionRequest(_remoteSessionManager.RemoteSession.accessUrl, _remoteSessionManager.RemoteSession.Id.ToString(), false, _remoteSessionManager.RemoteSession.serviceOrgId, _remoteSessionManager.RemoteSession.auditId, _remoteSessionManager.RemoteSession.isRecordingNeeded, _remoteSessionManager.RemoteSession.remoteSessionId);
                 }
 
                 #endregion

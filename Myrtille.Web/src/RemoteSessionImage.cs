@@ -45,5 +45,6 @@ namespace Myrtille.Web
         public int Quality;
         public bool Fullscreen;
         public byte[] Data;
+        public long timestamp;
     }
 }
