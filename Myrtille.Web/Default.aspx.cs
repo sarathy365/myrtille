@@ -547,7 +547,7 @@ namespace Myrtille.Web
                 {
                     string serverAccessUrl = null;
                     JObject response = null;
-                    JObject paramObj = new JObject(new JProperty("SESSION_TYPE", 1));
+                    JObject paramObj = new JObject(new JProperty("SESSION_TYPE", 7));
                     if (Request["access_url"] != null && Request["access_url"].Trim() != "")
                     {
                         string accessUrl = Request["access_url"].Trim();
