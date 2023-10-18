@@ -237,7 +237,12 @@ namespace Myrtille.Web
         public static void ImageByteFileWrite(RemoteSession remoteSession)
         {
             RemoteSessionImage image = remoteSession.imgDataQueue.Dequeue();
-            string recordingFile = remoteSession.folderLocationAbsolutePath + "\\recording.spbf" + remoteSession.recordingIndex.ToString();
+            string folder = remoteSession.folderLocationAbsolutePath;
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+            string recordingFile = folder + "\\recording.spbf" + remoteSession.recordingIndex.ToString();
 
             if (!File.Exists(recordingFile))
             {
@@ -251,8 +256,7 @@ namespace Myrtille.Web
             if (new FileInfo(recordingFile).Length > 250000)
             {
                 remoteSession.recordingIndex++;
-
-                recordingFile = remoteSession.folderLocationAbsolutePath + "\\recording.spbf" + remoteSession.recordingIndex.ToString();
+                recordingFile = folder + "\\recording.spbf" + remoteSession.recordingIndex.ToString();
                 lock (remoteSession.recordinglockObj)
                 {
                     var newrecordingImageFile = File.Create(recordingFile);

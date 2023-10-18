@@ -88,7 +88,21 @@ namespace Myrtille.Web.src.Utils
             }
             return response;
         }
-        
+
+        public static JObject UpdateRecordedFolder(string serverUrl, long recordedSessionId, string folderLocation, string serviceOrgId)
+        {
+            JObject response = new JObject();
+            if (serverUrl != null && serverUrl != String.Empty)
+            {
+                JObject paramObj = new JObject(
+                    new JProperty("RECORDED_SESSION_ID", recordedSessionId),
+                    new JProperty("FOLDER_LOCATION", folderLocation)
+                    );
+                response = SecurdenWebRequest(serverUrl, "/launcher/update_recorded_folder", "POST", paramObj, serviceOrgId);
+            }
+            return response;
+        }
+
         public static JObject ProcessLaunchRequest(HttpRequest Request, HttpResponse Response, string serverUrl, string authKey, string connectionId, string serviceOrgId)
         {
             JObject returnObj = null;
