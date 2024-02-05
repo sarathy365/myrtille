@@ -645,6 +645,8 @@ namespace Myrtille.Web
             long auditId = 0;
             bool isRecordingNeeded = false;
             long remoteSessionId = 0;
+            bool isDisplayTitle = false;
+            string accountTitle = null;
             if (RemoteSession == null)
             {
                 JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString(), serviceOrgId);
@@ -756,6 +758,8 @@ namespace Myrtille.Web
                     loginDomain = "";
                     loginUser = (string)connectionDetails["username"];
                     loginPassword = (string)connectionDetails["password"];
+                    isDisplayTitle = (bool)connectionDetails["is_display_title"];
+                    accountTitle = (string)connectionDetails["account_title"];
                     if (connectionDetails.ContainsKey("port"))
                     {
                         loginServer += ":" + connectionDetails["port"];
@@ -937,7 +941,9 @@ namespace Myrtille.Web
                     maxActiveGuests,
                     Session.SessionID,
                     (string)Session[HttpSessionStateVariables.ClientKey.ToString()],
-                    Request["cid"] != null
+                    Request["cid"] != null,
+                    accountTitle,
+                    isDisplayTitle
                 );
 
                 RemoteSession.UserProfileId = userProfileId;
