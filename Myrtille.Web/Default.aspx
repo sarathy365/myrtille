@@ -35,7 +35,7 @@
         <!-- mobile devices -->
         <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0"/>
         
-        <title><%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? ((RemoteSession.isManageSession? "Shadow Session - " : "") + ((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString() + "@" + RemoteSession.ServerAddress.ToString() + " | Securden RDP Session") : "Securden RDP Gateway"%></title>
+        <title><%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? ((RemoteSession.isManageSession? "Shadow Session - " : "") + (RemoteSession.isDisplayTitle? RemoteSession.AccountTitle : (((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString())) + "@" + RemoteSession.ServerAddress.ToString() + " | Securden RDP Session") : "Securden RDP Gateway"%></title>
         
         <link rel="icon" type="image/x-icon" href="favicon.ico"/>
         <link rel="stylesheet" type="text/css" href="<%=BundleTable.Bundles.ResolveBundleUrl("~/css/Default.css", true)%>"/>
