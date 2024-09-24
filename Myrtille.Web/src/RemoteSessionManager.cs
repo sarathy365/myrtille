@@ -36,11 +36,11 @@ using Myrtille.Web.src.Utils;
 using Newtonsoft.Json.Linq;
 
 namespace Myrtille.Web
-{
+{               
     public class RemoteSessionManager : IDisposable
     {
         #region Init
-
+        public DateTime lastActiveTime;
         public RemoteSession RemoteSession { get; private set; }
 
         public RemoteSessionManager(RemoteSession remoteSession)
@@ -187,9 +187,10 @@ namespace Myrtille.Web
                         // in case the remote session was reconnected, send the capture API config
                         SendCommand(RemoteSessionCommand.SetScreenshotConfig, string.Format("{0}|{1}|{2}", RemoteSession.ScreenshotIntervalSecs, (int)RemoteSession.ScreenshotFormat, RemoteSession.ScreenshotPath));
                     }
-
+                    
                     ProcessUpdate(data);
                 }
+
             }
             catch (Exception exc)
             {
@@ -521,6 +522,10 @@ namespace Myrtille.Web
                     Pipes.InputsPipe,
                     "remotesession_" + RemoteSession.Id + "_inputs",
                     commandWithArgs);
+                if ((command == RemoteSessionCommand.SendMouseMove) || (command == RemoteSessionCommand.SendKeyScancode) || (command == RemoteSessionCommand.SetReconnectSession)) {
+                    lastActiveTime = DateTime.Now;
+                }
+                
             }
             catch (Exception exc)
             {
@@ -930,7 +935,6 @@ namespace Myrtille.Web
                     }
                 }
             }
-
             StopWaitForImageEvent();
         }
 
