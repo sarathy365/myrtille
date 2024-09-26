@@ -17,6 +17,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Web;
 using Newtonsoft.Json;
@@ -129,6 +130,7 @@ namespace Myrtille.Web
         public void SendMessage(RemoteSessionMessage message)
         {
             Send(JsonConvert.SerializeObject(message));
+
         }
 
         public void Send(string data)
