@@ -78,7 +78,7 @@
         <%=(RemoteSession != null ? RemoteSession.ClientWidth.ToString() : "null")%>,
         <%=(RemoteSession != null ? RemoteSession.ClientHeight.ToString() : "null")%>,
         '<%=(RemoteSession != null ? RemoteSession.HostType.ToString() : HostType.RDP.ToString())%>',
-        <%=(RemoteSession != null && !string.IsNullOrEmpty(RemoteSession.VMGuid) && !RemoteSession.VMEnhancedMode).ToString().ToLower()%>);">
+        <%=(RemoteSession != null && !string.IsNullOrEmpty(RemoteSession.VMGuid) && !RemoteSession.VMEnhancedMode).ToString().ToLower()%>);resetIdleTimer()">
 
         <!-- custom UI: all elements below, including the logo, are customizable into Default.css -->
 
@@ -452,7 +452,10 @@
 
             var dragDiv = document.getElementById('dragDiv');
             var dragHandle = document.getElementById('dragHandle');
-
+            var idleDialog = document.getElementById("dialog-overlay");
+            let idleTimer;
+            var IDLE_TIMEOUT;
+            
             interact(dragDiv)
                 .draggable({
                     allowFrom: dragHandle,
@@ -519,10 +522,9 @@
                 catch (exc)
                 {
                     alert('Unexpected Error');
-                    console.log('initDisplay error: ' + exc.message);
                 }
             }
-
+            
             function onHostTypeChange(hostType)
             {
                 var securityProtocolDiv = document.getElementById('securityProtocolDiv');
@@ -615,6 +617,7 @@
 
             function onDragMove(event)
             {
+                resetIdleTimer()
                 var target = event.target,
                 x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
                 y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
@@ -634,9 +637,39 @@
                 target.setAttribute('data-x', x);
                 target.setAttribute('data-y', y);
             }
+            function resetIdleTimer() {
+                var idleTimeout =   <%= (RemoteSession != null && 
+                 (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) &&
+                 !string.IsNullOrEmpty(RemoteSession.IdleTimeout)) 
+                 ? RemoteSession.IdleTimeout 
+                 : "1" %>
+                IDLE_TIMEOUT = parseInt(idleTimeout) * 60 * 1000;
+                clearTimeout(idleTimer);
+                var center_dialog = document.getElementById("dialog-overlay");
+                if (center_dialog.style.visibility === "visible") {
+                    center_dialog.style.visibility = "hidden";
+                }
+                idleTimer = window.setTimeout(() => {
+                center_dialog.style.visibility = "visible";
+                setClickAction()
+                }, IDLE_TIMEOUT);
 
-		</script>
+            }
+            function setClickAction() {
+                var center_dialog = document.getElementById("dialog-overlay");
+                center_dialog.removeEventListener("mouseover", resetIdleTimer);
+                center_dialog.addEventListener("mouseover", resetIdleTimer);
+            }
+            document.addEventListener("mousemove", resetIdleTimer);
+        </script>
 
 	</body>
+    <div class="overlay" id="dialog-overlay" style="visibility: hidden;">
+    <div class="dialog">
+        <h2>Idle Timeout</h2>
+        <p>You have been inactive. Please click to continue.</p>
+
+    </div>
+</div>
 
 </html>
