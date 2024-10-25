@@ -670,6 +670,7 @@ namespace Myrtille.Web
             bool isDisplayTitle = false;
             string accountTitle = null;
             string idleTime = null;
+            bool isSessionShadowed = false;
             if (RemoteSession == null)
             {
                 JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString(), serviceOrgId);
@@ -689,6 +690,7 @@ namespace Myrtille.Web
                     }
                     idleTime = (string)connectionDetails["IDLE_SESSION_TIME"];
                     accessUrl = (string)connectionDetails["ACCESS_URL"];
+                    isSessionShadowed = (string)connectionDetails["type"] == "SHADOW_SESSION";
                     if ((string)connectionDetails["type"] == "SHADOW_SESSION")
                     {
                         connectionDetails = (JObject)connectionDetails["details"];
@@ -968,7 +970,8 @@ namespace Myrtille.Web
                     Request["cid"] != null,
                     accountTitle,
                     isDisplayTitle,
-                    idleTime
+                    idleTime,
+                    isSessionShadowed
                 );
 
                 RemoteSession.UserProfileId = userProfileId;
@@ -979,6 +982,7 @@ namespace Myrtille.Web
                 RemoteSession.remoteSessionId = remoteSessionId;
                 RemoteSession.isRecordingNeeded = isRecordingNeeded;
                 RemoteSession.IdleTimeout = idleTime;
+                RemoteSession.isIdleTimeOutEnabled = !isSessionShadowed;
 
                 // bind the remote session to the current http session
                 Session[HttpSessionStateVariables.RemoteSession.ToString()] = RemoteSession;

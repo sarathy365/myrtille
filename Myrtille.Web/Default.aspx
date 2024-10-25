@@ -640,7 +640,7 @@
             function resetIdleTimer() {
                 var idleTimeout =   <%= (RemoteSession != null && 
                  (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) &&
-                 !string.IsNullOrEmpty(RemoteSession.IdleTimeout)) 
+                 !string.IsNullOrEmpty(RemoteSession.IdleTimeout) && (RemoteSession.isIdleTimeOutEnabled)) 
                  ? RemoteSession.IdleTimeout 
                  : "1" %>
                 IDLE_TIMEOUT = parseInt(idleTimeout) * 60 * 1000;
@@ -667,7 +667,7 @@
     <div class="overlay" id="dialog-overlay" style="visibility: hidden;">
     <div class="dialog">
         <h2>Idle Timeout</h2>
-        <p>You have been inactive. Please click to continue.</p>
+        <p>An idle session has been detected and you will be timed out of this connection. Take action to prevent timeout.</p>
 
     </div>
 </div>
