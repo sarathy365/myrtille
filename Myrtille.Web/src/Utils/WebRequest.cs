@@ -154,6 +154,7 @@ namespace Myrtille.Web.src.Utils
                 Response.Write("<script>alert('Unable to launch the connection. Try again.'); window.close();</script>");
             }
             return returnObj;
+ 
         }
     }
 }

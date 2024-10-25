@@ -542,15 +542,37 @@ namespace Myrtille.Web
             try
             {
                 var remoteSessions = ((IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()]);
+                var idleSessionIds = new JArray();
+
+                foreach (KeyValuePair<Guid, RemoteSession> RemoteSessionMap in remoteSessions)
+                {
+                    var remotesession = RemoteSessionMap.Value;
+                    RemoteSessionManager manager = remotesession.Manager;
+                    bool isConnected = (remotesession.State == RemoteSessionState.Connected);
+                    if ((isConnected) && (manager != null) && (manager.lastActiveTime != null))
+                    {
+
+                        TimeSpan idleTime = DateTime.Now - manager.lastActiveTime;
+                        if (idleTime.TotalSeconds > int.Parse(RemoteSession.IdleTimeout) * 60)
+                        {
+                            idleSessionIds.Add(RemoteSessionMap.Key);
+                        }
+                    }
+                }
                 bool isEmpty = remoteSessions.Count == 0;
+                bool isIdleSessionEmpty = idleSessionIds.Count == 0;
                 if (!isEmpty)
                 {
                     string serverAccessUrl = null;
                     JObject response = null;
                     JObject paramObj = new JObject(new JProperty("SESSION_TYPE", 7));
+    
                     if (Request["access_url"] != null && Request["access_url"].Trim() != "")
                     {
                         string accessUrl = Request["access_url"].Trim();
+                        if (!isIdleSessionEmpty) {
+                            paramObj.Add("IDLE_SESSION_IDS", idleSessionIds);
+                        }
                         if (accessUrl.EndsWith("/"))
                         {
                             accessUrl = accessUrl.Substring(0, accessUrl.Length - 1);
@@ -574,7 +596,6 @@ namespace Myrtille.Web
                         }
                         else if (response != null)
                         {
-                            bool isTerminated = false;
                             try
                             {
                                 var valueArray = (JArray)response["machine_session_id_list"];
@@ -585,7 +606,6 @@ namespace Myrtille.Web
                                     {
                                         var RemoteSession = ((IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()])[(Guid)toTerminateConnectionId];
                                         RemoteSession.Manager.SendCommand(RemoteSessionCommand.CloseClient);
-                                        isTerminated = true;
                                     }
                                 }
                             }
@@ -597,11 +617,6 @@ namespace Myrtille.Web
                             {
                                 System.Diagnostics.Trace.TraceError("Failed to terminate the session ({0})", exc);
                             }
-                            // if (isTerminated)
-                            // {
-                               // Thread.CurrentThread.Abort();
-                               // Response.Write("<script>alert('Session terminated.'); window.close();</script>");
-                            // }
                         }
                     }
                     Thread.Sleep(60000);
@@ -647,6 +662,8 @@ namespace Myrtille.Web
             long remoteSessionId = 0;
             bool isDisplayTitle = false;
             string accountTitle = null;
+            string idleTime = null;
+            bool isSessionShadowed = false;
             if (RemoteSession == null)
             {
                 JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString(), serviceOrgId);
@@ -664,7 +681,9 @@ namespace Myrtille.Web
                     {
                         userSessionId = (long)connectionDetails["user_session_id"];
                     }
+                    idleTime = (string)connectionDetails["IDLE_SESSION_TIME"];
                     accessUrl = (string)connectionDetails["ACCESS_URL"];
+                    isSessionShadowed = (string)connectionDetails["type"] == "SHADOW_SESSION";
                     if ((string)connectionDetails["type"] == "SHADOW_SESSION")
                     {
                         connectionDetails = (JObject)connectionDetails["details"];
@@ -943,7 +962,9 @@ namespace Myrtille.Web
                     (string)Session[HttpSessionStateVariables.ClientKey.ToString()],
                     Request["cid"] != null,
                     accountTitle,
-                    isDisplayTitle
+                    isDisplayTitle,
+                    idleTime,
+                    isSessionShadowed
                 );
 
                 RemoteSession.UserProfileId = userProfileId;
@@ -953,9 +974,12 @@ namespace Myrtille.Web
                 RemoteSession.auditId = auditId;
                 RemoteSession.remoteSessionId = remoteSessionId;
                 RemoteSession.isRecordingNeeded = isRecordingNeeded;
+                RemoteSession.IdleTimeout = idleTime;
+                RemoteSession.isIdleTimeOutEnabled = !isSessionShadowed;
 
                 // bind the remote session to the current http session
                 Session[HttpSessionStateVariables.RemoteSession.ToString()] = RemoteSession;
+                Session["IDLE_TIMEOUT"] = idleTime;
 
                 // register the remote session at the application level
                 var remoteSessions = (IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()];

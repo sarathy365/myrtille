@@ -104,7 +104,8 @@ namespace Myrtille.Web
         public string ClipboardText;                    // clipboard text
         public string AccountTitle;
         public bool isDisplayTitle;
-
+        public string IdleTimeout;
+        public bool isIdleTimeOutEnabled;
 
         public class MetaDataDetails
         {
@@ -201,7 +202,6 @@ namespace Myrtille.Web
                 File.WriteAllText(metafile, jsonObject.ToString());
             }
         }
-
         public static void updateMainMetaFile(int fileIndex, RemoteSession remoteSession)
         {
             string mainMetaFile = remoteSession.folderLocationAbsolutePath + "\\recording_main_meta.spbf";
@@ -340,7 +340,9 @@ namespace Myrtille.Web
             string ownerClientKey,
             bool connectionService,
             string accountTitle,
-            bool displayTitle)
+            bool displayTitle,
+            string idleTime,
+            bool isSessionShadowed)
         {
             Id = id;
             State = RemoteSessionState.NotConnected;
@@ -380,7 +382,8 @@ namespace Myrtille.Web
             ImageQueueWriteCheck = true;
             recordingIndex = 0;
             isUpdateMainMeta = false;
-
+            IdleTimeout = idleTime;
+            isIdleTimeOutEnabled = !(isSessionShadowed);
             Manager = new RemoteSessionManager(this);
         }
     }
