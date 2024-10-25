@@ -596,7 +596,6 @@ namespace Myrtille.Web
                         }
                         else if (response != null)
                         {
-                            bool isTerminated = false;
                             try
                             {
                                 var valueArray = (JArray)response["machine_session_id_list"];
@@ -607,7 +606,6 @@ namespace Myrtille.Web
                                     {
                                         var RemoteSession = ((IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()])[(Guid)toTerminateConnectionId];
                                         RemoteSession.Manager.SendCommand(RemoteSessionCommand.CloseClient);
-                                        isTerminated = true;
                                     }
                                 }
                             }
@@ -619,11 +617,6 @@ namespace Myrtille.Web
                             {
                                 System.Diagnostics.Trace.TraceError("Failed to terminate the session ({0})", exc);
                             }
-                            // if (isTerminated)
-                            // {
-                               // Thread.CurrentThread.Abort();
-                               // Response.Write("<script>alert('Session terminated.'); window.close();</script>");
-                            // }
                         }
                     }
                     Thread.Sleep(60000);
