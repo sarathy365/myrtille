@@ -644,6 +644,9 @@
                  ? RemoteSession.IdleTimeout 
                  : "1" %>
                 IDLE_TIMEOUT = parseInt(idleTimeout) * 60 * 1000;
+                if (IDLE_TIMEOUT==0){
+                    return
+                }
                 clearTimeout(idleTimer);
                 var center_dialog = document.getElementById("dialog-overlay");
                 if (center_dialog.style.visibility === "visible") {
