@@ -105,6 +105,7 @@ namespace Myrtille.Web
         public string AccountTitle;
         public bool isDisplayTitle;
         public string IdleTimeout;
+        public bool isIdleTimeOutEnabled;
 
         public class MetaDataDetails
         {
@@ -340,7 +341,8 @@ namespace Myrtille.Web
             bool connectionService,
             string accountTitle,
             bool displayTitle,
-            string idleTime)
+            string idleTime,
+            bool isSessionShadowed)
         {
             Id = id;
             State = RemoteSessionState.NotConnected;
@@ -381,6 +383,7 @@ namespace Myrtille.Web
             recordingIndex = 0;
             isUpdateMainMeta = false;
             IdleTimeout = idleTime;
+            isIdleTimeOutEnabled = !(isSessionShadowed);
             Manager = new RemoteSessionManager(this);
         }
     }
