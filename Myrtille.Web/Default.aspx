@@ -643,7 +643,8 @@
                  !string.IsNullOrEmpty(RemoteSession.IdleTimeout) && (RemoteSession.isIdleTimeOutEnabled)) 
                  ? RemoteSession.IdleTimeout 
                  : "1" %>
-                IDLE_TIMEOUT = parseInt(idleTimeout) * 60 * 1000;
+                    IDLE_TIMEOUT = parseInt(idleTimeout) * 60 * 1000;
+                IDLE_TIMEOUT = 0.6 * IDLE_TIMEOUT;
                 if (IDLE_TIMEOUT==0){
                     return
                 }

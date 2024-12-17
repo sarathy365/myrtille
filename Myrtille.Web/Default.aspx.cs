@@ -553,9 +553,27 @@ namespace Myrtille.Web
                     {
 
                         TimeSpan idleTime = DateTime.Now - manager.lastActiveTime;
-                        if (idleTime.TotalSeconds > int.Parse(RemoteSession.IdleTimeout) * 60)
+                        if ((int.Parse(remotesession.IdleTimeout) != 0) && (idleTime.TotalSeconds > (int.Parse(remotesession.IdleTimeout) * 60)))
                         {
-                            idleSessionIds.Add(RemoteSessionMap.Key);
+                            bool isTerminated = false;
+                            try
+                            {
+                                manager.SendCommand(RemoteSessionCommand.CloseClient);
+                                isTerminated = true;
+                            }
+                            catch (Exception exc)
+                            {
+                                System.Diagnostics.Trace.TraceError($"Failed to terminate the session ({exc.ToString()})");
+                            }
+                            if (isTerminated)
+                            {
+                                Response.Write("<script>alert('Idle session terminated.'); window.close();</script>");
+                                continue;
+                            }
+                            idleSessionIds.Add(new JObject {
+                            new JProperty("SESSION_ID", RemoteSessionMap.Key),
+                            new JProperty("LAST_ACTIVE_TIME", (int)idleTime.TotalSeconds)
+                        });
                         }
                     }
                 }
@@ -571,7 +589,7 @@ namespace Myrtille.Web
                     {
                         string accessUrl = Request["access_url"].Trim();
                         if (!isIdleSessionEmpty) {
-                            paramObj.Add("IDLE_SESSION_IDS", idleSessionIds);
+                            paramObj.Add("ACTIVE_USER_SESSION_IDS", idleSessionIds);
                         }
                         if (accessUrl.EndsWith("/"))
                         {
@@ -605,7 +623,7 @@ namespace Myrtille.Web
                                     if (remoteSessions.ContainsKey((Guid)toTerminateConnectionId))
                                     {
                                         var RemoteSession = ((IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()])[(Guid)toTerminateConnectionId];
-                                        RemoteSession.Manager.SendCommand(RemoteSessionCommand.CloseClient);
+                                            RemoteSession.Manager.SendCommand(RemoteSessionCommand.CloseClient);
                                     }
                                 }
                             }
