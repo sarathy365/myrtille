@@ -71,19 +71,61 @@ namespace Myrtille.Web.src.Utils
             return result;
         }
 
+
+        public static int ReadAppServerProperties()
+        {
+            string folderPath = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase))).Substring(6) + "\\";
+            string appServerConfFile = folderPath + "conf\\" + "app_server.properties";
+            string[] lines = null;
+
+            Int32 finalValue = 1;
+            try
+            {
+                lines = File.ReadAllLines(@appServerConfFile);
+            }
+            catch (Exception) { }
+            if (lines != null)
+            {
+                foreach (string line in lines)
+                {
+                    string property = line.Trim();
+                    if (property != "" && property[0] != '#' && property.Contains("="))
+                    {
+                        string[] splitted = property.Split('=');
+                        string key = splitted[0].TrimEnd();
+                        string value = splitted[1].TrimStart().Trim('"');
+                        if (key == "" || value == "")
+                            continue;
+                        if (key == "app_server_id")
+                        {
+                            try
+                            {
+                                finalValue = int.Parse(value);
+                                break;
+                            }
+                            catch (Exception) { }
+                        }
+                    }
+                }
+            }
+            return finalValue;
+        }
+
         public static JObject ManageSessionRequest(string serverUrl, string connectionId, bool status, string serviceOrgId, long auditId, bool isRecordingNeeded, long remoteSessionId)
         {
             JObject response = new JObject();
             if (serverUrl != null && serverUrl != String.Empty)
             {
+                var appServerId = ReadAppServerProperties();
                 JObject paramObj = new JObject(
                     new JProperty("CONNECTION_ID", connectionId),
                     new JProperty("STATUS", status),
                     new JProperty("IS_RECORDING_ENABLED", isRecordingNeeded),
                     new JProperty("AUDIT_ID", auditId),
                     new JProperty("REMOTE_SESSION_ID", remoteSessionId),
-                    new JProperty("IS_FILE_CONTENT", isRecordingNeeded)
-                    );
+                    new JProperty("IS_FILE_CONTENT", isRecordingNeeded),
+                    new JProperty("APP_SERVER_ID", appServerId)
+                    ); ;
                 response = SecurdenWebRequest(serverUrl, "/launcher/manage_web_session", "POST", paramObj, serviceOrgId);
             }
             return response;
