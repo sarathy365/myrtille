@@ -36,11 +36,11 @@ using Myrtille.Web.src.Utils;
 using Newtonsoft.Json.Linq;
 
 namespace Myrtille.Web
-{
+{               
     public class RemoteSessionManager : IDisposable
     {
         #region Init
-
+        public DateTime lastActiveTime;
         public RemoteSession RemoteSession { get; private set; }
 
         public RemoteSessionManager(RemoteSession remoteSession)
@@ -163,6 +163,7 @@ namespace Myrtille.Web
                     {
                         RemoteSession.State = RemoteSessionState.Connected;
                         JObject response = SecurdenWeb.ManageSessionRequest(RemoteSession.accessUrl, RemoteSession.Id.ToString(), true, RemoteSession.serviceOrgId, RemoteSession.auditId, RemoteSession.isRecordingNeeded, RemoteSession.remoteSessionId);
+                        // RemoteSession.folderLocationAbsolutePath = (string)response["return_dict"]["folder_location_absolute_path"];
                         JObject backupLocationDict = (JObject)response["return_dict"]["backup_location_dict"];
                         string folderLocationRelativePath = (string)response["return_dict"]["folder_location_relative_path"];
                         string backupFolderLocation = (string)backupLocationDict["folder_location"];
@@ -170,8 +171,8 @@ namespace Myrtille.Web
                         bool isRelativePath = (bool)backupLocationDict["is_relative_path"];
                         if (isRelativePath)
                         {
-                            string sessionRecordingFolder = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase))).Substring(6) + "\\";
-                            RemoteSession.folderLocationAbsolutePath = sessionRecordingFolder + "\\" + backupFolderLocation + "\\" + folderLocationRelativePath;
+                             string sessionRecordingFolder = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase))).Substring(6) + "\\";
+                             RemoteSession.folderLocationAbsolutePath = sessionRecordingFolder + "\\" + backupFolderLocation + "\\" + folderLocationRelativePath;
                         }
                         else
                         {
@@ -183,9 +184,10 @@ namespace Myrtille.Web
                         // in case the remote session was reconnected, send the capture API config
                         SendCommand(RemoteSessionCommand.SetScreenshotConfig, string.Format("{0}|{1}|{2}", RemoteSession.ScreenshotIntervalSecs, (int)RemoteSession.ScreenshotFormat, RemoteSession.ScreenshotPath));
                     }
-
+                    
                     ProcessUpdate(data);
                 }
+
             }
             catch (Exception exc)
             {
@@ -517,6 +519,10 @@ namespace Myrtille.Web
                     Pipes.InputsPipe,
                     "remotesession_" + RemoteSession.Id + "_inputs",
                     commandWithArgs);
+                if ((command == RemoteSessionCommand.SendMouseMove) || (command == RemoteSessionCommand.SendKeyScancode) || (command == RemoteSessionCommand.SetReconnectSession)) {
+                    lastActiveTime = DateTime.Now;
+                }
+                
             }
             catch (Exception exc)
             {
@@ -975,7 +981,6 @@ namespace Myrtille.Web
                     }
                 }
             }
-
             StopWaitForImageEvent();
         }
 
