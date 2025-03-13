@@ -106,7 +106,7 @@ namespace Myrtille.Web
         public bool isDisplayTitle;
         public string IdleTimeout;
         public bool isIdleTimeOutEnabled;
-        public string ShareFolderPath; 
+        public string sharedFolderPath; 
 
         public class MetaDataDetails
         {
@@ -373,7 +373,7 @@ namespace Myrtille.Web
             ConnectionService = connectionService;
             AccountTitle = accountTitle;
             isDisplayTitle = displayTitle;
-            ShareFolderPath = shareFolderPath;
+            sharedFolderPath = shareFolderPath;
 
             // default capture API config
             ScreenshotIntervalSecs = 60;

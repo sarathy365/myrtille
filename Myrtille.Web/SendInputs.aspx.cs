@@ -111,7 +111,7 @@ namespace Myrtille.Web
                                 remoteSession.AllowRemoteClipboard,
                                 remoteSession.AllowPrintDownload,
                                 remoteSession.AllowAudioPlayback,
-                                remoteSession.ShareFolderPath);
+                                remoteSession.sharedFolderPath);
                         }
                         catch (Exception exc)
                         {

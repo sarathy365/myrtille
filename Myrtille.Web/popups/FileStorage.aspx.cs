@@ -66,7 +66,7 @@ namespace Myrtille.Web
                             _remoteSession.UserDomain,
                             _remoteSession.UserName,
                             _remoteSession.UserPassword,
-                            _remoteSession.ShareFolderPath);
+                            _remoteSession.sharedFolderPath);
 
                         if (files.Count > 0)
                         {
@@ -120,7 +120,7 @@ namespace Myrtille.Web
                             UserPassword = _remoteSession.UserPassword,
                             FileName = Path.GetFileName(fileToUploadText.PostedFile.FileName),
                             FileStream = fileToUploadText.PostedFile.InputStream,
-                            ShareFolderPath = _remoteSession.ShareFolderPath
+                            sharedFolderPath = _remoteSession.sharedFolderPath
                         });
 
                     // reload the page to have the newly uploaded file available for download
@@ -159,7 +159,7 @@ namespace Myrtille.Web
                         _remoteSession.UserName,
                         _remoteSession.UserPassword,
                         fileToDownloadSelect.Value,
-                        _remoteSession.ShareFolderPath);
+                        _remoteSession.sharedFolderPath);
 
                     FileHelper.DownloadFile(Response, fileStream, fileToDownloadSelect.Value, true);
                 }

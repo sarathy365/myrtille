@@ -32,9 +32,9 @@ namespace Myrtille.Services
             string userDomain,
             string userName,
             string userPassword,
-            string ShareFolderPath)
+            string sharedFolderPath)
         {
-            var documentsFolder = ShareFolderPath;
+            var documentsFolder = sharedFolderPath;
 
             try
             {
@@ -55,7 +55,7 @@ namespace Myrtille.Services
         public void UploadFileToUserDocumentsFolder(
             UploadRequest uploadRequest)
         {
-            var documentsFolder = uploadRequest.ShareFolderPath;
+            var documentsFolder = uploadRequest.sharedFolderPath;
 
             try
             {
@@ -93,9 +93,9 @@ namespace Myrtille.Services
             string userName,
             string userPassword,
             string fileName,
-            string ShareFolderPath)
+            string sharedFolderPath)
         {
-            var documentsFolder = ShareFolderPath;
+            var documentsFolder = sharedFolderPath;
 
             Stream fileStream = null;
 

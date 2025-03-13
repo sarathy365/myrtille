@@ -45,7 +45,7 @@ namespace Myrtille.Services.Contracts
         public Stream FileStream { get; set; }
 
         [MessageHeader(MustUnderstand = true)]
-        public string ShareFolderPath { get; set; }
+        public string sharedFolderPath { get; set; }
     }
 
     [ServiceContract]
@@ -60,7 +60,7 @@ namespace Myrtille.Services.Contracts
             string userDomain,
             string userName,
             string userPassword,
-            string ShareFolderPath);
+            string sharedFolderPath);
 
         /// <summary>
         /// upload a file to the given user documents folder

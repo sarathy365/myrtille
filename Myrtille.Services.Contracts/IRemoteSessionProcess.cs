@@ -42,7 +42,7 @@ namespace Myrtille.Services.Contracts
             bool allowRemoteClipboard,
             bool allowPrintDownload,
             bool allowAudioPlayback, 
-            string ShareFolderPath);
+            string sharedFolderPath);
 
         /// <summary>
         /// stop the host client process
