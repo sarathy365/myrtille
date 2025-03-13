@@ -34,7 +34,7 @@
             
             <!-- upload/download file(s). only enabled if the connected server is localhost or if a domain is specified (so file(s) can be accessed within the remote session) -->
             <div>
-                <span id="fileStoragePopupDesc">Files into "My documents" folder</span><hr/>
+                <span id="fileStoragePopupDesc">Files into "Share" folder</span><hr/>
                 Upload file: <input type="file" runat="server" id="fileToUploadText" onchange="onFileToUploadChange(this);"/>
                 <input type="button" runat="server" id="uploadFileButton" value="Upload" disabled="disabled" onserverclick="UploadFileButtonClick"/><br/>
                 Download file: <select runat="server" id="fileToDownloadSelect" onchange="onFileToDownloadChange(this);"/>
@@ -73,10 +73,11 @@
                 if (idx != -1)
                 {
                     alert('file was uploaded successfully');
+                    parent.closePopup();
                 }
             }
 
-		</script>
+        </script>
 
 	</body>
 

@@ -8,10 +8,10 @@
 //------------------------------------------------------------------------------
 
 namespace Myrtille.Web {
-    
-    
+
+
     public partial class FileStorage {
-        
+
         /// <summary>
         /// fileToUploadText control.
         /// </summary>
@@ -20,7 +20,7 @@ namespace Myrtille.Web {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlInputFile fileToUploadText;
-        
+
         /// <summary>
         /// uploadFileButton control.
         /// </summary>
@@ -29,7 +29,7 @@ namespace Myrtille.Web {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlInputButton uploadFileButton;
-        
+
         /// <summary>
         /// fileToDownloadSelect control.
         /// </summary>
@@ -38,7 +38,7 @@ namespace Myrtille.Web {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlSelect fileToDownloadSelect;
-        
+
         /// <summary>
         /// downloadFileButton control.
         /// </summary>

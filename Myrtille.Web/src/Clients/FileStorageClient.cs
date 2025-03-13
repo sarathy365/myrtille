@@ -27,11 +27,11 @@ namespace Myrtille.Web
 {
     public class FileStorageClient : ClientBase<IFileStorage>, IFileStorage
     {
-        public List<string> GetUserDocumentsFolderFiles(Guid remoteSessionId, string userDomain, string userName, string userPassword)
+        public List<string> GetUserDocumentsFolderFiles(Guid remoteSessionId, string userDomain, string userName, string userPassword, string ShareFolderPath)
         {
             try
             {
-                return Channel.GetUserDocumentsFolderFiles(remoteSessionId, userDomain, userName, userPassword);
+                return Channel.GetUserDocumentsFolderFiles(remoteSessionId, userDomain, userName, userPassword, ShareFolderPath);
             }
             catch (Exception exc)
             {
@@ -53,11 +53,11 @@ namespace Myrtille.Web
             }
         }
 
-        public Stream DownloadFileFromUserDocumentsFolder(Guid remoteSessionId, string userDomain, string userName, string userPassword, string fileName)
+        public Stream DownloadFileFromUserDocumentsFolder(Guid remoteSessionId, string userDomain, string userName, string userPassword, string fileName, string ShareFolderPath)
         {
             try
             {
-                return Channel.DownloadFileFromUserDocumentsFolder(remoteSessionId, userDomain, userName, userPassword, fileName);
+                return Channel.DownloadFileFromUserDocumentsFolder(remoteSessionId, userDomain, userName, userPassword, fileName, ShareFolderPath);
             }
             catch (Exception exc)
             {

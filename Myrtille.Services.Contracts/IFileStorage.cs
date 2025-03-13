@@ -43,6 +43,9 @@ namespace Myrtille.Services.Contracts
      
         [MessageBodyMember(Order = 1)]
         public Stream FileStream { get; set; }
+
+        [MessageHeader(MustUnderstand = true)]
+        public string ShareFolderPath { get; set; }
     }
 
     [ServiceContract]
@@ -56,7 +59,8 @@ namespace Myrtille.Services.Contracts
             Guid remoteSessionId,
             string userDomain,
             string userName,
-            string userPassword);
+            string userPassword,
+            string ShareFolderPath);
 
         /// <summary>
         /// upload a file to the given user documents folder
@@ -74,6 +78,7 @@ namespace Myrtille.Services.Contracts
             string userDomain,
             string userName,
             string userPassword,
-            string fileName);
+            string fileName,
+            string ShareFolderpath);
     }
 }

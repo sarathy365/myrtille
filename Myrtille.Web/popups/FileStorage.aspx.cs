@@ -53,7 +53,7 @@ namespace Myrtille.Web
                 // if possible, use SSL to communicate with the service
                 if (_remoteSession.State == RemoteSessionState.Connected &&
                     Session.SessionID.Equals(_remoteSession.OwnerSessionID) &&
-                    _remoteSession.HostType != HostType.SSH &&
+                    _remoteSession.HostType != HostType.SSH && 
                     _remoteSession.AllowFileTransfer &&
                     (_remoteSession.ServerAddress.ToLower() == "localhost" || _remoteSession.ServerAddress == "127.0.0.1" || _remoteSession.ServerAddress == "[::1]" || _remoteSession.ServerAddress == Request.Url.Host || !string.IsNullOrEmpty(_remoteSession.UserDomain)) &&
                     !string.IsNullOrEmpty(_remoteSession.UserName) && !string.IsNullOrEmpty(_remoteSession.UserPassword) &&
@@ -65,7 +65,8 @@ namespace Myrtille.Web
                             _remoteSession.Id,
                             _remoteSession.UserDomain,
                             _remoteSession.UserName,
-                            _remoteSession.UserPassword);
+                            _remoteSession.UserPassword,
+                            _remoteSession.ShareFolderPath);
 
                         if (files.Count > 0)
                         {
@@ -118,7 +119,8 @@ namespace Myrtille.Web
                             UserName = _remoteSession.UserName,
                             UserPassword = _remoteSession.UserPassword,
                             FileName = Path.GetFileName(fileToUploadText.PostedFile.FileName),
-                            FileStream = fileToUploadText.PostedFile.InputStream
+                            FileStream = fileToUploadText.PostedFile.InputStream,
+                            ShareFolderPath = _remoteSession.ShareFolderPath
                         });
 
                     // reload the page to have the newly uploaded file available for download
@@ -156,7 +158,8 @@ namespace Myrtille.Web
                         _remoteSession.UserDomain,
                         _remoteSession.UserName,
                         _remoteSession.UserPassword,
-                        fileToDownloadSelect.Value);
+                        fileToDownloadSelect.Value,
+                        _remoteSession.ShareFolderPath);
 
                     FileHelper.DownloadFile(Response, fileStream, fileToDownloadSelect.Value, true);
                 }
