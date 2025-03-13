@@ -355,7 +355,7 @@ namespace Myrtille.Web
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlInputButton osk;
-        
+
         /// <summary>
         /// clipboard control.
         /// </summary>
@@ -418,7 +418,7 @@ namespace Myrtille.Web
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlInputButton disconnect;
-        
+
         /// <summary>
         /// imageQuality control.
         /// </summary>
@@ -490,6 +490,15 @@ namespace Myrtille.Web
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl ctrlaltdelOperDiv;
+
+        /// <summary>
+        /// uploaddownloadOperDiv control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl uploaddownloadOperDiv;
 
         /// <summary>
         /// resizeOperDiv control.

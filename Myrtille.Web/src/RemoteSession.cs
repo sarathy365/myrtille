@@ -106,6 +106,7 @@ namespace Myrtille.Web
         public bool isDisplayTitle;
         public string IdleTimeout;
         public bool isIdleTimeOutEnabled;
+        public string ShareFolderPath; 
 
         public class MetaDataDetails
         {
@@ -342,7 +343,8 @@ namespace Myrtille.Web
             string accountTitle,
             bool displayTitle,
             string idleTime,
-            bool isSessionShadowed)
+            bool isSessionShadowed,
+            string shareFolderPath)
         {
             Id = id;
             State = RemoteSessionState.NotConnected;
@@ -371,6 +373,7 @@ namespace Myrtille.Web
             ConnectionService = connectionService;
             AccountTitle = accountTitle;
             isDisplayTitle = displayTitle;
+            ShareFolderPath = shareFolderPath;
 
             // default capture API config
             ScreenshotIntervalSecs = 60;
