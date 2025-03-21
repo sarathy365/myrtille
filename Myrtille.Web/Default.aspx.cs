@@ -666,7 +666,7 @@ namespace Myrtille.Web
             var loginUser = user.Value;
             var loginPassword = string.IsNullOrEmpty(passwordHash.Value) ? password.Value : CryptoHelper.RDP_Decrypt(passwordHash.Value);
             var startProgram = program.Value;
-            string shareFolderPath = null;
+            string sharedFolderPath = null;
             if (RemoteSession == null && (Request["auth_key"] == null || Request["auth_key"].Trim() == "" || Request["referrer"] == null || Request["referrer"].Trim() == "" || Request["service_org_id"] == null || Request["service_org_id"].Trim() == ""))
             {
                 Response.Write("<script>alert('Invalid command.'); window.close();</script>");
@@ -798,9 +798,9 @@ namespace Myrtille.Web
                     loginPassword = (string)connectionDetails["password"];
                     isDisplayTitle = (bool)connectionDetails["is_display_title"];
                     accountTitle = (string)connectionDetails["account_title"];
-                    shareFolderPath = (string)connectionDetails["share_folder_path"];
+                    sharedFolderPath = (string)connectionDetails["share_folder_path"];
 
-                    if (shareFolderPath != null)
+                    if (sharedFolderPath != null)
                     {
                         _allowFileTransfer = true;
                     }
@@ -991,7 +991,7 @@ namespace Myrtille.Web
                     isDisplayTitle,
                     idleTime,
                     isSessionShadowed,
-                    shareFolderPath
+                    sharedFolderPath
                 );
 
                 RemoteSession.UserProfileId = userProfileId;

@@ -45,7 +45,7 @@ namespace Myrtille.Services.Contracts
         public Stream FileStream { get; set; }
 
         [MessageHeader(MustUnderstand = true)]
-        public string sharedFolderPath { get; set; }
+        public string SharedFolderPath { get; set; }
     }
 
     [ServiceContract]

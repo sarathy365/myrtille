@@ -55,7 +55,7 @@ namespace Myrtille.Services
         public void UploadFileToUserDocumentsFolder(
             UploadRequest uploadRequest)
         {
-            var documentsFolder = uploadRequest.sharedFolderPath;
+            var documentsFolder = uploadRequest.SharedFolderPath;
 
             try
             {

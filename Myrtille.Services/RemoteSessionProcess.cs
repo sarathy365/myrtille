@@ -355,7 +355,7 @@ namespace Myrtille.Services
                         (securityProtocol != SecurityProtocol.auto ? " /sec:" + securityProtocol.ToString() : string.Empty) +       // security protocol
                         (allowAudioPlayback ? " /sound" : string.Empty) +                                                           // sound support
                         " /audio-mode:" + (allowAudioPlayback ? "0" : "2") +                                                        // audio mode (0: redirect, 1: play on server, 2: do not play)
-                        " /drive:" + sharedFolderPath + "," + "share";                                                               // file transfer support
+                        ((sharedFolderPath != null && sharedFolderPath != string.Empty)? " /drive:" + sharedFolderPath + ",share": string.Empty);                                                               // file transfer support
                 }
 
                 #endregion
