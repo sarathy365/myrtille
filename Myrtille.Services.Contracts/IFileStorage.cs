@@ -79,6 +79,6 @@ namespace Myrtille.Services.Contracts
             string userName,
             string userPassword,
             string fileName,
-            string ShareFolderpath);
+            string sharedFolderPath);
     }
 }
