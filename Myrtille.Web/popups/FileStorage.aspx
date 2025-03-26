@@ -25,7 +25,7 @@
 	
     <head>
         <title>Myrtille</title>
-        <link rel="stylesheet" type="text/css" href="../css/Default.css"/>
+        <link rel="stylesheet" type="text/css" href="../css/securden.css"/>
 	</head>
 
     <body onload="onFileToUploadSuccess();">
@@ -33,15 +33,24 @@
         <form method="post" runat="server">
             
             <!-- upload/download file(s). only enabled if the connected server is localhost or if a domain is specified (so file(s) can be accessed within the remote session) -->
-            <div>
-                <span id="fileStoragePopupDesc">Files into "Share" folder</span><hr/>
-                Upload file: <input type="file" runat="server" id="fileToUploadText" onchange="onFileToUploadChange(this);"/>
-                <input type="button" runat="server" id="uploadFileButton" value="Upload" disabled="disabled" onserverclick="UploadFileButtonClick"/><br/>
-                Download file: <select runat="server" id="fileToDownloadSelect" onchange="onFileToDownloadChange(this);"/>
-                <input type="button" runat="server" id="downloadFileButton" value="Download" disabled="disabled" onserverclick="DownloadFileButtonClick"/><br/>
-                <input type="button" id="closePopupButton" value="Close" onclick="parent.closePopup();"/>
+            <span id="fileStoragePopupDesc">Upload / Download (Share Folder)</span>
+            <div class="file-share-wrap">
+                <div class="share-folder-upload">
+                    <span>Upload file: </span>
+                    <div class="choose-share-file-wrap">
+                        <input type="file" runat="server" id="fileToUploadText" onchange="onFileToUploadChange(this);"/>
+                        <label for="fileToUploadText">Choose File</label>
+                    </div>
+                    <input type="button" runat="server" id="uploadFileButton" value="Upload" disabled="disabled" onserverclick="UploadFileButtonClick"/>
+                </div>
+                <div class="share-folder-download">
+                    <span>Download file: </span>
+                    <select runat="server" id="fileToDownloadSelect" onchange="onFileToDownloadChange(this);"/>
+                    <input type="button" runat="server" id="downloadFileButton" value="Download" disabled="disabled" onserverclick="DownloadFileButtonClick"/>
+                </div>
+                <input type="button" id="closePopupButton" value="Close" class="file-info-close" onclick="parent.closePopup();"/>
             </div>
-            
+
         </form>
 
 		<script type="text/javascript" language="javascript" defer="defer">
