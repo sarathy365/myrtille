@@ -406,6 +406,21 @@
                   </span>
                 <span class="remote-oper-label-text-val">Ctrl+Alt+Delete</span>
                 </div>
+                
+                <div class="remote-oper-label-text" onclick="openPopup('fileStoragePopup', 'FileStorage.aspx');" id="uploaddownloadOperDiv" runat="server" visible="True">
+                  <span class="remote-oper-label-text-icon upload-download-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
+                        <style type="text/css">
+	                        .st0{fill:#FFFFFF;}
+                        </style>
+                        <g>
+	                        <polygon class="st0" points="23.3,1.4 14.7,10 20,10 20,23.6 20,28.6 20,30 21.3,30 25.3,30 26.7,30 26.7,28.6 26.7,23.6 26.7,10    32,10  "/>
+	                        <polygon class="st0" points="12,8.4 12,3.4 12,2 10.7,2 6.7,2 5.4,2 5.4,3.4 5.4,8.4 5.4,22 0,22 8.7,30.6 17.4,22 12,22  "/>
+                        </g>
+                    </svg>
+                  </span>
+                    <span class="remote-oper-label-text-val">Upload/Download</span>
+                </div>
 
                 <div class="remote-oper-label-text" onclick="resizeSession();" id="resizeOperDiv" runat="server" visible="True">
                   <span class="remote-oper-label-text-icon resize-icon">

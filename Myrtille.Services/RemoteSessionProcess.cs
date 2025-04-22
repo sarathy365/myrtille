@@ -106,7 +106,7 @@ namespace Myrtille.Services
         private Guid _remoteSessionId;
         private Process _process;
         private IRemoteSessionProcessCallback _callback;
-
+        private string sharedFolder = "";
         public void StartProcess(
             Guid remoteSessionId,
             HostType hostType,
@@ -120,7 +120,8 @@ namespace Myrtille.Services
             int clientHeight,
             bool allowRemoteClipboard,
             bool allowPrintDownload,
-            bool allowAudioPlayback)
+            bool allowAudioPlayback,
+            string sharedFolderPath)
         {
             Trace.TraceInformation("Connecting remote session {0}, type {1}, security {2}, server (:port) {3}, vm {4}, domain {5}, user {6}, program {7}",
                 remoteSessionId,
@@ -201,6 +202,10 @@ namespace Myrtille.Services
 
                 if (hostType == HostType.RDP)
                 {
+                    if (sharedFolderPath != null || sharedFolderPath != string.Empty)
+                    {
+                        sharedFolder = sharedFolderPath;
+                    }
                     // color depth
                     int bpp;
                     if (!int.TryParse(ConfigurationManager.AppSettings["FreeRDPBpp"], out bpp))
@@ -326,7 +331,7 @@ namespace Myrtille.Services
                     // https://github.com/FreeRDP/FreeRDP/wiki/CommandLineInterface
                     // Syntax: /flag enables flag, +toggle or -toggle enables or disables toggle. /toggle and +toggle are the same. Options with values work like this: /option:<value>
                     // as the process command line can be displayed into the task manager / process explorer, the connection settings (including user credentials) are now passed to the rdp client through the inputs pipe
-                    _process.StartInfo.Arguments =
+                    _process.StartInfo.Arguments = 
                         "/myrtille-sid:" + _remoteSessionId +                                                                       // session id
                         (!Environment.UserInteractive ? string.Empty : " /myrtille-window") +                                       // session window
                         (!remoteSessionLog ? string.Empty : " /myrtille-log") +                                                     // session log
@@ -353,7 +358,8 @@ namespace Myrtille.Services
                         (allowRemoteClipboard ? " +" : " -") + "clipboard" +                                                        // clipboard support
                         (securityProtocol != SecurityProtocol.auto ? " /sec:" + securityProtocol.ToString() : string.Empty) +       // security protocol
                         (allowAudioPlayback ? " /sound" : string.Empty) +                                                           // sound support
-                        " /audio-mode:" + (allowAudioPlayback ? "0" : "2");                                                         // audio mode (0: redirect, 1: play on server, 2: do not play)
+                        " /audio-mode:" + (allowAudioPlayback ? "0" : "2") +                                                        // audio mode (0: redirect, 1: play on server, 2: do not play)
+                        ((sharedFolderPath != null && sharedFolderPath != string.Empty) ? " /drive:\"" + sharedFolderPath + "\",share" : string.Empty); // file transfer support
                 }
 
                 #endregion
@@ -451,7 +457,11 @@ namespace Myrtille.Services
             if (_process != null && _process.HasExited)
             {
                 Trace.TraceInformation("Disconnected remote session {0}, exit code {1}", _remoteSessionId, _process.ExitCode);
-
+                
+                if (sharedFolder != string.Empty && Directory.Exists(sharedFolder))
+                {
+                    Directory.Delete(sharedFolder, recursive: true);
+                }
                 try
                 {
                     // invoke the callback asynchronously and possibly in a separate thread to avoid any deadlock

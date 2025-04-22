@@ -31,9 +31,10 @@ namespace Myrtille.Services
             Guid remoteSessionId,
             string userDomain,
             string userName,
-            string userPassword)
+            string userPassword,
+            string sharedFolderPath)
         {
-            var documentsFolder = AccountHelper.GetUserDocumentsFolder(userDomain, userName, userPassword);
+            var documentsFolder = sharedFolderPath;
 
             try
             {
@@ -50,11 +51,11 @@ namespace Myrtille.Services
                 throw;
             }
         }
-
+        
         public void UploadFileToUserDocumentsFolder(
             UploadRequest uploadRequest)
         {
-            var documentsFolder = AccountHelper.GetUserDocumentsFolder(uploadRequest.UserDomain, uploadRequest.UserName, uploadRequest.UserPassword);
+            var documentsFolder = uploadRequest.SharedFolderPath;
 
             try
             {
@@ -91,9 +92,10 @@ namespace Myrtille.Services
             string userDomain,
             string userName,
             string userPassword,
-            string fileName)
+            string fileName,
+            string sharedFolderPath)
         {
-            var documentsFolder = AccountHelper.GetUserDocumentsFolder(userDomain, userName, userPassword);
+            var documentsFolder = sharedFolderPath;
 
             Stream fileStream = null;
 
