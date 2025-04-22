@@ -802,7 +802,15 @@ namespace Myrtille.Web
 
                     if (sharedFolderPath != null)
                     {
-                        _allowFileTransfer = true;
+                        string randomFolder = Path.GetRandomFileName().Replace(".", "");
+                        string tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "share_rdp_folder");
+                        string folderPath = Path.Combine(tempDir, randomFolder);
+                        if (!Directory.Exists(folderPath))
+                        {
+                            Directory.CreateDirectory(folderPath);
+                            sharedFolderPath = folderPath;
+                            _allowFileTransfer = true;
+                        }
                     }
 
                     if (connectionDetails.ContainsKey("port"))

@@ -93,7 +93,8 @@ namespace Myrtille.Services
 
             // database (enterprise mode)
             ConfigureEnterpriseDatabase();
-
+            DeleteShareFolder();
+            
             /*
             if (!Environment.UserInteractive)
             {
@@ -225,6 +226,15 @@ namespace Myrtille.Services
             }
 
             AppDomain.CurrentDomain.SetData("DataDirectory", dataDir);
+        }
+
+        private static void DeleteShareFolder()
+        {
+            string tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\share_rdp_folder");
+            if (tempDir != string.Empty && Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
         }
     }
 }
