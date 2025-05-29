@@ -178,9 +178,9 @@ namespace Myrtille.Web.src.Utils
             }
             else if (response.ContainsKey("type"))
             {
-                if ((string)response["type"] == "WEB_RDP" || (string)response["type"] == "SHADOW_SESSION" || (string)response["type"] == "TERMINATE_SESSION")
+                if ((string)response["type"] == "WEB_RDP" || (string)response["type"] == "SHADOW_SESSION" || (string)response["type"] == "TERMINATE_SESSION" || (string)response["type"] == "CONTROL_SESSION")
                 {
-                    if ((string)response["type"] == "SHADOW_SESSION" || (string)response["type"] == "TERMINATE_SESSION" || (((JObject)response["details"]).ContainsKey("is_remote_session_managed") && (bool)response["details"]["is_remote_session_managed"]))
+                    if ((string)response["type"] == "SHADOW_SESSION" || (string)response["type"] == "CONTROL_SESSION" || (string)response["type"] == "TERMINATE_SESSION" || (((JObject)response["details"]).ContainsKey("is_remote_session_managed") && (bool)response["details"]["is_remote_session_managed"]))
                     {
                         response["ACCESS_URL"] = serverAccessUrl;
                     }

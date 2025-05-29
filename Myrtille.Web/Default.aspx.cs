@@ -584,7 +584,7 @@ namespace Myrtille.Web
                     string serverAccessUrl = null;
                     JObject response = null;
                     JObject paramObj = new JObject(new JProperty("SESSION_TYPE", 7));
-    
+
                     if (Request["access_url"] != null && Request["access_url"].Trim() != "")
                     {
                         string accessUrl = Request["access_url"].Trim();
@@ -625,7 +625,7 @@ namespace Myrtille.Web
                                         var RemoteSession = ((IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()])[(Guid)toTerminateConnectionId];
                                             RemoteSession.Manager.SendCommand(RemoteSessionCommand.CloseClient);
                                     }
-                                }
+                                } 
                             }
                             catch (ThreadAbortException)
                             {
@@ -702,9 +702,49 @@ namespace Myrtille.Web
                     }
                     idleTime = (string)connectionDetails["IDLE_SESSION_TIME"];
                     accessUrl = (string)connectionDetails["ACCESS_URL"];
-                    isSessionShadowed = (string)connectionDetails["type"] == "SHADOW_SESSION";
-                    if ((string)connectionDetails["type"] == "SHADOW_SESSION")
+                    isSessionShadowed = (string)connectionDetails["type"] == "SHADOW_SESSION" || (string)connectionDetails["type"] == "CONTROL_SESSION";
+                    if ((string)connectionDetails["type"] == "SHADOW_SESSION" || (string)connectionDetails["type"] == "CONTROL_SESSION")
                     {
+                        bool controlSession = false;
+                        if ((string)connectionDetails["type"] == "CONTROL_SESSION")
+                        {
+                            var controlConnectionId = connectionDetails["details"]["connection_id"]?.ToString();
+                            if (!string.IsNullOrEmpty(controlConnectionId) && (string)connectionDetails["details"]["control_based_on_req"] == "2" || (string)connectionDetails["details"]["control_based_on_req"] == "3")
+                            {
+                                var key = $"ShowControl_{controlConnectionId}";
+                                HttpRuntime.Cache[key] = true;
+                                HttpRuntime.Cache[$"controlSessionPopUpTimeOut_{controlConnectionId}"] = (int)connectionDetails["details"]["control_req_popup_timeout"];
+                                int sleepTime = ((int)connectionDetails["details"]["control_req_popup_timeout"] * 1000) + 5000;
+                                Thread.Sleep(sleepTime);
+                                string responseforControl = HttpRuntime.Cache[$"ShowControlResponse_{controlConnectionId}"] as string;
+                                if (!string.IsNullOrEmpty(responseforControl))
+                                {
+                                    if (responseforControl == "accept" || (string)connectionDetails["details"]["control_based_on_req"] == "3")
+                                    {
+                                        controlSession = true;
+                                        HttpRuntime.Cache.Remove($"ShowControlResponse_{controlConnectionId}");
+                                    }
+                                    else
+                                    {
+                                        HttpRuntime.Cache.Remove($"ShowControlResponse_{controlConnectionId}");
+                                        Response.Write("<script>alert('Rejected the request for control session.'); window.close();</script>");
+                                        return false;
+                                    }
+                                }
+                                else {
+                                    return false;
+                                }
+                            }
+                            else {
+                                if ((string)connectionDetails["details"]["control_based_on_req"] == "1")
+                                {
+                                    HttpRuntime.Cache[$"ShowControlMsg_{controlConnectionId}"] = true;
+                                    HttpRuntime.Cache[$"controlSessionPopUpTimeOut_{controlConnectionId}"] = (int)connectionDetails["details"]["control_req_popup_timeout"];
+                                    Thread.Sleep(5000);
+                                }
+                                controlSession = true;
+                            }
+                        }
                         connectionDetails = (JObject)connectionDetails["details"];
                         string guestShareId = "";
                         try
@@ -721,10 +761,14 @@ namespace Myrtille.Web
                                 {
                                     Id = Guid.NewGuid(),
                                     ConnectionId = OldConnectionId,
-                                    Control = false,
+                                    Control = controlSession,
                                 }
                             };
                             sharingInfo.RemoteSession.isManageSession = true;
+                            if (controlSession)
+                            {
+                                sharingInfo.RemoteSession.isControlSession = true;
+                            }
 
                             sharedSessions.Add(sharingInfo.GuestInfo.Id, sharingInfo);
                             guestShareId = sharingInfo.GuestInfo.Id.ToString();

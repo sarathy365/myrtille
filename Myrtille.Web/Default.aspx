@@ -35,7 +35,7 @@
         <!-- mobile devices -->
         <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0"/>
         
-        <title><%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? ((RemoteSession.isManageSession? "Shadow Session - " : "") + (RemoteSession.isDisplayTitle? RemoteSession.AccountTitle : (((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString())) + "@" + RemoteSession.ServerAddress.ToString() + " | Securden RDP Session") : "Securden RDP Gateway"%></title>
+        <title><%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? ((RemoteSession.isManageSession? (RemoteSession.isControlSession? "Control Session - " : "Shadow Session - ") : "") + (RemoteSession.isDisplayTitle? RemoteSession.AccountTitle : (((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString())) + "@" + RemoteSession.ServerAddress.ToString() + " | Securden RDP Session") : "Securden RDP Gateway"%></title>
         
         <link rel="icon" type="image/x-icon" href="favicon.ico"/>
         <link rel="stylesheet" type="text/css" href="<%=BundleTable.Bundles.ResolveBundleUrl("~/css/Default.css", true)%>"/>
@@ -468,7 +468,7 @@
             var dragDiv = document.getElementById('dragDiv');
             var dragHandle = document.getElementById('dragHandle');
             var idleDialog = document.getElementById("dialog-overlay");
-            let idleTimer;
+           let idleTimer;
             var IDLE_TIMEOUT;
             
             interact(dragDiv)
@@ -680,6 +680,65 @@
                 center_dialog.addEventListener("mouseover", resetIdleTimer);
             }
             document.addEventListener("mousemove", resetIdleTimer);
+
+            function checkControlRequest() {
+                fetch('/CheckControlRequest.aspx?action=check&sessionId=<%= RemoteSession != null ? RemoteSession.Id.ToString() : "" %>')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.showControlDialog) {
+                        showControlDialog(data.popUpTimeOut);
+                    } else if (data.showMsgPopup) {
+                        showMsgDialog(data.popUpTimeOut);
+                    }
+                });
+            }
+            setInterval(checkControlRequest, 3000);
+
+            function showControlDialog(timeout) {
+                const overlay = document.getElementById("dialogOverlayControlSession");
+                overlay.style.visibility = "visible";
+
+                setTimeout(() => {
+                    sendControlResponse("timeout");
+                    closePopup();
+                }, (timeout * 1000));
+            }
+
+
+            function sendControlResponse(responseType) {
+                fetch('/CheckControlRequest.aspx?action=respond&response=' + responseType + '&sessionId=<%= RemoteSession != null ? RemoteSession.Id.ToString() : "" %>', {
+                    method: 'POST'
+                }).then(() => {
+                    closePopup();
+                });
+            }
+
+            function acceptControl() {
+                sendControlResponse("accept");
+                closePopup();
+            }
+
+            function rejectControl() {
+                sendControlResponse("reject");
+                closePopup();
+            }
+
+            function closePopup() {
+                document.getElementById("dialogOverlayControlSession").style.visibility = "hidden";
+            }
+
+            function showMsgDialog(timeout) {
+                const overlay = document.getElementById("dialogOverlayMsgPopup");
+                overlay.style.visibility = "visible";
+                setTimeout(() => {
+                    closeMsgPopup();
+                }, (timeout * 1000));
+            }
+
+            function closeMsgPopup() {
+                document.getElementById("dialogOverlayMsgPopup").style.visibility = "hidden";
+            }
+
         </script>
 
 	</body>
@@ -687,8 +746,26 @@
     <div class="dialog">
         <h2>Idle Timeout</h2>
         <p>An idle session has been detected and you will be timed out of this connection. Take action to prevent timeout.</p>
-
     </div>
-</div>
+    </div>
+    <div class="overlay" id="dialogOverlayControlSession" style="visibility: hidden;">
+        <div class="dialog">
+            <h2>Control Session Request</h2>
+            <p>Do you want to accept the request for control session?</p>
+            <div class="dialog-buttons">
+                <button class="btn accept" onclick="acceptControl()">Accept</button>
+                <button class="btn reject" onclick="rejectControl()">Reject</button>
+            </div>
+        </div>
+    </div>
+    <div class="overlay" id="dialogOverlayMsgPopup" style="visibility: hidden;">
+        <div class="dialog">
+            <h2>Control Session Message</h2>
+            <p id="msgPopupText">Your session is taken control by another user.</p>
+            <div class="dialog-buttons">
+                <button class="btn accept" onclick="closeMsgPopup()">OK</button>
+            </div>
+        </div>
+    </div>
 
 </html>
