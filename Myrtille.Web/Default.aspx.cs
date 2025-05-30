@@ -683,6 +683,7 @@ namespace Myrtille.Web
             string accountTitle = null;
             string idleTime = null;
             bool isSessionShadowed = false;
+            bool isRecordingPopupNeeded = false;
             if (RemoteSession == null)
             {
                 JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString(), serviceOrgId);
@@ -765,11 +766,11 @@ namespace Myrtille.Web
                                 }
                             };
                             sharingInfo.RemoteSession.isManageSession = true;
+                            sharingInfo.RemoteSession.isControlSession = false;
                             if (controlSession)
                             {
                                 sharingInfo.RemoteSession.isControlSession = true;
                             }
-
                             sharedSessions.Add(sharingInfo.GuestInfo.Id, sharingInfo);
                             guestShareId = sharingInfo.GuestInfo.Id.ToString();
                         }
@@ -830,6 +831,10 @@ namespace Myrtille.Web
                     {
                         auditId = (long)connectionDetails["audit_id"];
                         isRecordingNeeded = (bool)connectionDetails["details"]["is_recording_needed"];
+                        if (((JObject)connectionDetails["details"]).ContainsKey("show_recording_notification"))
+                        {
+                            isRecordingPopupNeeded = (bool)connectionDetails["details"]["show_recording_notification"];
+                        }
                         if (connectionDetails.ContainsKey("remote_session_id"))
                         {
                             remoteSessionId = (long)connectionDetails["remote_session_id"];
@@ -1051,6 +1056,7 @@ namespace Myrtille.Web
                 RemoteSession.isRecordingNeeded = isRecordingNeeded;
                 RemoteSession.IdleTimeout = idleTime;
                 RemoteSession.isIdleTimeOutEnabled = !isSessionShadowed;
+                RemoteSession.isRecordingPopupNeeded = isRecordingPopupNeeded;
 
                 // bind the remote session to the current http session
                 Session[HttpSessionStateVariables.RemoteSession.ToString()] = RemoteSession;

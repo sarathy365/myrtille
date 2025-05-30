@@ -468,7 +468,8 @@
             var dragDiv = document.getElementById('dragDiv');
             var dragHandle = document.getElementById('dragHandle');
             var idleDialog = document.getElementById("dialog-overlay");
-           let idleTimer;
+            var stopintervalfunction = false;
+            let idleTimer;
             var IDLE_TIMEOUT;
             
             interact(dragDiv)
@@ -682,6 +683,13 @@
             document.addEventListener("mousemove", resetIdleTimer);
 
             function checkControlRequest() {
+                if (!stopintervalfunction) {
+                    <% if (RemoteSession != null && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && RemoteSession.isRecordingPopupNeeded) { %>
+                        showSessionRecordingPopup();
+                    <% } else if (RemoteSession != null && !RemoteSession.isRecordingPopupNeeded) { %>
+                        stopintervalfunction = true;
+                    <% } %>
+                }
                 fetch('/CheckControlRequest.aspx?action=check&sessionId=<%= RemoteSession != null ? RemoteSession.Id.ToString() : "" %>')
                 .then(res => res.json())
                 .then(data => {
@@ -739,6 +747,18 @@
                 document.getElementById("dialogOverlayMsgPopup").style.visibility = "hidden";
             }
 
+            function showSessionRecordingPopup() {
+                document.getElementById("dialogOverlayRecordingMessage").style.visibility = "visible";
+                stopintervalfunction = true;
+                setTimeout(() => {
+                    closeRecordingMsgPopup();
+                }, 20000);
+            }
+
+            function closeRecordingMsgPopup() {
+                document.getElementById("dialogOverlayRecordingMessage").style.visibility = "hidden";
+            }
+            
         </script>
 
 	</body>
@@ -767,5 +787,13 @@
             </div>
         </div>
     </div>
-
+    <div class="overlay" id="dialogOverlayRecordingMessage" style="visibility: hidden;">
+        <div class="dialog">
+            <h2>RDP Session Recording</h2>
+            <p>Your session has been Recording...</p>
+            <div class="dialog-buttons">
+                <button class="btn accept" onclick="closeRecordingMsgPopup()">OK</button>
+            </div>
+        </div>
+    </div>
 </html>

@@ -47,6 +47,7 @@ namespace Myrtille.Web
         public string serviceOrgId;
         public bool isManageSession;
         public bool isControlSession;
+        public bool isRecordingPopupNeeded;
         public Queue<RemoteSessionImage> imgDataQueue;
         public long recordStartTime;
         public bool ImageQueueWriteCheck;
