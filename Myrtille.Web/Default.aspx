@@ -684,10 +684,10 @@
 
             function checkControlRequest() {
                 if (!stopintervalfunction) {
-                    <% if (RemoteSession != null && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && RemoteSession.isRecordingPopupNeeded) { %>
-                        showSessionRecordingPopup();
-                    <% } else if (RemoteSession != null && !RemoteSession.isRecordingPopupNeeded) { %>
+                    <% if (RemoteSession != null && (!RemoteSession.isRecordingPopupNeeded || RemoteSession.isControlSession || RemoteSession.isManageSession)) { %>
                         stopintervalfunction = true;
+                    <% } else if (RemoteSession != null && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && RemoteSession.isRecordingPopupNeeded) { %>
+                        showSessionRecordingPopup();
                     <% } %>
                 }
                 fetch('/CheckControlRequest.aspx?action=check&sessionId=<%= RemoteSession != null ? RemoteSession.Id.ToString() : "" %>')
