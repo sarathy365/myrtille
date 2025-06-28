@@ -46,6 +46,8 @@ namespace Myrtille.Web
         public string accessUrl;
         public string serviceOrgId;
         public bool isManageSession;
+        public bool isControlSession;
+        public bool isRecordingPopupNeeded;
         public Queue<RemoteSessionImage> imgDataQueue;
         public long recordStartTime;
         public bool ImageQueueWriteCheck;
@@ -386,7 +388,7 @@ namespace Myrtille.Web
             recordingIndex = 0;
             isUpdateMainMeta = false;
             IdleTimeout = idleTime;
-            isIdleTimeOutEnabled = !(isSessionShadowed);
+            isIdleTimeOutEnabled = !(isSessionShadowed || isControlSession);
             Manager = new RemoteSessionManager(this);
         }
     }
