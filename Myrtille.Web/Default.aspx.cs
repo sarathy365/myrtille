@@ -848,14 +848,17 @@ namespace Myrtille.Web
                     isDisplayTitle = (bool)connectionDetails["is_display_title"];
                     accountTitle = (string)connectionDetails["account_title"];
 
-                    string randomFolder = Path.GetRandomFileName().Replace(".", "");
-                    string tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "share_rdp_folder");
-                    string folderPath = Path.Combine(tempDir, randomFolder);
-                    if (!Directory.Exists(folderPath))
+                    if (connectionDetails.ContainsKey("is_file_sharing_needed") && (bool)connectionDetails["is_file_sharing_needed"])
                     {
-                        Directory.CreateDirectory(folderPath);
-                        sharedFolderPath = folderPath;
-                        _allowFileTransfer = true;
+                        string randomFolder = Path.GetRandomFileName().Replace(".", "");
+                        string tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "share_rdp_folder");
+                        string folderPath = Path.Combine(tempDir, randomFolder);
+                        if (!Directory.Exists(folderPath))
+                        {
+                            Directory.CreateDirectory(folderPath);
+                            sharedFolderPath = folderPath;
+                            _allowFileTransfer = true;
+                        }
                     }
 
                     if (connectionDetails.ContainsKey("port"))

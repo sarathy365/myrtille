@@ -406,7 +406,8 @@
                   </span>
                 <span class="remote-oper-label-text-val">Ctrl+Alt+Delete</span>
                 </div>
-                
+
+                <% if(RemoteSession.AllowFileTransfer) { %>
                 <div class="remote-oper-label-text" onclick="openPopup('fileStoragePopup', 'FileStorage.aspx');" id="uploaddownloadOperDiv" runat="server" visible="True">
                   <span class="remote-oper-label-text-icon upload-download-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
@@ -421,6 +422,7 @@
                   </span>
                     <span class="remote-oper-label-text-val">Upload/Download</span>
                 </div>
+                <% } %>
 
                 <div class="remote-oper-label-text" onclick="resizeSession();" id="resizeOperDiv" runat="server" visible="True">
                   <span class="remote-oper-label-text-icon resize-icon">

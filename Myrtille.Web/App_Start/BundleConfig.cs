@@ -65,8 +65,8 @@ namespace Myrtille.Web
 
             // nodejs modules shouldn't be modified directly, but compute hashes anyway just in case...
             bundles.Add(new Bundle("~/node_modules/interactjs/dist/interact.js").Include("~/node_modules/interactjs/dist/interact.js"));
-            bundles.Add(new Bundle("~/node_modules/simple-keyboard/build/index.js").Include("~/node_modules/simple-keyboard/build/index.js"));
-            bundles.Add(new Bundle("~/node_modules/simple-keyboard-layouts/build/index.js").Include("~/node_modules/simple-keyboard-layouts/build/index.js"));
+            /*bundles.Add(new Bundle("~/node_modules/simple-keyboard/build/index.js").Include("~/node_modules/simple-keyboard/build/index.js"));
+            bundles.Add(new Bundle("~/node_modules/simple-keyboard-layouts/build/index.js").Include("~/node_modules/simple-keyboard-layouts/build/index.js"));*/
 
             // styles
 
