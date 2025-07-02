@@ -8,7 +8,8 @@
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{F00C33EB-EDA4-4980-AC2A-0BF574913A24}</ProjectGuid>
-    <ProjectTypeGuids></ProjectTypeGuids>
+    <ProjectTypeGuids>
+    </ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Myrtille.Web</RootNamespace>
@@ -208,6 +209,13 @@
     </Compile>
     <Compile Include="handlers\SocketHandler.ashx.cs">
       <DependentUpon>SocketHandler.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="CheckControlRequest.aspx.cs">
+      <DependentUpon>CheckControlRequest.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="CheckControlRequest.aspx.designer.cs">
+      <DependentUpon>CheckControlRequest.aspx</DependentUpon>
     </Compile>
     <Compile Include="src\Clients\ApplicationPoolClient.cs" />
     <Compile Include="src\Controllers\DisconnectionController.cs" />
@@ -416,6 +424,7 @@
     <Content Include="js\user\mouse.js" />
     <Content Include="PrintDocument.aspx" />
     <Content Include="SendInputs.aspx" />
+    <Content Include="CheckControlRequest.aspx" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>
@@ -536,24 +545,7 @@
   </Target>
   <Target Name="AfterBuild">
   </Target>
-  <ProjectExtensions>
-    <VisualStudio>
-      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
-        <WebProjectProperties>
-          <UseIIS>True</UseIIS>
-          <AutoAssignPort>True</AutoAssignPort>
-          <DevelopmentServerPort>2323</DevelopmentServerPort>
-          <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>https://localhost/Myrtille</IISUrl>
-          <NTLMAuthentication>False</NTLMAuthentication>
-          <UseCustomServer>False</UseCustomServer>
-          <CustomServerUrl>
-          </CustomServerUrl>
-          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
-        </WebProjectProperties>
-      </FlavorProperties>
-    </VisualStudio>
-  </ProjectExtensions>
+  <ProjectExtensions />
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>

@@ -656,3 +656,85 @@ canvas
 	color: black;
 	z-index: 200;
 }
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dialog {
+    background-color: #ffffff;
+    border-radius: 10px;
+    width: 380px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    z-index: 9999;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    animation: slideDown 0.3s ease-out;
+}
+
+.dialog h2 {
+    margin-top: 0;
+    color: #0078D7;
+}
+
+.dialog p {
+    font-size: 15px;
+    color: #333;
+    margin: 15px 0;
+}
+
+.dialog-buttons {
+    display: flex;
+    justify-content: space-evenly;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    min-width: 100px;
+}
+
+.btn.accept {
+background-color: #0078D7;
+color: white;
+}
+
+.btn.accept:hover {
+    background-color: #005EA6;
+}
+
+.btn.reject {
+background-color: #e5e5e5;
+color: #333;
+}
+
+.btn.reject:hover {
+    background-color: #ccc;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
