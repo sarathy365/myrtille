@@ -684,13 +684,14 @@ canvas
 
 .dialog h2 {
     margin-top: 0;
-    color: #0078D7;
+    color: #0ea970;
+    margin-bottom: 0px;
 }
 
 .dialog p {
     font-size: 15px;
     color: #333;
-    margin: 15px 0;
+    margin: 8px 0 15px 0;
 }
 
 .dialog-buttons {
@@ -702,7 +703,7 @@ canvas
 .btn {
     padding: 10px 20px;
     border: none;
-    border-radius: 6px;
+    border-radius: 0;
     font-size: 14px;
     cursor: pointer;
     transition: background 0.2s ease;
@@ -710,12 +711,12 @@ canvas
 }
 
 .btn.accept {
-background-color: #0078D7;
+background-color: #0ea970;
 color: white;
 }
 
 .btn.accept:hover {
-    background-color: #005EA6;
+    background-color: #088d5c;
 }
 
 .btn.reject {

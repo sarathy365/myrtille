@@ -269,7 +269,7 @@ svg {
 
 .remote-oper-label-text:hover {
     color: #ffffff;
-    background-color: #2096f3;
+    background-color: #0ea970;
 }
 
 .show-icon {
@@ -282,7 +282,7 @@ svg {
     padding-top: 5px;
     top: auto;
     border-radius: 0 0 3px 3px;
-    background-color: #2096f3;
+    background-color: #0ea970;
     cursor: move;
 }
 
@@ -387,7 +387,7 @@ svg {
 .dialog {
     background-color: white;
     padding: 20px;
-    border-radius: 8px;
+    border-radius: 0;
     width: 300px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     text-align: center;
