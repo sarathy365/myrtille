@@ -710,7 +710,7 @@
 
                 setTimeout(() => {
                     sendControlResponse("timeout");
-                    closePopup();
+                    closeControlPopup();
                 }, (timeout * 1000));
             }
 
@@ -719,21 +719,21 @@
                 fetch('/CheckControlRequest.aspx?action=respond&response=' + responseType + '&sessionId=<%= RemoteSession != null ? RemoteSession.Id.ToString() : "" %>', {
                     method: 'POST'
                 }).then(() => {
-                    closePopup();
+                    closeControlPopup();
                 });
             }
 
             function acceptControl() {
                 sendControlResponse("accept");
-                closePopup();
+                closeControlPopup();
             }
 
             function rejectControl() {
                 sendControlResponse("reject");
-                closePopup();
+                closeControlPopup();
             }
 
-            function closePopup() {
+            function closeControlPopup() {
                 document.getElementById("dialogOverlayControlSession").style.visibility = "hidden";
             }
 
