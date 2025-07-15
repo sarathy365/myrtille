@@ -35,7 +35,7 @@
         <!-- mobile devices -->
         <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0"/>
         
-        <title><%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? ((RemoteSession.isManageSession? "Shadow Session - " : "") + (RemoteSession.isDisplayTitle? RemoteSession.AccountTitle : (((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString())) + "@" + RemoteSession.ServerAddress.ToString() + " | Securden RDP Session") : "Securden RDP Gateway"%></title>
+        <title><%=RemoteSession != null && !RemoteSession.ConnectionService && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && !string.IsNullOrEmpty(RemoteSession.ServerAddress) ? ((RemoteSession.isManageSession? (RemoteSession.isControlSession? "Control Session - " : "Shadow Session - ") : "") + (RemoteSession.isDisplayTitle? RemoteSession.AccountTitle : (((!string.IsNullOrEmpty(RemoteSession.UserDomain))? RemoteSession.UserDomain.ToString() + "\\" : "") + RemoteSession.UserName.ToString())) + "@" + RemoteSession.ServerAddress.ToString() + " | Securden RDP Session") : "Securden RDP Gateway"%></title>
         
         <link rel="icon" type="image/x-icon" href="favicon.ico"/>
         <link rel="stylesheet" type="text/css" href="<%=BundleTable.Bundles.ResolveBundleUrl("~/css/Default.css", true)%>"/>
@@ -406,7 +406,8 @@
                   </span>
                 <span class="remote-oper-label-text-val">Ctrl+Alt+Delete</span>
                 </div>
-                
+
+                <% if(RemoteSession.AllowFileTransfer) { %>
                 <div class="remote-oper-label-text" onclick="openPopup('fileStoragePopup', 'FileStorage.aspx');" id="uploaddownloadOperDiv" runat="server" visible="True">
                   <span class="remote-oper-label-text-icon upload-download-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
@@ -421,6 +422,7 @@
                   </span>
                     <span class="remote-oper-label-text-val">Upload/Download</span>
                 </div>
+                <% } %>
 
                 <div class="remote-oper-label-text" onclick="resizeSession();" id="resizeOperDiv" runat="server" visible="True">
                   <span class="remote-oper-label-text-icon resize-icon">
@@ -468,6 +470,7 @@
             var dragDiv = document.getElementById('dragDiv');
             var dragHandle = document.getElementById('dragHandle');
             var idleDialog = document.getElementById("dialog-overlay");
+            var stopintervalfunction = false;
             let idleTimer;
             var IDLE_TIMEOUT;
             
@@ -680,6 +683,84 @@
                 center_dialog.addEventListener("mouseover", resetIdleTimer);
             }
             document.addEventListener("mousemove", resetIdleTimer);
+
+            function checkControlRequest() {
+                if (!stopintervalfunction) {
+                    <% if (RemoteSession != null && (!RemoteSession.isRecordingPopupNeeded || RemoteSession.isControlSession || RemoteSession.isManageSession)) { %>
+                        stopintervalfunction = true;
+                    <% } else if (RemoteSession != null && (RemoteSession.State == RemoteSessionState.Connecting || RemoteSession.State == RemoteSessionState.Connected) && RemoteSession.isRecordingPopupNeeded) { %>
+                        showSessionRecordingPopup();
+                    <% } %>
+                }
+                fetch('/CheckControlRequest.aspx?action=check&sessionId=<%= RemoteSession != null ? RemoteSession.Id.ToString() : "" %>')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.showControlDialog) {
+                        showControlDialog(data.popUpTimeOut);
+                    } else if (data.showMsgPopup) {
+                        showMsgDialog(data.popUpTimeOut);
+                    }
+                });
+            }
+            setInterval(checkControlRequest, 3000);
+
+            function showControlDialog(timeout) {
+                const overlay = document.getElementById("dialogOverlayControlSession");
+                overlay.style.visibility = "visible";
+
+                setTimeout(() => {
+                    sendControlResponse("timeout");
+                    closeControlPopup();
+                }, (timeout * 1000));
+            }
+
+
+            function sendControlResponse(responseType) {
+                fetch('/CheckControlRequest.aspx?action=respond&response=' + responseType + '&sessionId=<%= RemoteSession != null ? RemoteSession.Id.ToString() : "" %>', {
+                    method: 'POST'
+                }).then(() => {
+                    closeControlPopup();
+                });
+            }
+
+            function acceptControl() {
+                sendControlResponse("accept");
+                closeControlPopup();
+            }
+
+            function rejectControl() {
+                sendControlResponse("reject");
+                closeControlPopup();
+            }
+
+            function closeControlPopup() {
+                document.getElementById("dialogOverlayControlSession").style.visibility = "hidden";
+            }
+
+            function showMsgDialog(timeout) {
+                const overlay = document.getElementById("dialogOverlayMsgPopup");
+                overlay.style.visibility = "visible";
+                setTimeout(() => {
+                    closeMsgPopup();
+                }, (timeout * 1000));
+            }
+
+            function closeMsgPopup() {
+                document.getElementById("dialogOverlayMsgPopup").style.visibility = "hidden";
+            }
+
+            function showSessionRecordingPopup() {
+                document.getElementById("dialogOverlayRecordingMessage").style.visibility = "visible";
+                stopintervalfunction = true;
+                setTimeout(() => {
+                    closeRecordingMsgPopup();
+                }, 20000);
+            }
+
+            function closeRecordingMsgPopup() {
+                document.getElementById("dialogOverlayRecordingMessage").style.visibility = "hidden";
+            }
+            
         </script>
 
 	</body>
@@ -687,8 +768,34 @@
     <div class="dialog">
         <h2>Idle Timeout</h2>
         <p>An idle session has been detected and you will be timed out of this connection. Take action to prevent timeout.</p>
-
     </div>
-</div>
-
+    </div>
+    <div class="overlay" id="dialogOverlayControlSession" style="visibility: hidden;">
+        <div class="dialog">
+            <h2>Control Session Request</h2>
+            <p>Do you want to accept the request for control session?</p>
+            <div class="dialog-buttons">
+                <button class="btn accept" onclick="acceptControl()">Accept</button>
+                <button class="btn reject" onclick="rejectControl()">Reject</button>
+            </div>
+        </div>
+    </div>
+    <div class="overlay" id="dialogOverlayMsgPopup" style="visibility: hidden;">
+        <div class="dialog">
+            <h2>Control Session Message</h2>
+            <p id="msgPopupText">Your session is taken control by another user.</p>
+            <div class="dialog-buttons">
+                <button class="btn accept" onclick="closeMsgPopup()">OK</button>
+            </div>
+        </div>
+    </div>
+    <div class="overlay" id="dialogOverlayRecordingMessage" style="visibility: hidden;">
+        <div class="dialog">
+            <h2>RDP Session Recording</h2>
+            <p>Your session has been Recording...</p>
+            <div class="dialog-buttons">
+                <button class="btn accept" onclick="closeRecordingMsgPopup()">OK</button>
+            </div>
+        </div>
+    </div>
 </html>
