@@ -35,28 +35,31 @@ namespace Myrtille.Web
                 string sessionId = Request.QueryString["sessionId"];
                 bool showPopup = false;
                 bool showMsgPopup = false;
+                bool isTerminateSession = false;
                 int popupTimeout = 20;
                 string cacheKey = $"ShowControl_{sessionId}";
                 string msgKey = $"ShowControlMsg_{sessionId}";
                 string timeoutKey = $"controlSessionPopUpTimeOut_{sessionId}";
+                string terminateSession = $"terminateSession_{sessionId}";
+                if (!string.IsNullOrEmpty(sessionId) && (bool?)HttpRuntime.Cache[terminateSession] == true)
+                {
+                    isTerminateSession = true;
+                }
                 if (!string.IsNullOrEmpty(sessionId) && (bool?)HttpRuntime.Cache[cacheKey] == true)
                 {
                     showPopup = true;
                     popupTimeout = (int)HttpRuntime.Cache[timeoutKey];
-                    HttpRuntime.Cache.Remove(cacheKey);
-                    HttpRuntime.Cache.Remove(timeoutKey);
                 } else if (!string.IsNullOrEmpty(sessionId) && (bool?)HttpRuntime.Cache[msgKey] == true)
                 {
                     showMsgPopup = true;
                     popupTimeout = (int)HttpRuntime.Cache[timeoutKey];
-                    HttpRuntime.Cache.Remove(msgKey);
-                    HttpRuntime.Cache.Remove(timeoutKey);
                 }
                 Response.ContentType = "application/json";
                 Response.Write("{ " +
                     "\"showControlDialog\": " + showPopup.ToString().ToLower() + "," +
                     "\"showMsgPopup\": " + showMsgPopup.ToString().ToLower() + "," +
-                    "\"popUpTimeOut\": " + popupTimeout +
+                    "\"popUpTimeOut\": " + popupTimeout + "," +
+                    "\"isTerminateSession\": " + isTerminateSession.ToString().ToLower() +
                 "}");
                 Response.End();
             }
@@ -65,13 +68,40 @@ namespace Myrtille.Web
                 string userResponse = Request.QueryString["response"];
                 string responseSessionId = Request.QueryString["sessionId"];
                 string cacheKey = $"ShowControlResponse_{responseSessionId}";
-
-                if (HttpRuntime.Cache[cacheKey] == null)
+                if (userResponse == "closeMsgPopUp")
+                {
+                    HttpRuntime.Cache.Remove($"ShowControlMsg_{responseSessionId}");
+                    HttpRuntime.Cache.Remove($"controlSessionPopUpTimeOut_{responseSessionId}");
+                }
+                else if (userResponse == "closeReqPopUp")
+                {
+                    HttpRuntime.Cache.Remove($"ShowControl_{responseSessionId}");
+                    HttpRuntime.Cache.Remove($"controlSessionPopUpTimeOut_{responseSessionId}");
+                }
+                else if (HttpRuntime.Cache[cacheKey] == null)
                 {
                     HttpRuntime.Cache[cacheKey] = userResponse;
                 }
                 Response.StatusCode = 200;
                 Response.End();
+            }else if (action == "guestSessionTerminate")
+            {
+                var gid = Request.QueryString["gid"];
+                var sessionId = Request.QueryString["sessionId"];
+                if (!string.IsNullOrEmpty(sessionId) && !string.IsNullOrEmpty(gid))
+                {
+                    var cacheKey = $"userTerminateSession_{sessionId}";
+                    var existingGuestSessionList = HttpRuntime.Cache[cacheKey] as List<string>;
+                    if (existingGuestSessionList == null)
+                    {
+                        existingGuestSessionList = new List<string>();
+                    }
+                    if (!existingGuestSessionList.Contains(gid))
+                    {
+                        existingGuestSessionList.Add(gid);
+                    }
+                    HttpRuntime.Cache[cacheKey] = existingGuestSessionList;
+                }
             }
         }
     }

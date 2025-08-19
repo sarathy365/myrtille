@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
@@ -164,6 +165,12 @@ namespace Myrtille.Web
                 }
             }
 
+            // Guest id in session for termination usage
+            if (!string.IsNullOrEmpty(Request.QueryString["gid"]))
+            {
+                Session["CurrentGuestId"] = Request.QueryString["gid"];
+            }
+
             // session spoofing protection
             if (_httpSessionUseUri)
             {
@@ -265,6 +272,30 @@ namespace Myrtille.Web
                 catch (Exception exc)
                 {
                     System.Diagnostics.Trace.TraceError("Failed to retrieve the active remote session ({0})", exc);
+                }
+
+                //check the guest session termination
+                var GuestId = Session["CurrentGuestId"] as string;
+                if (!string.IsNullOrEmpty(GuestId))
+                {
+                    Session.Remove("CurrentGuestId");
+                    var RemoteSession = (RemoteSession)Session[HttpSessionStateVariables.RemoteSession.ToString()];
+                    ClientScript.RegisterStartupScript(
+                        this.GetType(),
+                        "GuestCleanup",
+                        $@"
+                        <script>
+                            var currentGuestId = '{GuestId}';
+                            var mainConnectionId = '{RemoteSession.Id}';
+                            window.addEventListener('beforeunload', function () {{
+                                fetch('/CheckControlRequest.aspx?action=guestSessionTerminate&gid=' + currentGuestId + '&sessionId=' + mainConnectionId, {{
+                                    method: 'POST',
+                                    keepalive: true
+                                }});
+                            }});
+                        </script>",
+                        false
+                    );
                 }
             }
             // retrieve a shared remote session from url, if any
@@ -614,6 +645,29 @@ namespace Myrtille.Web
                         }
                         else if (response != null)
                         {
+                            var guestSessions = HttpRuntime.Cache[$"userTerminateSession_{connectionId}"] as List<string>;
+                            if (guestSessions != null && guestSessions.Count > 0)
+                            {
+                                try
+                                {
+                                    var gidsToProcess = guestSessions.ToList();
+                                    foreach (var gid in gidsToProcess)
+                                    {
+                                        terminateGuestSessions(gid);
+                                        JObject paramObject = new JObject();
+                                        paramObj["CONNECTION_ID"] = gid;
+                                        paramObj["REMOTE_SESSION_ID"] = connectionId;
+                                        var responseForTermination = SecurdenWeb.SecurdenWebRequest(serverAccessUrl, "/launcher/end_shadow_control_session", "POST", paramObject, serviceOrgId);
+                                        if (responseForTermination != null && responseForTermination.ContainsKey("is_valid"))
+                                        {
+                                            guestSessions.Remove(gid);
+                                        }
+                                    }
+                                    HttpRuntime.Cache[$"userTerminateSession_{connectionId}"] = guestSessions;
+                                }
+                                catch { }
+                            }
+
                             try
                             {
                                 var valueArray = (JArray)response["machine_session_id_list"];
@@ -651,6 +705,8 @@ namespace Myrtille.Web
                 System.Diagnostics.Trace.TraceError("Failed to terminate the session ({0})", exc);
             }
         }
+
+
         private bool ConnectRemoteServer()
         {
             var connectionId = Guid.NewGuid();
@@ -707,46 +763,71 @@ namespace Myrtille.Web
                     if ((string)connectionDetails["type"] == "SHADOW_SESSION" || (string)connectionDetails["type"] == "CONTROL_SESSION")
                     {
                         bool controlSession = false;
+                        var mainConnectionId = connectionDetails["details"]["connection_id"]?.ToString();
                         if ((string)connectionDetails["type"] == "CONTROL_SESSION")
                         {
-                            var controlConnectionId = connectionDetails["details"]["connection_id"]?.ToString();
-                            if (!string.IsNullOrEmpty(controlConnectionId) && (string)connectionDetails["details"]["control_based_on_req"] == "2" || (string)connectionDetails["details"]["control_based_on_req"] == "3")
+                            if (!string.IsNullOrEmpty(mainConnectionId) && (string)connectionDetails["details"]["control_based_on_req"] == "2" || (string)connectionDetails["details"]["control_based_on_req"] == "3")
                             {
-                                var key = $"ShowControl_{controlConnectionId}";
+                                var key = $"ShowControl_{mainConnectionId}";
                                 HttpRuntime.Cache[key] = true;
-                                HttpRuntime.Cache[$"controlSessionPopUpTimeOut_{controlConnectionId}"] = (int)connectionDetails["details"]["control_req_popup_timeout"];
+                                HttpRuntime.Cache[$"controlSessionPopUpTimeOut_{mainConnectionId}"] = (int)connectionDetails["details"]["control_req_popup_timeout"];
                                 int sleepTime = ((int)connectionDetails["details"]["control_req_popup_timeout"] * 1000) + 5000;
-                                Thread.Sleep(sleepTime);
-                                string responseforControl = HttpRuntime.Cache[$"ShowControlResponse_{controlConnectionId}"] as string;
+                                int totalWaitTime = sleepTime;
+                                int interval = sleepTime / 4;
+                                while (totalWaitTime > 0)
+                                {
+                                    Thread.Sleep(interval);
+                                    totalWaitTime -= interval;
+                                    if (HttpRuntime.Cache[$"ShowControlResponse_{mainConnectionId}"] != null)
+                                    {
+                                        break;
+                                    }
+                                }
+                                string responseforControl = HttpRuntime.Cache[$"ShowControlResponse_{mainConnectionId}"] as string;
                                 if (!string.IsNullOrEmpty(responseforControl))
                                 {
                                     if (responseforControl == "accept" || (string)connectionDetails["details"]["control_based_on_req"] == "3")
                                     {
                                         controlSession = true;
-                                        HttpRuntime.Cache.Remove($"ShowControlResponse_{controlConnectionId}");
+                                        HttpRuntime.Cache.Remove($"ShowControlResponse_{mainConnectionId}");
                                     }
                                     else
                                     {
-                                        HttpRuntime.Cache.Remove($"ShowControlResponse_{controlConnectionId}");
+                                        HttpRuntime.Cache.Remove($"ShowControlResponse_{mainConnectionId}");
                                         Response.Write("<script>alert('Rejected the request for control session.'); window.close();</script>");
                                         return false;
                                     }
                                 }
                                 else {
-                                    return false;
+                                    if ((string)connectionDetails["details"]["control_based_on_req"] != "3"){
+                                        Response.Write("<script>alert('The user didn't respond for the control request'); window.close();</script>");
+                                        return false;
+                                    }
                                 }
                             }
-                            else {
-                                if ((string)connectionDetails["details"]["control_based_on_req"] == "1")
+                            HttpRuntime.Cache[$"terminateSession_{mainConnectionId}"] = true;
+                            if (((JObject)connectionDetails["details"]).ContainsKey("shadowed_session_ids"))
+                            {
+                                foreach (var eachConnection in connectionDetails["details"]["shadowed_session_ids"])
                                 {
-                                    HttpRuntime.Cache[$"ShowControlMsg_{controlConnectionId}"] = true;
-                                    HttpRuntime.Cache[$"controlSessionPopUpTimeOut_{controlConnectionId}"] = (int)connectionDetails["details"]["control_req_popup_timeout"];
-                                    Thread.Sleep(5000);
+                                    terminateGuestSessions((string)eachConnection);
                                 }
-                                controlSession = true;
                             }
+                            if ((string)connectionDetails["details"]["control_based_on_req"] == "1")
+                            {
+                                HttpRuntime.Cache[$"ShowControlMsg_{mainConnectionId}"] = true;
+                                HttpRuntime.Cache[$"controlSessionPopUpTimeOut_{mainConnectionId}"] = (int)connectionDetails["details"]["control_req_popup_timeout"];
+                            }
+                            Thread.Sleep(10000);
+                            controlSession = true;
                         }
                         connectionDetails = (JObject)connectionDetails["details"];
+                        if (connectionDetails.ContainsKey("remote_session_id"))
+                        {
+                            remoteSessionId = (long)connectionDetails["remote_session_id"];
+                        }
+                        
+                        HttpRuntime.Cache.Remove($"terminateSession_{mainConnectionId}");
                         string guestShareId = "";
                         try
                         {
@@ -773,6 +854,7 @@ namespace Myrtille.Web
                             }
                             sharedSessions.Add(sharingInfo.GuestInfo.Id, sharingInfo);
                             guestShareId = sharingInfo.GuestInfo.Id.ToString();
+                            JObject response = SecurdenWeb.ManageShadowControlSessionRequest(accessUrl, guestShareId, controlSession, remoteSessionId, userProfileId, serviceOrgId);
                         }
                         catch (ThreadAbortException)
                         {
@@ -1105,6 +1187,39 @@ namespace Myrtille.Web
         /// <summary>
         /// create an enterprise session from a one time url
         /// </summary>
+
+        private void terminateGuestSessions(string connectionId)
+        {
+            Guid guestId = new Guid((string)connectionId);
+            try
+            {
+                Application.Lock();
+                var sharedSessions = (IDictionary<Guid, SharingInfo>)Application[HttpApplicationStateVariables.SharedRemoteSessions.ToString()];
+                if (sharedSessions.ContainsKey(guestId))
+                {
+                    var sharingInfo = sharedSessions[guestId];
+                    if (sharingInfo.RemoteSession.State == RemoteSessionState.Connected)
+                    {
+                        if (sharingInfo.GuestInfo.Active && sharingInfo.HttpSession != null)
+                        {
+                            sharingInfo.HttpSession[HttpSessionStateVariables.RemoteSession.ToString()] = null;
+                            sharingInfo.HttpSession[HttpSessionStateVariables.GuestInfo.ToString()] = null;
+                            if (sharingInfo.RemoteSession.ActiveGuests > 0)
+                            {
+                                sharingInfo.RemoteSession.ActiveGuests--;
+                            }
+                        }
+                        sharedSessions.Remove(guestId);
+                    }
+                }
+            }
+            catch {}
+            finally
+            {
+                Application.UnLock();
+            }
+        }
+
         private void CreateEnterpriseSessionFromUrl()
         {
             try

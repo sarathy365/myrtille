@@ -694,22 +694,29 @@
                 }
                 fetch('/CheckControlRequest.aspx?action=check&sessionId=<%= RemoteSession != null ? RemoteSession.Id.ToString() : "" %>')
                 .then(res => res.json())
-                .then(data => {
-                    if (data.showControlDialog) {
-                        showControlDialog(data.popUpTimeOut);
-                    } else if (data.showMsgPopup) {
-                        showMsgDialog(data.popUpTimeOut);
-                    }
+                    .then(data => {
+                        var isRemoteOpsVisible = document.getElementById("remoteOperationsDivHeader");
+                        if (data.isTerminateSession && isRemoteOpsVisible == null) {
+                            const overlay = document.getElementById("dialogOverlayTerminate");
+                            overlay.style.visibility = "visible";
+                            setTimeout(() => {
+                                window.close();
+                            }, (5000));
+                        }
+                        if (data.showControlDialog && isRemoteOpsVisible != null) {
+                            showControlDialog(data.popUpTimeOut);
+                        } else if (data.showMsgPopup && isRemoteOpsVisible != null) {
+                            showMsgDialog(data.popUpTimeOut);
+                        }
                 });
             }
-            setInterval(checkControlRequest, 3000);
+            setInterval(checkControlRequest, 5000);
 
             function showControlDialog(timeout) {
                 const overlay = document.getElementById("dialogOverlayControlSession");
                 overlay.style.visibility = "visible";
 
                 setTimeout(() => {
-                    sendControlResponse("timeout");
                     closeControlPopup();
                 }, (timeout * 1000));
             }
@@ -719,7 +726,6 @@
                 fetch('/CheckControlRequest.aspx?action=respond&response=' + responseType + '&sessionId=<%= RemoteSession != null ? RemoteSession.Id.ToString() : "" %>', {
                     method: 'POST'
                 }).then(() => {
-                    closeControlPopup();
                 });
             }
 
@@ -734,6 +740,7 @@
             }
 
             function closeControlPopup() {
+                sendControlResponse("closeReqPopUp");
                 document.getElementById("dialogOverlayControlSession").style.visibility = "hidden";
             }
 
@@ -746,6 +753,7 @@
             }
 
             function closeMsgPopup() {
+                sendControlResponse("closeMsgPopUp");
                 document.getElementById("dialogOverlayMsgPopup").style.visibility = "hidden";
             }
 
@@ -760,7 +768,7 @@
             function closeRecordingMsgPopup() {
                 document.getElementById("dialogOverlayRecordingMessage").style.visibility = "hidden";
             }
-            
+
         </script>
 
 	</body>
@@ -797,5 +805,11 @@
                 <button class="btn accept" onclick="closeRecordingMsgPopup()">OK</button>
             </div>
         </div>
+    </div>
+    <div class="overlay" id="dialogOverlayTerminate" style="visibility: hidden;">
+    <div class="dialog">
+        <h2>Session Terminated</h2>
+        <p>Your session has been terminated because of new control session took place.</p>
+    </div>
     </div>
 </html>
