@@ -655,8 +655,7 @@ namespace Myrtille.Web
                                     {
                                         terminateGuestSessions(gid);
                                         JObject paramObject = new JObject();
-                                        paramObj["CONNECTION_ID"] = gid;
-                                        paramObj["REMOTE_SESSION_ID"] = connectionId;
+                                        paramObject["CONNECTION_ID"] = gid;
                                         var responseForTermination = SecurdenWeb.SecurdenWebRequest(serverAccessUrl, "/launcher/end_shadow_control_session", "POST", paramObject, serviceOrgId);
                                         if (responseForTermination != null && responseForTermination.ContainsKey("is_valid"))
                                         {
