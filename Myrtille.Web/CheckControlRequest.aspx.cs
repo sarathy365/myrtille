@@ -40,6 +40,8 @@ namespace Myrtille.Web
                 string cacheKey = $"ShowControl_{sessionId}";
                 string msgKey = $"ShowControlMsg_{sessionId}";
                 string timeoutKey = $"controlSessionPopUpTimeOut_{sessionId}";
+                string userName = $"controlUserName_{sessionId}";
+                string controlUserName = "Unknown User";
                 string terminateSession = $"terminateSession_{sessionId}";
                 if (!string.IsNullOrEmpty(sessionId) && (bool?)HttpRuntime.Cache[terminateSession] == true)
                 {
@@ -54,12 +56,17 @@ namespace Myrtille.Web
                     showMsgPopup = true;
                     popupTimeout = (int)HttpRuntime.Cache[timeoutKey];
                 }
+                if (HttpRuntime.Cache[userName] != null)
+                {
+                    controlUserName = (string)HttpRuntime.Cache[userName];
+                }
                 Response.ContentType = "application/json";
                 Response.Write("{ " +
                     "\"showControlDialog\": " + showPopup.ToString().ToLower() + "," +
                     "\"showMsgPopup\": " + showMsgPopup.ToString().ToLower() + "," +
                     "\"popUpTimeOut\": " + popupTimeout + "," +
-                    "\"isTerminateSession\": " + isTerminateSession.ToString().ToLower() +
+                    "\"isTerminateSession\": " + isTerminateSession.ToString().ToLower() + "," + 
+                    "\"userName\": \"" + controlUserName.ToString() + "\"" +
                 "}");
                 Response.End();
             }
@@ -72,11 +79,13 @@ namespace Myrtille.Web
                 {
                     HttpRuntime.Cache.Remove($"ShowControlMsg_{responseSessionId}");
                     HttpRuntime.Cache.Remove($"controlSessionPopUpTimeOut_{responseSessionId}");
+                    HttpRuntime.Cache.Remove($"controlUserName_{responseSessionId}");
                 }
                 else if (userResponse == "closeReqPopUp")
                 {
                     HttpRuntime.Cache.Remove($"ShowControl_{responseSessionId}");
                     HttpRuntime.Cache.Remove($"controlSessionPopUpTimeOut_{responseSessionId}");
+                    HttpRuntime.Cache.Remove($"controlUserName_{responseSessionId}");
                 }
                 else if (HttpRuntime.Cache[cacheKey] == null)
                 {

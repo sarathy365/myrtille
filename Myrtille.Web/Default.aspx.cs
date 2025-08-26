@@ -770,6 +770,7 @@ namespace Myrtille.Web
                                 var key = $"ShowControl_{mainConnectionId}";
                                 HttpRuntime.Cache[key] = true;
                                 HttpRuntime.Cache[$"controlSessionPopUpTimeOut_{mainConnectionId}"] = (int)connectionDetails["details"]["control_req_popup_timeout"];
+                                HttpRuntime.Cache[$"controlUserName_{mainConnectionId}"] = (string)connectionDetails["details"]["username"];
                                 int sleepTime = ((int)connectionDetails["details"]["control_req_popup_timeout"] * 1000) + 5000;
                                 int totalWaitTime = sleepTime;
                                 int interval = sleepTime / 4;
@@ -799,7 +800,7 @@ namespace Myrtille.Web
                                 }
                                 else {
                                     if ((string)connectionDetails["details"]["control_based_on_req"] != "3"){
-                                        Response.Write("<script>alert('The user didn't respond for the control request'); window.close();</script>");
+                                        Response.Write("<script>alert('The user did not respond for the control request'); window.close();</script>");
                                         return false;
                                     }
                                 }
@@ -816,6 +817,7 @@ namespace Myrtille.Web
                             {
                                 HttpRuntime.Cache[$"ShowControlMsg_{mainConnectionId}"] = true;
                                 HttpRuntime.Cache[$"controlSessionPopUpTimeOut_{mainConnectionId}"] = (int)connectionDetails["details"]["control_req_popup_timeout"];
+                                HttpRuntime.Cache[$"controlUserName_{mainConnectionId}"] = (string)connectionDetails["details"]["username"];
                             }
                             Thread.Sleep(10000);
                             controlSession = true;

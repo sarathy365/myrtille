@@ -704,15 +704,16 @@
                             }, (5000));
                         }
                         if (data.showControlDialog && isRemoteOpsVisible != null) {
-                            showControlDialog(data.popUpTimeOut);
+                            showControlDialog(data.popUpTimeOut, data.userName);
                         } else if (data.showMsgPopup && isRemoteOpsVisible != null) {
-                            showMsgDialog(data.popUpTimeOut);
+                            showMsgDialog(data.popUpTimeOut, data.userName);
                         }
                 });
             }
             setInterval(checkControlRequest, 5000);
 
-            function showControlDialog(timeout) {
+            function showControlDialog(timeout, userName) {
+                document.getElementById("controlSessionRequest").innerText = userName + " requested for controlling the session.";
                 const overlay = document.getElementById("dialogOverlayControlSession");
                 overlay.style.visibility = "visible";
 
@@ -744,7 +745,8 @@
                 document.getElementById("dialogOverlayControlSession").style.visibility = "hidden";
             }
 
-            function showMsgDialog(timeout) {
+            function showMsgDialog(timeout, userName) {
+                document.getElementById("controlSessionMessage").innerText = "Your session is taken control by " + userName;
                 const overlay = document.getElementById("dialogOverlayMsgPopup");
                 overlay.style.visibility = "visible";
                 setTimeout(() => {
@@ -781,7 +783,7 @@
     <div class="overlay" id="dialogOverlayControlSession" style="visibility: hidden;">
         <div class="dialog">
             <h2>Control Session Request</h2>
-            <p>Do you want to accept the request for control session?</p>
+            <p id="controlSessionRequest">Do you want to accept the request for control session?</p>
             <div class="dialog-buttons">
                 <button class="btn accept" onclick="acceptControl()">Accept</button>
                 <button class="btn reject" onclick="rejectControl()">Reject</button>
@@ -791,7 +793,7 @@
     <div class="overlay" id="dialogOverlayMsgPopup" style="visibility: hidden;">
         <div class="dialog">
             <h2>Control Session Message</h2>
-            <p id="msgPopupText">Your session is taken control by another user.</p>
+            <p id="controlSessionMessage">Your session is taken control by another user.</p>
             <div class="dialog-buttons">
                 <button class="btn accept" onclick="closeMsgPopup()">OK</button>
             </div>
