@@ -756,6 +756,7 @@ namespace Myrtille.Web
                     {
                         userSessionId = (long)connectionDetails["user_session_id"];
                     }
+
                     idleTime = (string)connectionDetails["IDLE_SESSION_TIME"];
                     accessUrl = (string)connectionDetails["ACCESS_URL"];
                     isSessionShadowed = (string)connectionDetails["type"] == "SHADOW_SESSION" || (string)connectionDetails["type"] == "CONTROL_SESSION";
@@ -794,13 +795,13 @@ namespace Myrtille.Web
                                     else
                                     {
                                         HttpRuntime.Cache.Remove($"ShowControlResponse_{mainConnectionId}");
-                                        Response.Write("<script>alert('Rejected the request for control session.'); window.close();</script>");
+                                        Response.Write("<script>alert('Request to join session rejected.'); window.close();</script>");
                                         return false;
                                     }
                                 }
                                 else {
                                     if ((string)connectionDetails["details"]["control_based_on_req"] != "3"){
-                                        Response.Write("<script>alert('The user did not respond for the control request'); window.close();</script>");
+                                        Response.Write("<script>alert('Control request has timed out, no response from end user.'); window.close();</script>");
                                         return false;
                                     }
                                 }

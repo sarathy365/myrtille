@@ -713,7 +713,7 @@
             setInterval(checkControlRequest, 5000);
 
             function showControlDialog(timeout, userName) {
-                document.getElementById("controlSessionRequest").innerText = userName + " requested for controlling the session.";
+                document.getElementById("controlSessionRequest").innerText = "Do you want to allow " + userName + " to join & control this session?";
                 const overlay = document.getElementById("dialogOverlayControlSession");
                 overlay.style.visibility = "visible";
 
@@ -746,7 +746,7 @@
             }
 
             function showMsgDialog(timeout, userName) {
-                document.getElementById("controlSessionMessage").innerText = "Your session is taken control by " + userName;
+                document.getElementById("controlSessionMessage").innerText = userName + " has taken concurrent control of your session.";
                 const overlay = document.getElementById("dialogOverlayMsgPopup");
                 overlay.style.visibility = "visible";
                 setTimeout(() => {
@@ -782,8 +782,8 @@
     </div>
     <div class="overlay" id="dialogOverlayControlSession" style="visibility: hidden;">
         <div class="dialog">
-            <h2>Control Session Request</h2>
-            <p id="controlSessionRequest">Do you want to accept the request for control session?</p>
+            <h2>Request to Join Session</h2>
+            <p id="controlSessionRequest">Do you want to allow Unknown User to join & control this session? </p>
             <div class="dialog-buttons">
                 <button class="btn accept" onclick="acceptControl()">Accept</button>
                 <button class="btn reject" onclick="rejectControl()">Reject</button>
@@ -792,8 +792,8 @@
     </div>
     <div class="overlay" id="dialogOverlayMsgPopup" style="visibility: hidden;">
         <div class="dialog">
-            <h2>Control Session Message</h2>
-            <p id="controlSessionMessage">Your session is taken control by another user.</p>
+            <h2>Concurrent Control Initiated</h2>
+            <p id="controlSessionMessage">Unknown User has taken concurrent control of your session.</p>
             <div class="dialog-buttons">
                 <button class="btn accept" onclick="closeMsgPopup()">OK</button>
             </div>
@@ -801,8 +801,8 @@
     </div>
     <div class="overlay" id="dialogOverlayRecordingMessage" style="visibility: hidden;">
         <div class="dialog">
-            <h2>RDP Session Recording</h2>
-            <p>Your session has been Recording...</p>
+            <h2>Recording Session</h2>
+            <p>Your session is currently being recorded.</p>
             <div class="dialog-buttons">
                 <button class="btn accept" onclick="closeRecordingMsgPopup()">OK</button>
             </div>
@@ -811,7 +811,7 @@
     <div class="overlay" id="dialogOverlayTerminate" style="visibility: hidden;">
     <div class="dialog">
         <h2>Session Terminated</h2>
-        <p>Your session has been terminated because of new control session took place.</p>
+        <p>Your current session has been terminated due to a new active control session.</p>
     </div>
     </div>
 </html>
