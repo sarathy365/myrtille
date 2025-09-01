@@ -694,22 +694,30 @@
                 }
                 fetch('/CheckControlRequest.aspx?action=check&sessionId=<%= RemoteSession != null ? RemoteSession.Id.ToString() : "" %>')
                 .then(res => res.json())
-                .then(data => {
-                    if (data.showControlDialog) {
-                        showControlDialog(data.popUpTimeOut);
-                    } else if (data.showMsgPopup) {
-                        showMsgDialog(data.popUpTimeOut);
-                    }
+                    .then(data => {
+                        var isRemoteOpsVisible = document.getElementById("remoteOperationsDivHeader");
+                        if (data.isTerminateSession && isRemoteOpsVisible == null) {
+                            const overlay = document.getElementById("dialogOverlayTerminate");
+                            overlay.style.visibility = "visible";
+                            setTimeout(() => {
+                                window.close();
+                            }, (5000));
+                        }
+                        if (data.showControlDialog && isRemoteOpsVisible != null) {
+                            showControlDialog(data.popUpTimeOut, data.userName);
+                        } else if (data.showMsgPopup && isRemoteOpsVisible != null) {
+                            showMsgDialog(data.popUpTimeOut, data.userName);
+                        }
                 });
             }
-            setInterval(checkControlRequest, 3000);
+            setInterval(checkControlRequest, 5000);
 
-            function showControlDialog(timeout) {
+            function showControlDialog(timeout, userName) {
+                document.getElementById("controlSessionRequest").innerText = "Do you want to allow " + userName + " to join & control this session?";
                 const overlay = document.getElementById("dialogOverlayControlSession");
                 overlay.style.visibility = "visible";
 
                 setTimeout(() => {
-                    sendControlResponse("timeout");
                     closeControlPopup();
                 }, (timeout * 1000));
             }
@@ -719,7 +727,6 @@
                 fetch('/CheckControlRequest.aspx?action=respond&response=' + responseType + '&sessionId=<%= RemoteSession != null ? RemoteSession.Id.ToString() : "" %>', {
                     method: 'POST'
                 }).then(() => {
-                    closeControlPopup();
                 });
             }
 
@@ -734,10 +741,12 @@
             }
 
             function closeControlPopup() {
+                sendControlResponse("closeReqPopUp");
                 document.getElementById("dialogOverlayControlSession").style.visibility = "hidden";
             }
 
-            function showMsgDialog(timeout) {
+            function showMsgDialog(timeout, userName) {
+                document.getElementById("controlSessionMessage").innerText = userName + " has taken concurrent control of your session.";
                 const overlay = document.getElementById("dialogOverlayMsgPopup");
                 overlay.style.visibility = "visible";
                 setTimeout(() => {
@@ -746,6 +755,7 @@
             }
 
             function closeMsgPopup() {
+                sendControlResponse("closeMsgPopUp");
                 document.getElementById("dialogOverlayMsgPopup").style.visibility = "hidden";
             }
 
@@ -760,7 +770,7 @@
             function closeRecordingMsgPopup() {
                 document.getElementById("dialogOverlayRecordingMessage").style.visibility = "hidden";
             }
-            
+
         </script>
 
 	</body>
@@ -772,8 +782,8 @@
     </div>
     <div class="overlay" id="dialogOverlayControlSession" style="visibility: hidden;">
         <div class="dialog">
-            <h2>Control Session Request</h2>
-            <p>Do you want to accept the request for control session?</p>
+            <h2>Request to Join Session</h2>
+            <p id="controlSessionRequest">Do you want to allow Unknown User to join & control this session? </p>
             <div class="dialog-buttons">
                 <button class="btn accept" onclick="acceptControl()">Accept</button>
                 <button class="btn reject" onclick="rejectControl()">Reject</button>
@@ -782,8 +792,8 @@
     </div>
     <div class="overlay" id="dialogOverlayMsgPopup" style="visibility: hidden;">
         <div class="dialog">
-            <h2>Control Session Message</h2>
-            <p id="msgPopupText">Your session is taken control by another user.</p>
+            <h2>Concurrent Control Initiated</h2>
+            <p id="controlSessionMessage">Unknown User has taken concurrent control of your session.</p>
             <div class="dialog-buttons">
                 <button class="btn accept" onclick="closeMsgPopup()">OK</button>
             </div>
@@ -791,11 +801,17 @@
     </div>
     <div class="overlay" id="dialogOverlayRecordingMessage" style="visibility: hidden;">
         <div class="dialog">
-            <h2>RDP Session Recording</h2>
-            <p>Your session has been Recording...</p>
+            <h2>Recording Session</h2>
+            <p>Your session is currently being recorded.</p>
             <div class="dialog-buttons">
                 <button class="btn accept" onclick="closeRecordingMsgPopup()">OK</button>
             </div>
         </div>
+    </div>
+    <div class="overlay" id="dialogOverlayTerminate" style="visibility: hidden;">
+    <div class="dialog">
+        <h2>Session Terminated</h2>
+        <p>Your current session has been terminated due to a new active control session.</p>
+    </div>
     </div>
 </html>

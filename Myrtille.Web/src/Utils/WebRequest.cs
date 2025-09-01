@@ -111,6 +111,27 @@ namespace Myrtille.Web.src.Utils
             return finalValue;
         }
 
+        public static JObject ManageShadowControlSessionRequest(string serverUrl, string connectionId, bool controlSession, long remoteSessionId, long userProfileId, string serviceOrgId)
+        {
+            JObject response = new JObject();
+            if (serverUrl != null && serverUrl != String.Empty)
+            {
+                int sessionType = 1;
+                if (controlSession)
+                {
+                    sessionType = 3;
+                }
+                JObject paramObj = new JObject(
+                    new JProperty("CONNECTION_ID", connectionId),
+                    new JProperty("SESSION_TYPE", sessionType),
+                    new JProperty("REMOTE_SESSION_ID", remoteSessionId),
+                    new JProperty("USER_PROFILE_ID", userProfileId)
+                    );
+                response = SecurdenWebRequest(serverUrl, "/launcher/manage_session_info", "POST", paramObj, serviceOrgId);
+            }
+            return response;
+        }
+
         public static JObject ManageSessionRequest(string serverUrl, string connectionId, bool status, string serviceOrgId, long auditId, bool isRecordingNeeded, long remoteSessionId)
         {
             JObject response = new JObject();
