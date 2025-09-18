@@ -121,7 +121,8 @@ namespace Myrtille.Services
             bool allowRemoteClipboard,
             bool allowPrintDownload,
             bool allowAudioPlayback,
-            string sharedFolderPath)
+            string sharedFolderPath,
+            bool isAdminConsole)
         {
             Trace.TraceInformation("Connecting remote session {0}, type {1}, security {2}, server (:port) {3}, vm {4}, domain {5}, user {6}, program {7}",
                 remoteSessionId,
@@ -331,7 +332,7 @@ namespace Myrtille.Services
                     // https://github.com/FreeRDP/FreeRDP/wiki/CommandLineInterface
                     // Syntax: /flag enables flag, +toggle or -toggle enables or disables toggle. /toggle and +toggle are the same. Options with values work like this: /option:<value>
                     // as the process command line can be displayed into the task manager / process explorer, the connection settings (including user credentials) are now passed to the rdp client through the inputs pipe
-                    _process.StartInfo.Arguments = 
+                    _process.StartInfo.Arguments =
                         "/myrtille-sid:" + _remoteSessionId +                                                                       // session id
                         (!Environment.UserInteractive ? string.Empty : " /myrtille-window") +                                       // session window
                         (!remoteSessionLog ? string.Empty : " /myrtille-log") +                                                     // session log
@@ -359,7 +360,8 @@ namespace Myrtille.Services
                         (securityProtocol != SecurityProtocol.auto ? " /sec:" + securityProtocol.ToString() : string.Empty) +       // security protocol
                         (allowAudioPlayback ? " /sound" : string.Empty) +                                                           // sound support
                         " /audio-mode:" + (allowAudioPlayback ? "0" : "2") +                                                        // audio mode (0: redirect, 1: play on server, 2: do not play)
-                        ((sharedFolderPath != null && sharedFolderPath != string.Empty) ? " /drive:\"" + sharedFolderPath + "\",share" : string.Empty); // file transfer support
+                        ((sharedFolderPath != null && sharedFolderPath != string.Empty) ? " /drive:\"" + sharedFolderPath + "\",share" : string.Empty) + // file transfer support
+                        (isAdminConsole ? " /admin" : string.Empty);                                                                // admin console
                 }
 
                 #endregion
