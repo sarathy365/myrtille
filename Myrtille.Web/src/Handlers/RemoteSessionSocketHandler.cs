@@ -154,7 +154,9 @@ namespace Myrtille.Web
                         _remoteSession.AllowRemoteClipboard,
                         _remoteSession.AllowPrintDownload,
                         _remoteSession.AllowAudioPlayback,
-                        _remoteSession.SharedFolderPath);
+                        _remoteSession.SharedFolderPath,
+                        _remoteSession.isAdminConsoleSession
+                        );
                 }
                 catch (Exception exc)
                 {

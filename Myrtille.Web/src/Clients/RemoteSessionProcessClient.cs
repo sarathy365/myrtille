@@ -78,7 +78,9 @@ namespace Myrtille.Web
             bool allowRemoteClipboard,
             bool allowPrintDownload,
             bool allowAudioPlayback,
-            string sharedFolderPath)
+            string sharedFolderPath,
+            bool isAdminConsole
+            )
         {
             Trace.TraceInformation("Calling service start process, remote session {0}, server {1}, domain {2}, user {3}, program {4}", remoteSessionId, serverAddress, string.IsNullOrEmpty(userDomain) ? "(none)" : userDomain, userName, string.IsNullOrEmpty(startProgram) ? "(none)" : startProgram);
 
@@ -100,7 +102,9 @@ namespace Myrtille.Web
                         allowRemoteClipboard,
                         allowPrintDownload,
                         allowAudioPlayback,
-                        sharedFolderPath);
+                        sharedFolderPath,
+                        isAdminConsole
+                        );
 
                     _processStarted = true;
                 }

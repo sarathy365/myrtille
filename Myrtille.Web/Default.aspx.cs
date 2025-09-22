@@ -722,6 +722,7 @@ namespace Myrtille.Web
             var loginPassword = string.IsNullOrEmpty(passwordHash.Value) ? password.Value : CryptoHelper.RDP_Decrypt(passwordHash.Value);
             var startProgram = program.Value;
             string sharedFolderPath = null;
+            bool isAdminConsole = false;
             if (RemoteSession == null && (Request["auth_key"] == null || Request["auth_key"].Trim() == "" || Request["referrer"] == null || Request["referrer"].Trim() == "" || Request["service_org_id"] == null || Request["service_org_id"].Trim() == ""))
             {
                 Response.Write("<script>alert('Invalid command.'); window.close();</script>");
@@ -760,6 +761,10 @@ namespace Myrtille.Web
                     idleTime = (string)connectionDetails["IDLE_SESSION_TIME"];
                     accessUrl = (string)connectionDetails["ACCESS_URL"];
                     isSessionShadowed = (string)connectionDetails["type"] == "SHADOW_SESSION" || (string)connectionDetails["type"] == "CONTROL_SESSION";
+                    if (connectionDetails.ContainsKey("details") && ((JObject)connectionDetails["details"]).ContainsKey("is_recording_needed"))
+                    {
+                        isRecordingNeeded = (bool)connectionDetails["details"]["is_recording_needed"];
+                    }   
                     if ((string)connectionDetails["type"] == "SHADOW_SESSION" || (string)connectionDetails["type"] == "CONTROL_SESSION")
                     {
                         bool controlSession = false;
@@ -799,8 +804,10 @@ namespace Myrtille.Web
                                         return false;
                                     }
                                 }
-                                else {
-                                    if ((string)connectionDetails["details"]["control_based_on_req"] != "3"){
+                                else
+                                {
+                                    if ((string)connectionDetails["details"]["control_based_on_req"] != "3")
+                                    {
                                         Response.Write("<script>alert('Control request has timed out, no response from end user.'); window.close();</script>");
                                         return false;
                                     }
@@ -828,7 +835,7 @@ namespace Myrtille.Web
                         {
                             remoteSessionId = (long)connectionDetails["remote_session_id"];
                         }
-                        
+
                         HttpRuntime.Cache.Remove($"terminateSession_{mainConnectionId}");
                         string guestShareId = "";
                         try
@@ -884,6 +891,10 @@ namespace Myrtille.Web
                     else if ((string)connectionDetails["type"] == "TERMINATE_SESSION")
                     {
                         connectionDetails = (JObject)connectionDetails["details"];
+                        if (connectionDetails.ContainsKey("remote_session_id"))
+                        {
+                            remoteSessionId = (long)connectionDetails["remote_session_id"];
+                        }
                         bool isTerminated = false;
                         try
                         {
@@ -914,7 +925,6 @@ namespace Myrtille.Web
                     if (connectionDetails.ContainsKey("audit_id"))
                     {
                         auditId = (long)connectionDetails["audit_id"];
-                        isRecordingNeeded = (bool)connectionDetails["details"]["is_recording_needed"];
                         if (((JObject)connectionDetails["details"]).ContainsKey("show_recording_notification"))
                         {
                             isRecordingPopupNeeded = (bool)connectionDetails["details"]["show_recording_notification"];
@@ -931,6 +941,10 @@ namespace Myrtille.Web
                     loginPassword = (string)connectionDetails["password"];
                     isDisplayTitle = (bool)connectionDetails["is_display_title"];
                     accountTitle = (string)connectionDetails["account_title"];
+                    if (connectionDetails.ContainsKey("is_user_admin_console"))
+                    {
+                        isAdminConsole = (bool)connectionDetails["is_user_admin_console"];
+                    }
 
                     if (connectionDetails.ContainsKey("is_file_sharing_needed") && (bool)connectionDetails["is_file_sharing_needed"])
                     {
@@ -1131,7 +1145,8 @@ namespace Myrtille.Web
                     isDisplayTitle,
                     idleTime,
                     isSessionShadowed,
-                    sharedFolderPath
+                    sharedFolderPath,
+                    isAdminConsole
                 );
 
                 RemoteSession.UserProfileId = userProfileId;
