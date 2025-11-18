@@ -18,6 +18,7 @@
 
 using System;
 using System.Configuration;
+using System.IO;
 using System.Reflection;
 using System.Web;
 using System.Web.Configuration;
@@ -25,6 +26,75 @@ using System.Web.SessionState;
 
 namespace Myrtille.Helpers
 {
+    //
+    // CUSTOM SESSION ID MANAGER
+    // ---------------------------------------------------------
+    // Compatible with .NET 4.0 (no SaveSessionID override)
+    // ASP.NET will accept IDs returned by CreateSessionID()
+    // ---------------------------------------------------------
+    //
+    public class CustomSessionIDManager : SessionIDManager
+    {
+        public override string CreateSessionID(HttpContext context)
+        {
+            string tenant = null;
+
+            try
+            {
+
+                // 1. SAFELY read from Request (Request may not be ready!)
+                if (context != null &&
+                    context.Request != null &&
+                    context.Request["client_name"] != null)
+                {
+                    tenant = context.Request["client_name"];
+                }
+
+                // 2. SAFELY read from Items
+                if (tenant == null &&
+                    context != null &&
+                    context.Items != null &&
+                    context.Items["client_name"] != null)
+                {
+                    tenant = context.Items["client_name"] as string;
+                }
+
+                // 3. SAFELY read from Session
+                if (tenant == null &&
+                    context != null &&
+                    context.Session != null &&
+                    context.Session["client_name"] != null)
+                {
+                    tenant = context.Session["client_name"] as string;
+                }
+
+                if (tenant == null)
+                {
+                    tenant = "Default";
+                }
+            }
+            catch (Exception ex)
+            {
+                tenant = "Default";
+            }
+
+            if (!tenant.EndsWith("-"))
+                tenant += "-";
+
+            string random = Guid.NewGuid().ToString("N");
+            string id = tenant + random;
+
+            return id;
+        }
+
+
+        public override bool Validate(string id)
+        {
+            return !string.IsNullOrEmpty(id);
+        }
+    }
+
+
     public static class HttpSessionHelper
     {
         // adapted from https://dopeydev.com/session-fixation-attack-and-prevention-in-asp-net/
@@ -53,7 +123,7 @@ namespace Myrtille.Helpers
         /// <returns>new session ID</returns>
         public static string CreateSessionId()
         {
-            var manager = new SessionIDManager();
+            var manager = new CustomSessionIDManager();
             return manager.CreateSessionID(HttpContext.Current);
         }
 
@@ -81,7 +151,7 @@ namespace Myrtille.Helpers
         public static string RegenerateSessionId()
         {
             // create a new session id
-            var manager = new SessionIDManager();
+            var manager = new CustomSessionIDManager();
             var oldId = manager.GetSessionID(HttpContext.Current);
             var newId = manager.CreateSessionID(HttpContext.Current);
             bool redirected, cookieAdded;
