@@ -49,7 +49,7 @@
 
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/tools/common.js", true)%>&<%=tenantParam%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/tools/convert.js", true)%>&<%=tenantParam%>"></script>
-        <script language="javascript" type="text/javascript"  src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/myrtille.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/myrtille.js", true)%>&<%=tenantParam%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/config.js", true)%>&<%=tenantParam%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/dialog.js", true)%>&<%=tenantParam%>"></script>
         <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/display.js", true)%>&<%=tenantParam%>"></script>
