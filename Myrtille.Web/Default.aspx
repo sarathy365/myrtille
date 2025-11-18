@@ -47,30 +47,30 @@
         <link rel="stylesheet" type="text/css" href="<%=BundleTable.Bundles.ResolveBundleUrl("~/css/xterm.css", true)%>&<%=tenantParam%>" />
         <link rel="stylesheet" type="text/css" href="<%=BundleTable.Bundles.ResolveBundleUrl("~/css/securden.css", true)%>&<%=tenantParam%>" />
 
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/tools/common.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/tools/convert.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/myrtille.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/config.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/dialog.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/display.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/display/canvas.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/display/divs.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/display/terminaldiv.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/buffer.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/eventsource.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/longpolling.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/websocket.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/xmlhttp.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/user.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/user/keyboard.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/user/mouse.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/user/touchscreen.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/xterm/xterm.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/xterm/addons/fit/fit.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/audio/audiowebsocket.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/securden.js", true)%>&<%=tenantParam%>"></script>
-        <script src="<%=BundleTable.Bundles.ResolveBundleUrl("~/node_modules/interactjs/dist/interact.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/tools/common.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/tools/convert.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript"  src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/myrtille.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/config.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/dialog.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/display.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/display/canvas.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/display/divs.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/display/terminaldiv.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/buffer.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/eventsource.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/longpolling.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/websocket.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/network/xmlhttp.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/user.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/user/keyboard.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/user/mouse.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/user/touchscreen.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/xterm/xterm.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/xterm/addons/fit/fit.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/audio/audiowebsocket.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/js/securden.js", true)%>&<%=tenantParam%>"></script>
+        <script language="javascript" type="text/javascript" src="<%=BundleTable.Bundles.ResolveBundleUrl("~/node_modules/interactjs/dist/interact.js", true)%>&<%=tenantParam%>"></script>
 
 	</head>
 	
