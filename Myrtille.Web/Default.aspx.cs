@@ -954,7 +954,7 @@ namespace Myrtille.Web
                         if (!Directory.Exists(folderPath))
                         {
                             Directory.CreateDirectory(folderPath);
-                            sharedFolderPath = folderPath;
+                            sharedFolderPath = randomFolder;
                             _allowFileTransfer = true;
                         }
                     }
