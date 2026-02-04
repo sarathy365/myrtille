@@ -42,6 +42,7 @@ namespace Myrtille.Web
 {
     public partial class Default : Page
     {
+
         private MFAAuthenticationClient _mfaAuthClient = new MFAAuthenticationClient();
         private EnterpriseClient _enterpriseClient = new EnterpriseClient();
         private ConnectionClient _connectionClient = new ConnectionClient(Settings.Default.ConnectionServiceUrl);

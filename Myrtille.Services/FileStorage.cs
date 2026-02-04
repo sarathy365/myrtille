@@ -34,7 +34,11 @@ namespace Myrtille.Services
             string userPassword,
             string sharedFolderPath)
         {
-            var documentsFolder = sharedFolderPath;
+            string installDir = AppDomain.CurrentDomain.BaseDirectory;
+            var documentsFolder = Path.Combine(
+                installDir,
+                @"..\share_rdp_folder", sharedFolderPath
+            );
 
             try
             {
@@ -101,27 +105,24 @@ namespace Myrtille.Services
             string sharedFolderPath)
         {
             string installDir = AppDomain.CurrentDomain.BaseDirectory;
-            string sharedRoot = Path.Combine(
+            string documentsFolder = Path.Combine(
                 installDir,
                 @"..\share_rdp_folder", sharedFolderPath
-            );
-            string fullPath = Path.GetFullPath(
-                Path.Combine(sharedRoot, fileName)
             );
 
             Stream fileStream = null;
 
             try
             {
-                fileStream = File.Open(Path.Combine(fullPath, fileName), FileMode.Open, FileAccess.Read, FileShare.Read);
+                fileStream = File.Open(Path.Combine(documentsFolder, fileName), FileMode.Open, FileAccess.Read, FileShare.Read);
             }
             catch (Exception exc)
             {
-                Trace.TraceError("Failed to download file {0} from user {1} documents folder {2}, remote session {3} ({4})", fileName, userName, fullPath, remoteSessionId, exc);
+                Trace.TraceError("Failed to download file {0} from user {1} documents folder {2}, remote session {3} ({4})", fileName, userName, documentsFolder, remoteSessionId, exc);
                 throw;
             }
 
-            Trace.TraceInformation("Downloaded file {0} from user {1} documents folder {2}, remote session {3}", fileName, userName, fullPath, remoteSessionId);
+            Trace.TraceInformation("Downloaded file {0} from user {1} documents folder {2}, remote session {3}", fileName, userName, documentsFolder, remoteSessionId);
 
             return fileStream;
         }

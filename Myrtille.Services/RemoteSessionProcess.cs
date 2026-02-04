@@ -203,13 +203,10 @@ namespace Myrtille.Services
 
                 if (hostType == HostType.RDP)
                 {
-                    if (sharedFolderPath != null || sharedFolderPath != string.Empty)
+                    if (sharedFolderPath != null && sharedFolderPath != string.Empty)
                     {
                         string installDir = AppDomain.CurrentDomain.BaseDirectory;
-                        string documentsFolder = Path.Combine(
-                            installDir,
-                            @"..\share_rdp_folder", sharedFolderPath
-                        );
+                        string documentsFolder = Path.Combine(installDir, @"..\share_rdp_folder", sharedFolderPath);
                         sharedFolder = documentsFolder;
                     }
                     // color depth
@@ -367,7 +364,7 @@ namespace Myrtille.Services
                         (securityProtocol != SecurityProtocol.auto ? " /sec:" + securityProtocol.ToString() : string.Empty) +       // security protocol
                         (allowAudioPlayback ? " /sound" : string.Empty) +                                                           // sound support
                         " /audio-mode:" + (allowAudioPlayback ? "0" : "2") +                                                        // audio mode (0: redirect, 1: play on server, 2: do not play)
-                        ((sharedFolderPath != null && sharedFolderPath != string.Empty) ? " /drive:\"" + sharedFolderPath + "\",share" : string.Empty) + // file transfer support
+                        ((sharedFolder != null && sharedFolder != string.Empty) ? " /drive:\"" + sharedFolder + "\",share" : string.Empty) + // file transfer support
                         (isAdminConsole ? " /admin" : string.Empty);                                                                // admin console
                 }
 
