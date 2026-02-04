@@ -287,8 +287,9 @@ namespace Myrtille.Web
                         <script>
                             var currentGuestId = '{GuestId}';
                             var mainConnectionId = '{RemoteSession.Id}';
+                            var client_name = '{RemoteSession.clientName}';
                             window.addEventListener('beforeunload', function () {{
-                                fetch('/CheckControlRequest.aspx?action=guestSessionTerminate&gid=' + currentGuestId + '&sessionId=' + mainConnectionId, {{
+                                fetch('/CheckControlRequest.aspx?action=guestSessionTerminate&gid=' + currentGuestId + '&sessionId=' + mainConnectionId + '&client_name=' + client_name, {{
                                     method: 'POST',
                                     keepalive: true
                                 }});
@@ -740,6 +741,13 @@ namespace Myrtille.Web
             string idleTime = null;
             bool isSessionShadowed = false;
             bool isRecordingPopupNeeded = false;
+            string clientName = "Default";
+            if (Request["client_name"] != null)
+            {
+                clientName = Request["client_name"].Trim();
+            }
+            HttpContext.Current.Session["client_name"] = clientName;
+            HttpContext.Current.Items["client_name"] = clientName;
             if (RemoteSession == null)
             {
                 JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString(), serviceOrgId);
@@ -1159,6 +1167,7 @@ namespace Myrtille.Web
                 RemoteSession.IdleTimeout = idleTime;
                 RemoteSession.isIdleTimeOutEnabled = !isSessionShadowed;
                 RemoteSession.isRecordingPopupNeeded = isRecordingPopupNeeded;
+                RemoteSession.clientName = clientName;
 
                 // bind the remote session to the current http session
                 Session[HttpSessionStateVariables.RemoteSession.ToString()] = RemoteSession;
