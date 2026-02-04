@@ -110,6 +110,7 @@ namespace Myrtille.Web
         public bool isIdleTimeOutEnabled;
         public string SharedFolderPath; 
         public bool isAdminConsoleSession;
+        public string clientName;
 
         public class MetaDataDetails
         {
