@@ -707,7 +707,6 @@ namespace Myrtille.Web
             }
         }
 
-
         private bool ConnectRemoteServer()
         {
             var connectionId = Guid.NewGuid();
@@ -958,7 +957,7 @@ namespace Myrtille.Web
                     if (connectionDetails.ContainsKey("is_file_sharing_needed") && (bool)connectionDetails["is_file_sharing_needed"])
                     {
                         string randomFolder = Path.GetRandomFileName().Replace(".", ""); 
-                        string tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "share_rdp_folder");
+                        string tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\share_rdp_folder");
                         string folderPath = Path.Combine(tempDir, randomFolder);
                         if (!Directory.Exists(folderPath))
                         {

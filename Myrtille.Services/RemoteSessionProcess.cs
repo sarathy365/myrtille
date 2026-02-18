@@ -206,7 +206,7 @@ namespace Myrtille.Services
                     if (sharedFolderPath != null && sharedFolderPath != string.Empty)
                     {
                         string installDir = AppDomain.CurrentDomain.BaseDirectory;
-                        string documentsFolder = Path.Combine(installDir, @"..\share_rdp_folder", sharedFolderPath);
+                        string documentsFolder = Path.Combine(installDir, @"..\..\share_rdp_folder", sharedFolderPath);
                         sharedFolder = documentsFolder;
                     }
                     // color depth
