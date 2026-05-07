@@ -292,6 +292,7 @@
     <Content Include="img\RemoteDesktop.png" />
     <Content Include="img\RemoteSSH.png" />
     <Content Include="img\test.webp" />
+    <Content Include="InternalError.html" />
     <Content Include="js\audio\audiowebsocket.js" />
     <Content Include="js\config.js" />
     <Content Include="js\display\canvas.js" />

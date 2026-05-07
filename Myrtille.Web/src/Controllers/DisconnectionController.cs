@@ -50,7 +50,7 @@ namespace Myrtille.Web
             return _disconnectionService.Disconnect(connectionId);
         }
 
-        [HttpGet]
+        [NonAction]
         public bool DisconnectAll()
         {
             return _disconnectionService.DisconnectAll();
