@@ -134,7 +134,8 @@ function XmlHttp(base, config, dialog, display, network)
             xhrStartTime = startTime;
 
             xhr.open('GET', config.getHttpServerUrl() + 'SendInputs.aspx' +
-                '?data=' + (data == null ? '' : encodeURIComponent(data)) +
+                '?clientId=' + network.getClientId() +
+                '&data=' + (data == null ? '' : encodeURIComponent(data)) +
                 '&imgIdx=' + display.getImgIdx() +
                 '&latency=' + network.getRoundtripDurationAvg() +
                 '&imgReturn=' + (config.getNetworkMode() == config.getNetworkModeEnum().XHR ? 1 : 0) +

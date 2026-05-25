@@ -41,17 +41,13 @@ I hope you will enjoy Myrtille! :)
 Special thanks to Catalin Trifanescu for its support.
 
 ## Installation
-Starting from version 2.8.0, the Myrtille requirements change: Windows 8.1 or Windows Server 2012 R2 or greater. This is partly because of the automated installation of the roles and features required by myrtille (which requires a modern powershell) and partly to deliver the best user experience possible (fast display and audio support), as HTML5 websockets (supported by all browsers nowadays) are only available in IIS 8.0+ (Windows 8.1 or Windows Server 2012 R2 or greater).
-
-That said, Myrtille will continue to fallback to HTML4 (xhr and long-polling) if websockets are not enabled into IIS (it's optional) or if the websocket traffic is blocked by any network equipment.
+Windows Server OS (2012 R2 or greater, with IIS 8.0+, .NET 4.5+ and WCF/HTTP activation enabled). CAUTION! IIS on Windows client OSes (7, 8, 10 - all versions) is limited to 10 simultaneous connections only - across all http sessions - and will hang after that!
 
 The .NET 4.5+ framework can be installed automatically by the myrtille installer, enabled as a feature of IIS (Web Server role > Applications Development > ASP.NET 4.5 on Windows Server 2012) or installed separately (https://www.microsoft.com/en-us/download/details.aspx?id=30653).
 
 Into the roles and features management, ensure you have enabled **HTTP Activation** under ".NET Framework 4.5+ Features" > "WCF Services" (required by the Myrtille services and REST API).
 
 The installer does install myrtille under the IIS default website and creates a custom application pool ("MyrtilleAppPool"). If you want to use another website or application pool, you can change it manually afterward (with the IIS manager).
-
-CAUTION! IIS on Windows client OSes (7, 8, 10) is limited to 10 simultaneous connections only - across all http sessions - and will hang after that! (https://forums.asp.net/t/2062118.aspx?+limit+of+10+simultaneous+connections+imposed+). Use Windows Server editions for production environments.
 
 All releases here: https://github.com/cedrozor/myrtille/releases
 

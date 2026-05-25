@@ -27,7 +27,10 @@ namespace Myrtille.Web
     {
         public void ProcessRequest(HttpContext context)
         {
-            var handler = new RemoteSessionEventSourceHandler(context);
+            // retrieve params
+            var clientId = context.Request.QueryString["clientId"];
+
+            var handler = new RemoteSessionEventSourceHandler(context, clientId);
 
             try
             {
