@@ -239,15 +239,43 @@ namespace Myrtille.Web
         {
             try
             {
+                IDictionary<Guid, RemoteSession> remoteSessions;
+                bool wasRegistered;
+
                 _application.Lock();
 
                 #region session
-
-                // unregister the remote session at the application level
-                var remoteSessions = (IDictionary<Guid, RemoteSession>)_application[HttpApplicationStateVariables.RemoteSessions.ToString()];
-                if (remoteSessions.ContainsKey(_remoteSessionManager.RemoteSession.Id))
+                try
                 {
-                    remoteSessions.Remove(_remoteSessionManager.RemoteSession.Id);
+                    // unregister the remote session at the application level
+                    remoteSessions = (IDictionary<Guid, RemoteSession>)_application[HttpApplicationStateVariables.RemoteSessions.ToString()];
+                    wasRegistered = remoteSessions.ContainsKey(_remoteSessionManager.RemoteSession.Id); 
+                    if (wasRegistered)
+                    {
+                        remoteSessions.Remove(_remoteSessionManager.RemoteSession.Id);
+                    }
+                    var sharedSessions = (IDictionary<Guid, SharingInfo>)_application[HttpApplicationStateVariables.SharedRemoteSessions.ToString()];
+                    var guests = new List<SharingInfo>();
+                    foreach (var sharingInfo in sharedSessions.Values)
+                    {
+                        if (sharingInfo.RemoteSession.Id.Equals(_remoteSessionManager.RemoteSession.Id))
+                        {
+                            guests.Add(sharingInfo);
+                        }
+                    }
+                    foreach (var guest in guests)
+                    {
+                        sharedSessions.Remove(guest.GuestInfo.Id);
+                    }
+                }
+                finally
+                {
+                    _application.UnLock();
+                }
+                #endregion
+
+                if (wasRegistered)
+                {
                     if (_remoteSessionManager.RemoteSession.isRecordingNeeded)
                     {
                         while (_remoteSessionManager.RemoteSession.imgDataQueue.Count != 0)
@@ -256,30 +284,16 @@ namespace Myrtille.Web
                         }
                         RemoteSession.updateMainMetaFile(_remoteSessionManager.RemoteSession.recordingIndex, _remoteSessionManager.RemoteSession);
                     }
-                    JObject response = SecurdenWeb.ManageSessionRequest(_remoteSessionManager.RemoteSession.accessUrl, _remoteSessionManager.RemoteSession.Id.ToString(), false, _remoteSessionManager.RemoteSession.serviceOrgId, _remoteSessionManager.RemoteSession.auditId, _remoteSessionManager.RemoteSession.isRecordingNeeded, _remoteSessionManager.RemoteSession.remoteSessionId);
+
+                    JObject response = SecurdenWeb.ManageSessionRequest(
+                        _remoteSessionManager.RemoteSession.accessUrl,
+                        _remoteSessionManager.RemoteSession.Id.ToString(),
+                        false,
+                        _remoteSessionManager.RemoteSession.serviceOrgId,
+                        _remoteSessionManager.RemoteSession.auditId,
+                        _remoteSessionManager.RemoteSession.isRecordingNeeded,
+                        _remoteSessionManager.RemoteSession.remoteSessionId);
                 }
-
-                #endregion
-
-                #region session sharing
-
-                // remove the remote session guest(s)
-                var guests = new List<SharingInfo>();
-                var sharedSessions = (IDictionary<Guid, SharingInfo>)_application[HttpApplicationStateVariables.SharedRemoteSessions.ToString()];
-                foreach (var sharingInfo in sharedSessions.Values)
-                {
-                    if (sharingInfo.RemoteSession.Id.Equals(_remoteSessionManager.RemoteSession.Id))
-                    {
-                        guests.Add(sharingInfo);
-                    }
-                }
-
-                foreach (var guest in guests)
-                {
-                    sharedSessions.Remove(guest.GuestInfo.Id);
-                }
-
-                #endregion
 
                 #region application pool recycling
 
@@ -361,10 +375,6 @@ namespace Myrtille.Web
             {
                 Trace.TraceError("Failed to cleanup disconnected session, remote session {0} ({1})", _remoteSessionManager.RemoteSession?.Id, exc);
                 throw;
-            }
-            finally
-            {
-                _application.UnLock();
             }
         }
     }

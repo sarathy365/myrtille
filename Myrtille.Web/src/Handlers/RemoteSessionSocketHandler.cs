@@ -42,6 +42,7 @@ namespace Myrtille.Web
         private HttpSessionState _session;
         private RemoteSession _remoteSession;
         private RemoteSessionClient _client;
+        GuestInfo resolvedGuestInfo = null;
 
         public bool Binary { get; private set; }
         public WebSocketDirection Direction { get; private set; }
@@ -52,14 +53,20 @@ namespace Myrtille.Web
             _session = context.Session;
             Binary = binary;
             Direction = direction;
+            string _connectionId = null;
 
             try
             {
-                if (context.Session[HttpSessionStateVariables.RemoteSession.ToString()] == null)
-                    throw new NullReferenceException();
+                _connectionId = context.Request.QueryString["connectionId"];
+                Guid connectionGuid = Guid.Parse(_connectionId);
 
-                // retrieve the remote session for the given http session
-                _remoteSession = (RemoteSession)context.Session[HttpSessionStateVariables.RemoteSession.ToString()];
+                var globalSessions = (IDictionary<Guid, RemoteSession>)context.Application[HttpApplicationStateVariables.RemoteSessions.ToString()];
+                _remoteSession = globalSessions[connectionGuid];
+
+                if (_remoteSession == null || _remoteSession.State == RemoteSessionState.Disconnected)
+                {
+                    throw new Exception("Session is no longer valid or has been disconnected.");
+                }
 
                 if (!_remoteSession.Manager.Clients.ContainsKey(clientId))
                 {
@@ -68,6 +75,17 @@ namespace Myrtille.Web
                         _remoteSession.Manager.Clients.Add(clientId, new RemoteSessionClient(clientId));
                     }
                 }
+
+                var gidParam = context.Request.QueryString["gid"];
+                if (!string.IsNullOrEmpty(gidParam) && Guid.TryParse(gidParam, out var guestGuid))
+                {
+                    var sharedSessions = (IDictionary<Guid, SharingInfo>)context.Application[HttpApplicationStateVariables.SharedRemoteSessions.ToString()];
+                    if (sharedSessions.TryGetValue(guestGuid, out var sharingInfo) && sharingInfo.RemoteSession.Id.Equals(_remoteSession.Id))
+                    {
+                        resolvedGuestInfo = sharingInfo.GuestInfo;
+                    }
+                }
+
 
                 _client = _remoteSession.Manager.Clients[clientId];
             }
@@ -115,15 +133,8 @@ namespace Myrtille.Web
             }
 
             // update guest information
-            if (!_session.SessionID.Equals(_remoteSession.OwnerSessionID))
-            {
-                if (_session[HttpSessionStateVariables.GuestInfo.ToString()] != null)
-                {
-                    ((GuestInfo)_session[HttpSessionStateVariables.GuestInfo.ToString()]).Websocket = true;
-                }
-            }
             // connect the remote server
-            else if (_remoteSession.State == RemoteSessionState.Connecting && !_remoteSession.Manager.HostClient.ProcessStarted)
+            if (_remoteSession.State == RemoteSessionState.Connecting && !_remoteSession.Manager.HostClient.ProcessStarted)
             {
                 try
                 {
@@ -218,7 +229,7 @@ namespace Myrtille.Web
                 // process input(s)
                 if (!string.IsNullOrEmpty(data))
                 {
-                    _remoteSession.Manager.ProcessInputs(_session, clientId, data);
+                    _remoteSession.Manager.ProcessInputs(_session, clientId, data, resolvedGuestInfo);
                 }
 
                 _client.ImgIdx = imgIdx;

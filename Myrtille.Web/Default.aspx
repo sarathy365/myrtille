@@ -74,16 +74,7 @@
 
 	</head>
 	
-    <body class="web-rdp-session-body" onload="startMyrtille(
-        <%=(RemoteSession != null ? "'" + RemoteSession.State.ToString().ToUpper() + "'" : "null")%>,
-        getToggleCookie((parent != null && window.name != '' ? window.name + '_' : '') + 'stat'),
-        getToggleCookie((parent != null && window.name != '' ? window.name + '_' : '') + 'debug'),
-        getToggleCookie((parent != null && window.name != '' ? window.name + '_' : '') + 'browser'),
-        <%=(RemoteSession != null && RemoteSession.BrowserResize.HasValue ? "'" + RemoteSession.BrowserResize.Value.ToString().ToUpper() + "'" : "null")%>,
-        <%=(RemoteSession != null ? RemoteSession.ClientWidth.ToString() : "null")%>,
-        <%=(RemoteSession != null ? RemoteSession.ClientHeight.ToString() : "null")%>,
-        '<%=(RemoteSession != null ? RemoteSession.HostType.ToString() : HostType.RDP.ToString())%>',
-        <%=(RemoteSession != null && !string.IsNullOrEmpty(RemoteSession.VMGuid) && !RemoteSession.VMEnhancedMode).ToString().ToLower()%>);resetIdleTimer()">
+    <body class="web-rdp-session-body">
 
         <!-- custom UI: all elements below, including the logo, are customizable into Default.css -->
 
@@ -363,7 +354,7 @@
             </div>
         </div>
 
-        <div runat="server" visible="False" class="container webrdp-container-body" id="certificateDiv">
+        <div runat="server" id="certificateDiv" class="container webrdp-container-body" style="display:none;">
             <div class="success-message-div dialog-message-div">
             <span class="webrdp-success-icon"></span>
             <span class="webrdp-dialog-message-text">Certificate validated. You can launch web-based RDP connections.</span>
@@ -781,7 +772,45 @@
             }
 
         </script>
+        <script type="text/javascript">
+            (function () {
+                var cid = sessionStorage.getItem('connectionId');
+                var gid = sessionStorage.getItem('gid');
 
+                if (!cid && !gid) {
+                    const certificateDiv = document.getElementById('certificateDiv');
+                    let remoteOperationsDiv = document.getElementById("remoteOperationsDiv")
+
+                    certificateDiv?.style.setProperty('display', 'block');
+                    remoteOperationsDiv?.style.setProperty('display', 'none');
+                    return;
+                }
+
+                var headers = {};
+                if (gid) headers['X-Guest-Id'] = gid;
+                else headers['X-Connection-Id'] = cid;
+
+                fetch(window.location.pathname, { headers: headers })
+                    .then(function (r) { return r.json(); })
+                    .then(function (s) {
+                        if (!s.found) {
+                            sessionStorage.removeItem('connectionId');
+                            sessionStorage.removeItem('gid');
+                            return;
+                        }
+                        document.title = (s.isManageSession
+                        ? (s.isControlSession ? 'Control Session - ' : 'Shadow Session - ')
+                        : '') +
+                        (s.isDisplayTitle
+                            ? s.accountTitle
+                            : (s.userDomain ? s.userDomain + '\\' : '') + s.userName) +
+                        '@' + s.serverAddress + ' | Securden RDP Session';
+                        startMyrtille(s.state, s.connectionId, s.gid, false, false, false, true,
+                                      s.clientWidth, s.clientHeight, s.hostType, s.vmNotEnhanced);
+                        onSessionConnection(); 
+                    });
+            })();
+        </script>
 	</body>
     <div class="overlay" id="dialog-overlay" style="visibility: hidden;">
     <div class="dialog">

@@ -38,7 +38,7 @@ function Websocket(base, config, dialog, display, network)
             var wsImpl = window.WebSocket || window.MozWebSocket;
 
             // using the IIS 8+ websockets support, the websocket server url is the same as http (there is just a protocol scheme change and a specific handler; standard and secured ports are the same)
-            var wsBaseUrl = config.getHttpServerUrl().replace('http', 'ws') + 'handlers/SocketHandler.ashx?binary=' + (config.getImageMode() == config.getImageModeEnum().BINARY ? 'true' : 'false') + '&clientId=' + network.getClientId();
+            var wsBaseUrl = config.getHttpServerUrl().replace('http', 'ws') + 'handlers/SocketHandler.ashx?binary=' + (config.getImageMode() == config.getImageModeEnum().BINARY ? 'true' : 'false') + '&clientId=' + network.getClientId() +'&connectionId=' + network.getConnectionId() + '&gid=' + network.getGuestId();
             var wsUrl;
 
             // 1 websocket up, n down

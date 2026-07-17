@@ -472,12 +472,13 @@ namespace Myrtille.Web
                             return;
 
                         var clipboardText = string.Empty;
-
-                        // read the clipboard text from unicode code points
-                        var charsCodes = args.Split(new[] { "-" }, StringSplitOptions.None);
-                        foreach (var charCode in charsCodes)
-                        {
-                            clipboardText += char.ConvertFromUtf32(int.Parse(charCode));
+                        if (!string.IsNullOrEmpty(args))
+                        {                            
+                            var charsCodes = args.Split(new[] { "-" }, StringSplitOptions.None);
+                            foreach (var charCode in charsCodes)
+                            {
+                                clipboardText += char.ConvertFromUtf32(int.Parse(charCode));
+                            }
                         }
 
                         // truncated above max length, which was normally already enforced client side; re-checking
@@ -538,7 +539,7 @@ namespace Myrtille.Web
 
         #region Inputs
 
-        public void ProcessInputs(HttpSessionState session, string clientId, string data)
+        public void ProcessInputs(HttpSessionState session, string clientId, string data, GuestInfo guestInfo)
         {
             if (RemoteSession.State == RemoteSessionState.NotConnected ||
                 RemoteSession.State == RemoteSessionState.Disconnected)
@@ -592,8 +593,9 @@ namespace Myrtille.Web
                                 return;
 
                             session[HttpSessionStateVariables.RemoteSession.ToString()] = null;
-                            if (session[HttpSessionStateVariables.GuestInfo.ToString()] != null)
-                            {
+                            if (session[HttpSessionStateVariables.GuestInfo.ToString()] != null &&  
+                            ((GuestInfo)session[HttpSessionStateVariables.GuestInfo.ToString()]).ConnectionId.Equals(RemoteSession.Id))
+                           {
                                 // an inactive guest isn't removed, it just looses its slot; if there is an available slot afterward, the guest can reclaim it
                                 ((GuestInfo)session[HttpSessionStateVariables.GuestInfo.ToString()]).Active = false;
 
@@ -660,20 +662,25 @@ namespace Myrtille.Web
                         // only FSUs is allowed for anyone to update their display
 
                         // TODO: maintain a list of guests for the remote session, with different settings for each guest, then have different processings accordingly
-
-                        if (session.SessionID.Equals(RemoteSession.OwnerSessionID) ||
-                            (session[HttpSessionStateVariables.GuestInfo.ToString()] != null &&
-                             ((GuestInfo)session[HttpSessionStateVariables.GuestInfo.ToString()]).Control &&
-                              (command == RemoteSessionCommand.SendKeyUnicode ||
-                               command == RemoteSessionCommand.SendKeyScancode ||
-                               command == RemoteSessionCommand.SendMouseLeftButton ||
-                               command == RemoteSessionCommand.SendMouseMiddleButton ||
-                               command == RemoteSessionCommand.SendMouseRightButton ||
-                               command == RemoteSessionCommand.SendMouseWheelUp ||
-                               command == RemoteSessionCommand.SendMouseWheelDown ||
-                               command == RemoteSessionCommand.SendMouseMove ||
-                               command == RemoteSessionCommand.SendLocalClipboard)) ||
-                            command == RemoteSessionCommand.RequestFullscreenUpdate)
+                        if (
+                            session.SessionID.Equals(RemoteSession.OwnerSessionID) ||
+                            (
+                                guestInfo != null &&
+                                ((GuestInfo)guestInfo).Control &&
+                                (
+                                    command == RemoteSessionCommand.SendKeyUnicode ||
+                                    command == RemoteSessionCommand.SendKeyScancode ||
+                                    command == RemoteSessionCommand.SendMouseLeftButton ||
+                                    command == RemoteSessionCommand.SendMouseMiddleButton ||
+                                    command == RemoteSessionCommand.SendMouseRightButton ||
+                                    command == RemoteSessionCommand.SendMouseWheelUp ||
+                                    command == RemoteSessionCommand.SendMouseWheelDown ||
+                                    command == RemoteSessionCommand.SendMouseMove ||
+                                    command == RemoteSessionCommand.SendLocalClipboard
+                                )
+                            ) ||
+                            command == RemoteSessionCommand.RequestFullscreenUpdate
+                        )
                         {
                             SendCommand(command, input.Remove(0, 3));
                         }

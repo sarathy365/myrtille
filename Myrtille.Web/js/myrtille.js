@@ -19,8 +19,7 @@
 /*****************************************************************************************************************************************************************************************************/
 /*** Main                                                                                                                                                                                          ***/
 /*****************************************************************************************************************************************************************************************************/
-
-function Myrtille(httpServerUrl, connectionState, statEnabled, debugEnabled, compatibilityMode, browserResize, displayWidth, displayHeight, hostType, vmNotEnhanced)
+function Myrtille(httpServerUrl, connectionState, connectionId, guestId, statEnabled, debugEnabled, compatibilityMode, browserResize, displayWidth, displayHeight, hostType, vmNotEnhanced)
 {
     var config = null;
     this.getConfig = function() { return config; };
@@ -106,6 +105,8 @@ function Myrtille(httpServerUrl, connectionState, statEnabled, debugEnabled, com
             display.init();
 
             network = new Network(this, config, dialog, display);
+            network.setConnectionId(connectionId); 
+            network.setGuestId(guestId);
             network.init();
 
             user = new User(this, config, dialog, display, network);
@@ -304,8 +305,7 @@ var messageTypeEnum =
     PrintJob: 5,
     Ack: 6
 };
-
-function startMyrtille(connectionState, statEnabled, debugEnabled, compatibilityMode, browserResize, displayWidth, displayHeight, hostType, vmNotEnhanced)
+function startMyrtille(connectionState, connectionId, guestId, statEnabled, debugEnabled, compatibilityMode, browserResize, displayWidth, displayHeight, hostType, vmNotEnhanced)
 {
     try
     {
@@ -334,8 +334,7 @@ function startMyrtille(connectionState, statEnabled, debugEnabled, compatibility
     
         var httpServerUrl = window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '') + '/' + pathname + '/';
         //alert('http server url: ' + httpServerUrl);
-
-        myrtille = new Myrtille(httpServerUrl, connectionState, statEnabled, debugEnabled, compatibilityMode, browserResize, displayWidth, displayHeight, hostType, vmNotEnhanced);
+        myrtille = new Myrtille(httpServerUrl, connectionState, connectionId, guestId, statEnabled, debugEnabled, compatibilityMode, browserResize, displayWidth, displayHeight, hostType, vmNotEnhanced);
         myrtille.init();
 
         // code shortcuts

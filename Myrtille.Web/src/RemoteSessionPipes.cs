@@ -20,6 +20,7 @@ using System;
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Security.AccessControl;
+using System.Threading.Tasks;
 using Myrtille.Helpers;
 using Myrtille.Services.Contracts;
 
@@ -181,7 +182,8 @@ namespace Myrtille.Web
                 if (UpdatesPipe != null)
                 {
                     UpdatesPipe.EndWaitForConnection(e);
-                    ReadUpdatesPipe();
+                    Task.Factory.StartNew(ReadUpdatesPipe, TaskCreationOptions.LongRunning);
+                    // ReadUpdatesPipe();
                 }
             }
             catch (Exception exc)
@@ -197,7 +199,7 @@ namespace Myrtille.Web
                 if (AudioPipe != null)
                 {
                     AudioPipe.EndWaitForConnection(e);
-                    ReadAudioPipe();
+                    Task.Factory.StartNew(ReadAudioPipe, TaskCreationOptions.LongRunning);
                 }
             }
             catch (Exception exc)

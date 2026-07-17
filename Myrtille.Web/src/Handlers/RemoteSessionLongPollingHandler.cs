@@ -17,8 +17,10 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Web;
+using Myrtille.Services.Contracts;
 using Newtonsoft.Json;
 
 namespace Myrtille.Web
@@ -32,14 +34,20 @@ namespace Myrtille.Web
         public RemoteSessionLongPollingHandler(HttpContext context, string clientId)
         {
             _context = context;
+            string _connectionId = null;
 
             try
             {
-                if (context.Session[HttpSessionStateVariables.RemoteSession.ToString()] == null)
-                    throw new NullReferenceException();
+                _connectionId = context.Request.QueryString["connectionId"];
+                Guid connectionGuid = Guid.Parse(_connectionId);
 
-                // retrieve the remote session for the given http session
-                _remoteSession = (RemoteSession)context.Session[HttpSessionStateVariables.RemoteSession.ToString()];
+                var globalSessions = (IDictionary<Guid, RemoteSession>)context.Application[HttpApplicationStateVariables.RemoteSessions.ToString()];
+                _remoteSession = globalSessions[connectionGuid];
+
+                if (_remoteSession == null || _remoteSession.State == RemoteSessionState.Disconnected)
+                {
+                    throw new Exception("Session is no longer valid or has been disconnected.");
+                }
 
                 if (!_remoteSession.Manager.Clients.ContainsKey(clientId))
                 {
