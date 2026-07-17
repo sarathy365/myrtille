@@ -839,265 +839,261 @@ namespace Myrtille.Web
             }
             HttpContext.Current.Session["client_name"] = clientName;
             HttpContext.Current.Items["client_name"] = clientName;
-            if (true)
+            JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString(), serviceOrgId);
+            if (connectionDetails == null)
             {
-                JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString(), serviceOrgId);
-                if (connectionDetails == null)
+                return false;
+            }
+            else
+            {
+                if (connectionDetails["user_profile_id"] != null && connectionDetails["user_profile_id"].ToString() != "")
                 {
-                    return false;
+                    userProfileId = (long)connectionDetails["user_profile_id"];
                 }
-                else
+                if (connectionDetails["user_session_id"] != null && connectionDetails["user_session_id"].ToString() != "")
                 {
-                    if (connectionDetails["user_profile_id"] != null && connectionDetails["user_profile_id"].ToString() != "")
-                    {
-                        userProfileId = (long)connectionDetails["user_profile_id"];
-                    }
-                    if (connectionDetails["user_session_id"] != null && connectionDetails["user_session_id"].ToString() != "")
-                    {
-                        userSessionId = (long)connectionDetails["user_session_id"];
-                    }
+                    userSessionId = (long)connectionDetails["user_session_id"];
+                }
 
-                    idleTime = (string)connectionDetails["IDLE_SESSION_TIME"];
-                    accessUrl = (string)connectionDetails["ACCESS_URL"];
-                    isSessionShadowed = (string)connectionDetails["type"] == "SHADOW_SESSION" || (string)connectionDetails["type"] == "CONTROL_SESSION";
-                    if (connectionDetails.ContainsKey("details") && ((JObject)connectionDetails["details"]).ContainsKey("is_recording_needed"))
+                idleTime = (string)connectionDetails["IDLE_SESSION_TIME"];
+                accessUrl = (string)connectionDetails["ACCESS_URL"];
+                isSessionShadowed = (string)connectionDetails["type"] == "SHADOW_SESSION" || (string)connectionDetails["type"] == "CONTROL_SESSION";
+                if (connectionDetails.ContainsKey("details") && ((JObject)connectionDetails["details"]).ContainsKey("is_recording_needed"))
+                {
+                    isRecordingNeeded = (bool)connectionDetails["details"]["is_recording_needed"];
+                }   
+                if ((string)connectionDetails["type"] == "SHADOW_SESSION" || (string)connectionDetails["type"] == "CONTROL_SESSION")
+                {
+                    bool controlSession = false;
+                    var mainConnectionId = connectionDetails["details"]["connection_id"]?.ToString();
+                    if ((string)connectionDetails["type"] == "CONTROL_SESSION")
                     {
-                        isRecordingNeeded = (bool)connectionDetails["details"]["is_recording_needed"];
-                    }   
-                    if ((string)connectionDetails["type"] == "SHADOW_SESSION" || (string)connectionDetails["type"] == "CONTROL_SESSION")
-                    {
-                        bool controlSession = false;
-                        var mainConnectionId = connectionDetails["details"]["connection_id"]?.ToString();
-                        if ((string)connectionDetails["type"] == "CONTROL_SESSION")
+                        string control_based_on_req = (string)connectionDetails["details"]["control_based_on_req"];
+                        if (!string.IsNullOrEmpty(mainConnectionId) && (control_based_on_req == "2" || control_based_on_req == "3"))
                         {
-                            string control_based_on_req = (string)connectionDetails["details"]["control_based_on_req"];
-                            if (!string.IsNullOrEmpty(mainConnectionId) && (control_based_on_req == "2" || control_based_on_req == "3"))
+                            var key = $"ShowControl_{mainConnectionId}";
+                            HttpRuntime.Cache[key] = true;
+                            HttpRuntime.Cache[$"controlSessionPopUpTimeOut_{mainConnectionId}"] = (int)connectionDetails["details"]["control_req_popup_timeout"];
+                            HttpRuntime.Cache[$"controlUserName_{mainConnectionId}"] = (string)connectionDetails["details"]["username"];
+                            int sleepTime = ((int)connectionDetails["details"]["control_req_popup_timeout"] * 1000) + 5000;
+                            int totalWaitTime = sleepTime;
+                            int interval = sleepTime / 4;
+                            while (totalWaitTime > 0)
                             {
-                                var key = $"ShowControl_{mainConnectionId}";
-                                HttpRuntime.Cache[key] = true;
-                                HttpRuntime.Cache[$"controlSessionPopUpTimeOut_{mainConnectionId}"] = (int)connectionDetails["details"]["control_req_popup_timeout"];
-                                HttpRuntime.Cache[$"controlUserName_{mainConnectionId}"] = (string)connectionDetails["details"]["username"];
-                                int sleepTime = ((int)connectionDetails["details"]["control_req_popup_timeout"] * 1000) + 5000;
-                                int totalWaitTime = sleepTime;
-                                int interval = sleepTime / 4;
-                                while (totalWaitTime > 0)
+                                Thread.Sleep(interval);
+                                totalWaitTime -= interval;
+                                if (HttpRuntime.Cache[$"ShowControlResponse_{mainConnectionId}"] != null)
                                 {
-                                    Thread.Sleep(interval);
-                                    totalWaitTime -= interval;
-                                    if (HttpRuntime.Cache[$"ShowControlResponse_{mainConnectionId}"] != null)
-                                    {
-                                        break;
-                                    }
+                                    break;
                                 }
-                                string responseforControl = HttpRuntime.Cache[$"ShowControlResponse_{mainConnectionId}"] as string;
-                                if (!string.IsNullOrEmpty(responseforControl))
+                            }
+                            string responseforControl = HttpRuntime.Cache[$"ShowControlResponse_{mainConnectionId}"] as string;
+                            if (!string.IsNullOrEmpty(responseforControl))
+                            {
+                                if (responseforControl == "accept" || (string)connectionDetails["details"]["control_based_on_req"] == "3")
                                 {
-                                    if (responseforControl == "accept" || (string)connectionDetails["details"]["control_based_on_req"] == "3")
-                                    {
-                                        controlSession = true;
-                                        HttpRuntime.Cache.Remove($"ShowControlResponse_{mainConnectionId}");
-                                    }
-                                    else
-                                    {
-                                        HttpRuntime.Cache.Remove($"ShowControlResponse_{mainConnectionId}");
-                                        Response.Write("<script>alert('Request to join session rejected.'); window.close();</script>");
-                                        return false;
-                                    }
+                                    controlSession = true;
+                                    HttpRuntime.Cache.Remove($"ShowControlResponse_{mainConnectionId}");
                                 }
                                 else
                                 {
-                                    if ((string)connectionDetails["details"]["control_based_on_req"] != "3")
-                                    {
-                                        Response.Write("<script>alert('Control request has timed out, no response from end user.'); window.close();</script>");
-                                        return false;
-                                    }
+                                    HttpRuntime.Cache.Remove($"ShowControlResponse_{mainConnectionId}");
+                                    Response.Write("<script>alert('Request to join session rejected.'); window.close();</script>");
+                                    return false;
                                 }
-                            }
-                            HttpRuntime.Cache[$"terminateSession_{mainConnectionId}"] = true;
-                            if (((JObject)connectionDetails["details"]).ContainsKey("shadowed_session_ids"))
-                            {
-                                foreach (var eachConnection in connectionDetails["details"]["shadowed_session_ids"])
-                                {
-                                    terminateGuestSessions((string)eachConnection);
-                                }
-                            }
-                            if ((string)connectionDetails["details"]["control_based_on_req"] == "1")
-                            {
-                                HttpRuntime.Cache[$"ShowControlMsg_{mainConnectionId}"] = true;
-                                HttpRuntime.Cache[$"controlSessionPopUpTimeOut_{mainConnectionId}"] = (int)connectionDetails["details"]["control_req_popup_timeout"];
-                                HttpRuntime.Cache[$"controlUserName_{mainConnectionId}"] = (string)connectionDetails["details"]["username"];
-                            }
-                            Thread.Sleep(10000);
-                            controlSession = true;
-                        }
-                        connectionDetails = (JObject)connectionDetails["details"];
-                        if (connectionDetails.ContainsKey("remote_session_id"))
-                        {
-                            remoteSessionId = (long)connectionDetails["remote_session_id"];
-                        }
-
-                        HttpRuntime.Cache.Remove($"terminateSession_{mainConnectionId}");
-                        string guestShareId = "";
-                        try
-                        {
-                            Application.Lock();
-
-                            // create a new guest for the remote session
-                            var sharedSessions = (IDictionary<Guid, SharingInfo>)Application[HttpApplicationStateVariables.SharedRemoteSessions.ToString()];
-                            Guid OldConnectionId = new Guid((string)connectionDetails["connection_id"]);
-                            var remoteSessions = (IDictionary<Guid, RemoteSession>)
-                                Application[HttpApplicationStateVariables.RemoteSessions.ToString()];
-
-                            if (remoteSessions.TryGetValue(OldConnectionId, out var remoteSession))
-                            {
-                                RemoteSession = remoteSession;
                             }
                             else
                             {
-                                RemoteSession = null;
-                            }
-                            var sharingInfo = new SharingInfo
-                            {
-                                RemoteSession = RemoteSession,
-                                GuestInfo = new GuestInfo
+                                if ((string)connectionDetails["details"]["control_based_on_req"] != "3")
                                 {
-                                    Id = Guid.NewGuid(),
-                                    ConnectionId = OldConnectionId,
-                                    Control = controlSession,
+                                    Response.Write("<script>alert('Control request has timed out, no response from end user.'); window.close();</script>");
+                                    return false;
                                 }
-                            };
-                            sharingInfo.RemoteSession.isManageSession = true;
-                            sharingInfo.RemoteSession.isControlSession = false;
-                            if (controlSession)
-                            {
-                                sharingInfo.RemoteSession.isControlSession = true;
                             }
-                            sharedSessions.Add(sharingInfo.GuestInfo.Id, sharingInfo);
-                            guestShareId = sharingInfo.GuestInfo.Id.ToString();
-                            JObject response = SecurdenWeb.ManageShadowControlSessionRequest(accessUrl, guestShareId, controlSession, remoteSessionId, userProfileId, serviceOrgId);
                         }
-                        catch (ThreadAbortException)
+                        HttpRuntime.Cache[$"terminateSession_{mainConnectionId}"] = true;
+                        if (((JObject)connectionDetails["details"]).ContainsKey("shadowed_session_ids"))
                         {
-                            // occurs because the response is ended after redirect
+                            foreach (var eachConnection in connectionDetails["details"]["shadowed_session_ids"])
+                            {
+                                terminateGuestSessions((string)eachConnection);
+                            }
                         }
-                        catch (Exception exc)
+                        if ((string)connectionDetails["details"]["control_based_on_req"] == "1")
                         {
-                            System.Diagnostics.Trace.TraceError("Failed to generate a session sharing url ({0})", exc);
+                            HttpRuntime.Cache[$"ShowControlMsg_{mainConnectionId}"] = true;
+                            HttpRuntime.Cache[$"controlSessionPopUpTimeOut_{mainConnectionId}"] = (int)connectionDetails["details"]["control_req_popup_timeout"];
+                            HttpRuntime.Cache[$"controlUserName_{mainConnectionId}"] = (string)connectionDetails["details"]["username"];
                         }
-                        finally
-                        {
-                            Application.UnLock();
-                        }
-                        if (guestShareId != "")
-                        {
-                            string script = $@"
-                                sessionStorage.setItem('gid', '{guestShareId}');
-                                sessionStorage.removeItem('connectionId');
-                                window.location.replace('/');
-                            ";
-                            ClientScript.RegisterStartupScript(this.GetType(), "SetTabState", script, true);
-                            // Response.Redirect("~/?gid=" + guestShareId, true);
-                        }
-                        else
-                        {
-                            JObject response = SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId, auditId, isRecordingNeeded, remoteSessionId);
-                            Response.Write("<script>alert('The session has already been closed or terminated.'); window.close();</script>");
-                        }
-                        return false;
-                    }
-                    else if ((string)connectionDetails["type"] == "TERMINATE_SESSION")
-                    {
-                        connectionDetails = (JObject)connectionDetails["details"];
-                        if (connectionDetails.ContainsKey("remote_session_id"))
-                        {
-                            remoteSessionId = (long)connectionDetails["remote_session_id"];
-                        }
-                        bool isTerminated = false;
-                        try
-                        {
-                            Guid OldConnectionId = new Guid((string)connectionDetails["connection_id"]);
-                            RemoteSession = ((IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()])[OldConnectionId];
-                            RemoteSession.Manager.SendCommand(RemoteSessionCommand.CloseClient);
-                            isTerminated = true;
-                        }
-                        catch (ThreadAbortException)
-                        {
-                            // occurs because the response is ended after redirect
-                        }
-                        catch (Exception exc)
-                        {
-                            System.Diagnostics.Trace.TraceError("Failed to terminate the session ({0})", exc);
-                        }
-                        if (isTerminated)
-                        {
-                            Response.Write("<script>alert('Session terminated.'); window.close();</script>");
-                        }
-                        else
-                        {
-                            JObject response = SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId, auditId, isRecordingNeeded, remoteSessionId);
-                            Response.Write("<script>alert('The session has already been closed or terminated.'); window.close();</script>");
-                        }
-                        return false;
-                    }
-                    if (connectionDetails.ContainsKey("audit_id"))
-                    {
-                        auditId = (long)connectionDetails["audit_id"];
-                        if (((JObject)connectionDetails["details"]).ContainsKey("show_recording_notification"))
-                        {
-                            isRecordingPopupNeeded = (bool)connectionDetails["details"]["show_recording_notification"];
-                        }
-                        if (connectionDetails.ContainsKey("remote_session_id"))
-                        {
-                            remoteSessionId = (long)connectionDetails["remote_session_id"];
-                        }
+                        Thread.Sleep(10000);
+                        controlSession = true;
                     }
                     connectionDetails = (JObject)connectionDetails["details"];
-                    loginServer = (string)connectionDetails["address"];
-                    loginDomain = "";
-                    loginUser = (string)connectionDetails["username"];
-                    loginPassword = (string)connectionDetails["password"];
-                    isDisplayTitle = (bool)connectionDetails["is_display_title"];
-                    accountTitle = (string)connectionDetails["account_title"];
-                    if (connectionDetails.ContainsKey("is_user_admin_console"))
+                    if (connectionDetails.ContainsKey("remote_session_id"))
                     {
-                        isAdminConsole = (bool)connectionDetails["is_user_admin_console"];
+                        remoteSessionId = (long)connectionDetails["remote_session_id"];
                     }
 
-                    if (connectionDetails.ContainsKey("is_file_sharing_needed") && (bool)connectionDetails["is_file_sharing_needed"])
+                    HttpRuntime.Cache.Remove($"terminateSession_{mainConnectionId}");
+                    string guestShareId = "";
+                    try
                     {
-                        string randomFolder = Path.GetRandomFileName().Replace(".", ""); 
-                        string tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\share_rdp_folder");
-                        string folderPath = Path.Combine(tempDir, randomFolder);
-                        if (!Directory.Exists(folderPath))
-                        {
-                            Directory.CreateDirectory(folderPath);
-                            sharedFolderPath = randomFolder;
-                            _allowFileTransfer = true;
-                        }
-                    }
+                        Application.Lock();
 
-                    if (connectionDetails.ContainsKey("port"))
-                    {
-                        loginServer += ":" + connectionDetails["port"];
-                    }
-                    if (connectionDetails.ContainsKey("clipboard"))
-                    {
-                        _allowRemoteClipboard = (bool)connectionDetails["clipboard"];
-                    }
-                    string tempUsername = loginUser;
-                    if (loginUser.Contains(":"))
-                    {
-                        string addressAlone = loginUser.Substring(0, loginUser.IndexOf(":"));
-                        string portUsername = loginUser.Substring(loginUser.IndexOf(":") + 1);
-                        if (portUsername.Contains("\\"))
+                        // create a new guest for the remote session
+                        var sharedSessions = (IDictionary<Guid, SharingInfo>)Application[HttpApplicationStateVariables.SharedRemoteSessions.ToString()];
+                        Guid OldConnectionId = new Guid((string)connectionDetails["connection_id"]);
+                        var remoteSessions = (IDictionary<Guid, RemoteSession>)
+                            Application[HttpApplicationStateVariables.RemoteSessions.ToString()];
+
+                        if (remoteSessions.TryGetValue(OldConnectionId, out var remoteSession))
                         {
-                            tempUsername = addressAlone + portUsername.Substring(portUsername.IndexOf("\\"));
+                            RemoteSession = remoteSession;
                         }
+                        else
+                        {
+                            RemoteSession = null;
+                        }
+                        var sharingInfo = new SharingInfo
+                        {
+                            RemoteSession = RemoteSession,
+                            GuestInfo = new GuestInfo
+                            {
+                                Id = Guid.NewGuid(),
+                                ConnectionId = OldConnectionId,
+                                Control = controlSession,
+                            }
+                        };
+                        sharingInfo.RemoteSession.isManageSession = true;
+                        sharingInfo.RemoteSession.isControlSession = false;
+                        if (controlSession)
+                        {
+                            sharingInfo.RemoteSession.isControlSession = true;
+                        }
+                        sharedSessions.Add(sharingInfo.GuestInfo.Id, sharingInfo);
+                        guestShareId = sharingInfo.GuestInfo.Id.ToString();
+                        JObject response = SecurdenWeb.ManageShadowControlSessionRequest(accessUrl, guestShareId, controlSession, remoteSessionId, userProfileId, serviceOrgId);
                     }
-                    loginUser = tempUsername;
+                    catch (ThreadAbortException)
+                    {
+                        // occurs because the response is ended after redirect
+                    }
+                    catch (Exception exc)
+                    {
+                        System.Diagnostics.Trace.TraceError("Failed to generate a session sharing url ({0})", exc);
+                    }
+                    finally
+                    {
+                        Application.UnLock();
+                    }
+                    if (guestShareId != "")
+                    {
+                        string script = $@"
+                            sessionStorage.setItem('gid', '{guestShareId}');
+                            sessionStorage.removeItem('connectionId');
+                            window.location.replace('/');
+                        ";
+                        ClientScript.RegisterStartupScript(this.GetType(), "SetTabState", script, true);
+                        // Response.Redirect("~/?gid=" + guestShareId, true);
+                    }
+                    else
+                    {
+                        JObject response = SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId, auditId, isRecordingNeeded, remoteSessionId);
+                        Response.Write("<script>alert('The session has already been closed or terminated.'); window.close();</script>");
+                    }
+                    return false;
                 }
-            }
-            // allowed features
+                else if ((string)connectionDetails["type"] == "TERMINATE_SESSION")
+                {
+                    connectionDetails = (JObject)connectionDetails["details"];
+                    if (connectionDetails.ContainsKey("remote_session_id"))
+                    {
+                        remoteSessionId = (long)connectionDetails["remote_session_id"];
+                    }
+                    bool isTerminated = false;
+                    try
+                    {
+                        Guid OldConnectionId = new Guid((string)connectionDetails["connection_id"]);
+                        RemoteSession = ((IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()])[OldConnectionId];
+                        RemoteSession.Manager.SendCommand(RemoteSessionCommand.CloseClient);
+                        isTerminated = true;
+                    }
+                    catch (ThreadAbortException)
+                    {
+                        // occurs because the response is ended after redirect
+                    }
+                    catch (Exception exc)
+                    {
+                        System.Diagnostics.Trace.TraceError("Failed to terminate the session ({0})", exc);
+                    }
+                    if (isTerminated)
+                    {
+                        Response.Write("<script>alert('Session terminated.'); window.close();</script>");
+                    }
+                    else
+                    {
+                        JObject response = SecurdenWeb.ManageSessionRequest(accessUrl, (string)connectionDetails["connection_id"], false, serviceOrgId, auditId, isRecordingNeeded, remoteSessionId);
+                        Response.Write("<script>alert('The session has already been closed or terminated.'); window.close();</script>");
+                    }
+                    return false;
+                }
+                if (connectionDetails.ContainsKey("audit_id"))
+                {
+                    auditId = (long)connectionDetails["audit_id"];
+                    if (((JObject)connectionDetails["details"]).ContainsKey("show_recording_notification"))
+                    {
+                        isRecordingPopupNeeded = (bool)connectionDetails["details"]["show_recording_notification"];
+                    }
+                    if (connectionDetails.ContainsKey("remote_session_id"))
+                    {
+                        remoteSessionId = (long)connectionDetails["remote_session_id"];
+                    }
+                }
+                connectionDetails = (JObject)connectionDetails["details"];
+                loginServer = (string)connectionDetails["address"];
+                loginDomain = "";
+                loginUser = (string)connectionDetails["username"];
+                loginPassword = (string)connectionDetails["password"];
+                isDisplayTitle = (bool)connectionDetails["is_display_title"];
+                accountTitle = (string)connectionDetails["account_title"];
+                if (connectionDetails.ContainsKey("is_user_admin_console"))
+                {
+                    isAdminConsole = (bool)connectionDetails["is_user_admin_console"];
+                }
+
+                if (connectionDetails.ContainsKey("is_file_sharing_needed") && (bool)connectionDetails["is_file_sharing_needed"])
+                {
+                    string randomFolder = Path.GetRandomFileName().Replace(".", ""); 
+                    string tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\share_rdp_folder");
+                    string folderPath = Path.Combine(tempDir, randomFolder);
+                    if (!Directory.Exists(folderPath))
+                    {
+                        Directory.CreateDirectory(folderPath);
+                        sharedFolderPath = randomFolder;
+                        _allowFileTransfer = true;
+                    }
+                }
+
+                if (connectionDetails.ContainsKey("port"))
+                {
+                    loginServer += ":" + connectionDetails["port"];
+                }
+                if (connectionDetails.ContainsKey("clipboard"))
+                {
+                    _allowRemoteClipboard = (bool)connectionDetails["clipboard"];
+                }
+                string tempUsername = loginUser;
+                if (loginUser.Contains(":"))
+                {
+                    string addressAlone = loginUser.Substring(0, loginUser.IndexOf(":"));
+                    string portUsername = loginUser.Substring(loginUser.IndexOf(":") + 1);
+                    if (portUsername.Contains("\\"))
+                    {
+                        tempUsername = addressAlone + portUsername.Substring(portUsername.IndexOf("\\"));
+                    }
+                }
+                loginUser = tempUsername;
+            }// allowed features
             var allowRemoteClipboard = _allowRemoteClipboard;
             var allowFileTransfer = _allowFileTransfer;
             var allowPrintDownload = _allowPrintDownload;
