@@ -22,6 +22,7 @@ using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Cache;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -149,6 +150,72 @@ namespace Myrtille.Web
             object sender,
             EventArgs e)
         {
+            var ajaxConnectionId = Request.Headers["X-Connection-Id"];
+            var ajaxGuestId = Request.Headers["X-Guest-Id"];
+            Guid connectionGuid;
+
+            RemoteSession resolvedSession = null;
+            if (!string.IsNullOrEmpty(ajaxConnectionId) || !string.IsNullOrEmpty(ajaxGuestId))
+            {
+                GuestInfo resolvedGuestInfo = null;
+
+                if (!string.IsNullOrEmpty(ajaxGuestId) && Guid.TryParse(ajaxGuestId, out var guestGuid))
+                {
+                    var sharedSessions = (IDictionary<Guid, SharingInfo>)Application[HttpApplicationStateVariables.SharedRemoteSessions.ToString()];
+                    if (sharedSessions != null && sharedSessions.TryGetValue(guestGuid, out var sharingInfo))
+                    {
+                        resolvedSession = sharingInfo.RemoteSession;
+                        resolvedGuestInfo = sharingInfo.GuestInfo;
+                    }
+                }
+                else if (!string.IsNullOrEmpty(ajaxConnectionId) && Guid.TryParse(ajaxConnectionId, out connectionGuid))
+                {
+                    var globalSessions = (IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()];
+                    globalSessions?.TryGetValue(connectionGuid, out resolvedSession);
+                }
+
+                Response.ContentType = "application/json";
+
+                if (resolvedSession == null)
+                {
+                    Response.Write("{\"found\":false}");
+                }
+                else
+                {
+                    Session[HttpSessionStateVariables.RemoteSession.ToString()] = resolvedSession;
+                    var guestId = Request.Headers["X-Guest-Id"];
+                    if (resolvedGuestInfo != null)
+                    {
+                        RegisterGuestCleanupScript(guestId, resolvedSession);
+                    }
+                    remoteOperationsDiv.Visible = true;
+                    var controlEnabled = resolvedGuestInfo == null || resolvedGuestInfo.Control;
+                    var vmNotEnhanced = !string.IsNullOrEmpty(resolvedSession.VMGuid) && !resolvedSession.VMEnhancedMode;
+                    Response.Write("{\"found\":true," +
+                        "\"connectionId\":\"" + resolvedSession.Id + "\"," +
+                        "\"gid\":\"" + guestId + "\"," +
+                        "\"state\":\"" + resolvedSession.State.ToString().ToUpper() + "\"," +
+                        "\"clientWidth\":" + resolvedSession.ClientWidth + "," +
+                        "\"clientHeight\":" + resolvedSession.ClientHeight + "," +
+                        "\"hostType\":\"" + resolvedSession.HostType + "\"," +
+                        "\"vmNotEnhanced\":" + vmNotEnhanced.ToString().ToLower() + "," +
+                        "\"controlEnabled\":" + controlEnabled.ToString().ToLower() + "," +
+                        "\"isManageSession\":" + resolvedSession.isManageSession.ToString().ToLower() + "," +          
+                        "\"isControlSession\":" + resolvedSession.isControlSession.ToString().ToLower() + "," +         
+                        "\"serverAddress\":\"" + HttpUtility.JavaScriptStringEncode(resolvedSession.ServerAddress) + "\"," +   
+                        "\"userDomain\":\"" + HttpUtility.JavaScriptStringEncode(resolvedSession.UserDomain ?? "") + "\"," +   
+                        "\"userName\":\"" + HttpUtility.JavaScriptStringEncode(resolvedSession.UserName ?? "") + "\"," +       
+                        "\"isDisplayTitle\":" + resolvedSession.isDisplayTitle.ToString().ToLower() + "," +              
+                        "\"accountTitle\":\"" + HttpUtility.JavaScriptStringEncode(resolvedSession.AccountTitle ?? "") + "\"" + 
+                        "}");
+                }
+
+                Response.End();
+                HttpContext.Current.ApplicationInstance.CompleteRequest();
+                // certificateDiv.Visible = false;
+                return;
+            }
+
             // client ip protection
             if (_clientIPTracking)
             {
@@ -221,9 +288,37 @@ namespace Myrtille.Web
                     System.Diagnostics.Trace.TraceError("Failed to retrieve the active enterprise session ({0})", exc);
                 }
             }
-
+            var connectionIdParam = Request.QueryString["connectionId"];
+            if (!string.IsNullOrEmpty(connectionIdParam) && Guid.TryParse(connectionIdParam, out connectionGuid))
+            {
+                var globalSessions = (IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()];
+                if (globalSessions != null && globalSessions.ContainsKey(connectionGuid))
+                {
+                    RemoteSession = globalSessions[connectionGuid];
+                }
+            }
             // retrieve the active remote session, if any
-            if (Session[HttpSessionStateVariables.RemoteSession.ToString()] != null)
+            if (!string.IsNullOrEmpty(Request["gid"]))
+            {
+                var guestId = Guid.Empty;
+                if (Guid.TryParse(Request["gid"], out guestId))
+                {
+                    var sharingInfo = GetSharingInfo(guestId);
+                    if (sharingInfo != null)
+                    {
+                        Session[HttpSessionStateVariables.RemoteSession.ToString()] = sharingInfo.RemoteSession;
+                        Session[HttpSessionStateVariables.GuestInfo.ToString()] = sharingInfo.GuestInfo;
+
+                        try
+                        {
+                            Response.Redirect("~/", true);
+                        }
+                        catch { }
+                    }
+                }
+            }
+
+            else if (RemoteSession == null && Session[HttpSessionStateVariables.RemoteSession.ToString()] != null)  // line 226, add "RemoteSession == null &&"
             {
                 try
                 {
@@ -277,54 +372,8 @@ namespace Myrtille.Web
 
                 //check the guest session termination
                 var GuestId = Session["CurrentGuestId"] as string;
-                if (!string.IsNullOrEmpty(GuestId))
-                {
-                    Session.Remove("CurrentGuestId");
-                    var RemoteSession = (RemoteSession)Session[HttpSessionStateVariables.RemoteSession.ToString()];
-                    ClientScript.RegisterStartupScript(
-                        this.GetType(),
-                        "GuestCleanup",
-                        $@"
-                        <script>
-                            var currentGuestId = '{GuestId}';
-                            var mainConnectionId = '{RemoteSession.Id}';
-                            var client_name = '{RemoteSession.clientName}';
-                            window.addEventListener('beforeunload', function () {{
-                                fetch('/CheckControlRequest.aspx?action=guestSessionTerminate&gid=' + currentGuestId + '&sessionId=' + mainConnectionId + '&client_name=' + client_name, {{
-                                    method: 'POST',
-                                    keepalive: true
-                                }});
-                            }});
-                        </script>",
-                        false
-                    );
-                }
+                RegisterGuestCleanupScript(GuestId, RemoteSession);
             }
-            // retrieve a shared remote session from url, if any
-            else if (!string.IsNullOrEmpty(Request["gid"]))
-            {
-                var guestId = Guid.Empty;
-                if (Guid.TryParse(Request["gid"], out guestId))
-                {
-                    var sharingInfo = GetSharingInfo(guestId);
-                    if (sharingInfo != null)
-                    {
-                        Session[HttpSessionStateVariables.RemoteSession.ToString()] = sharingInfo.RemoteSession;
-                        Session[HttpSessionStateVariables.GuestInfo.ToString()] = sharingInfo.GuestInfo;
-
-                        try
-                        {
-                            // remove the shared session guid from url
-                            Response.Redirect("~/", true);
-                        }
-                        catch (ThreadAbortException)
-                        {
-                            // occurs because the response is ended after redirect
-                        }
-                    }
-                }
-            }
-
             if (_httpSessionUseUri)
             {
                 // if running myrtille into an iframe, the iframe url is registered (into a cookie) after the remote session is connected
@@ -363,12 +412,34 @@ namespace Myrtille.Web
             // disable the browser cache; in addition to a "noCache" dummy param, with current time, on long-polling and xhr requests
             Response.Cache.SetCacheability(HttpCacheability.NoCache);
             Response.Cache.SetNoStore();
-            if (RemoteSession == null && (string.IsNullOrEmpty(Request["auth_key"]) || string.IsNullOrEmpty(Request["referrer"]) || string.IsNullOrEmpty(Request["service_org_id"])))
-            {
-                certificateDiv.Visible = true;
-            }
         }
 
+        private void RegisterGuestCleanupScript(string guestId, RemoteSession remoteSession)
+        {
+            if (string.IsNullOrEmpty(guestId) || remoteSession == null)
+                return;
+
+            ClientScript.RegisterStartupScript(
+                GetType(),
+                "GuestCleanup",
+                $@"
+                <script>
+                    var currentGuestId = '{guestId}';
+                    var mainConnectionId = '{remoteSession.Id}';
+                    var client_name = '{remoteSession.clientName}';
+
+                    window.addEventListener('beforeunload', function () {{
+                        fetch('/CheckControlRequest.aspx?action=guestSessionTerminate&gid=' +
+                            currentGuestId +
+                            '&sessionId=' + mainConnectionId +
+                            '&client_name=' + client_name, {{
+                            method: 'POST',
+                            keepalive: true
+                        }});
+                    }});
+                </script>",
+                false);
+        }
         /// <summary>
         /// force remove the .net viewstate hidden fields from page (large bunch of unwanted data in url)
         /// </summary>
@@ -407,7 +478,11 @@ namespace Myrtille.Web
                 if (_toolbarEnabled)
                 {
                     // interacting with the remote session is available to guests with control access, but only the remote session owner should have control on the remote session itself
-                    var controlEnabled = Session.SessionID.Equals(RemoteSession.OwnerSessionID) || (Session[HttpSessionStateVariables.GuestInfo.ToString()] != null && ((GuestInfo)Session[HttpSessionStateVariables.GuestInfo.ToString()]).Control);
+                    var controlEnabled = Session.SessionID.Equals(RemoteSession.OwnerSessionID) ||
+                        (Session[HttpSessionStateVariables.GuestInfo.ToString()] != null &&
+                        ((GuestInfo)Session[HttpSessionStateVariables.GuestInfo.ToString()]).ConnectionId.Equals(RemoteSession.Id) &&
+                        ((GuestInfo)Session[HttpSessionStateVariables.GuestInfo.ToString()]).Control);
+                    // var controlEnabled = Session.SessionID.Equals(RemoteSession.OwnerSessionID) || (Session[HttpSessionStateVariables.GuestInfo.ToString()] != null && ((GuestInfo)Session[HttpSessionStateVariables.GuestInfo.ToString()]).Control);
 
                     toolbar.Visible = true;
                     toolbarToggle.Visible = true;
@@ -487,8 +562,18 @@ namespace Myrtille.Web
             object sender,
             EventArgs e)
         {
+            var reqId = Guid.NewGuid().ToString().Substring(0, 8);
+
             if (!_authorizedRequest)
                 return;
+
+             if (string.IsNullOrEmpty(Request["width"]) || string.IsNullOrEmpty(Request["height"]))
+            {
+                return;
+            }
+            RemoteSession = null;
+            // certificateDiv.Visible = false;
+
             // one time usage enterprise session url
             if (_enterpriseSession == null && Request["SI"] != null && Request["SD"] != null && Request["SK"] != null)
             {
@@ -540,7 +625,13 @@ namespace Myrtille.Web
                     {
                         // standard mode: switch to http get (standard login) or remove the connection params from url (auto-connect / start program from url)
                         // enterprise mode: remove the host id from url
-                        Response.Redirect("~/", true);
+                        // Response.Redirect("~/", true);
+                        string script = $@"
+                            sessionStorage.setItem('connectionId', '{RemoteSession.Id}');
+                            sessionStorage.removeItem('gid');
+                            window.location.replace('/');
+                        ";
+                        ClientScript.RegisterStartupScript(this.GetType(), "SetTabState", script, true);
                     }
                     catch (ThreadAbortException)
                     {
@@ -748,7 +839,7 @@ namespace Myrtille.Web
             }
             HttpContext.Current.Session["client_name"] = clientName;
             HttpContext.Current.Items["client_name"] = clientName;
-            if (RemoteSession == null)
+            if (true)
             {
                 JObject connectionDetails = SecurdenWeb.ProcessLaunchRequest(Request, Response, Request["referrer"], Request["auth_key"], connectionId.ToString(), serviceOrgId);
                 if (connectionDetails == null)
@@ -779,7 +870,8 @@ namespace Myrtille.Web
                         var mainConnectionId = connectionDetails["details"]["connection_id"]?.ToString();
                         if ((string)connectionDetails["type"] == "CONTROL_SESSION")
                         {
-                            if (!string.IsNullOrEmpty(mainConnectionId) && (string)connectionDetails["details"]["control_based_on_req"] == "2" || (string)connectionDetails["details"]["control_based_on_req"] == "3")
+                            string control_based_on_req = (string)connectionDetails["details"]["control_based_on_req"];
+                            if (!string.IsNullOrEmpty(mainConnectionId) && (control_based_on_req == "2" || control_based_on_req == "3"))
                             {
                                 var key = $"ShowControl_{mainConnectionId}";
                                 HttpRuntime.Cache[key] = true;
@@ -853,9 +945,20 @@ namespace Myrtille.Web
                             // create a new guest for the remote session
                             var sharedSessions = (IDictionary<Guid, SharingInfo>)Application[HttpApplicationStateVariables.SharedRemoteSessions.ToString()];
                             Guid OldConnectionId = new Guid((string)connectionDetails["connection_id"]);
+                            var remoteSessions = (IDictionary<Guid, RemoteSession>)
+                                Application[HttpApplicationStateVariables.RemoteSessions.ToString()];
+
+                            if (remoteSessions.TryGetValue(OldConnectionId, out var remoteSession))
+                            {
+                                RemoteSession = remoteSession;
+                            }
+                            else
+                            {
+                                RemoteSession = null;
+                            }
                             var sharingInfo = new SharingInfo
                             {
-                                RemoteSession = ((IDictionary<Guid, RemoteSession>)Application[HttpApplicationStateVariables.RemoteSessions.ToString()])[OldConnectionId],
+                                RemoteSession = RemoteSession,
                                 GuestInfo = new GuestInfo
                                 {
                                     Id = Guid.NewGuid(),
@@ -887,7 +990,13 @@ namespace Myrtille.Web
                         }
                         if (guestShareId != "")
                         {
-                            Response.Redirect("~/?gid=" + guestShareId, true);
+                            string script = $@"
+                                sessionStorage.setItem('gid', '{guestShareId}');
+                                sessionStorage.removeItem('connectionId');
+                                window.location.replace('/');
+                            ";
+                            ClientScript.RegisterStartupScript(this.GetType(), "SetTabState", script, true);
+                            // Response.Redirect("~/?gid=" + guestShareId, true);
                         }
                         else
                         {
@@ -1092,9 +1201,8 @@ namespace Myrtille.Web
             }
 
             // remove any active remote session (disconnected?)
-            if (RemoteSession != null)
+            if (RemoteSession != null && !string.IsNullOrEmpty(Request.QueryString["connectionId"]))
             {
-                // unset the remote session for the current http session
                 Session[HttpSessionStateVariables.RemoteSession.ToString()] = null;
                 RemoteSession = null;
             }

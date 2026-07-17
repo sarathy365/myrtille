@@ -79,6 +79,12 @@ function Network(base, config, dialog, display)
 
     // browser window/tab unique id (regenerated on each page reload)
     var clientId = null;
+    var connectionId = null;
+    this.getConnectionId = function() { return connectionId; };
+    this.setConnectionId = function(id) { connectionId = id; };
+    var gid = null;
+    this.getGuestId = function() { return gid; };
+    this.setGuestId = function(id) { gid = id; };
     this.getClientId = function()
     {
         try

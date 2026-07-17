@@ -28,7 +28,7 @@ function Eventsource(base, config, dialog, display, network)
     {
         try
         {
-            var sseUrl = config.getHttpServerUrl() + 'handlers/EventSourceHandler.ashx?clientId=' + network.getClientId();
+            var sseUrl = config.getHttpServerUrl() + 'handlers/EventSourceHandler.ashx?clientId=' + network.getClientId() +'&connectionId=' + network.getConnectionId() + '&gid=' + network.getGuestId();
             //dialog.showDebug('event source url: ' + sseUrl);
             sse = new EventSource(sseUrl);
 

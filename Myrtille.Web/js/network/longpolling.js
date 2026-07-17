@@ -88,6 +88,8 @@ function LongPolling(base, config, dialog, display, network)
 
             lpIFrame.src = config.getHttpServerUrl() + 'handlers/LongPollingHandler.ashx' +
                 '?clientId=' + network.getClientId() +
+                '&connectionId=' + network.getConnectionId() +
+                '&gid=' + network.getGuestId() +
                 '&longPollingDuration=' + config.getLongPollingDuration() +
                 '&imgIdx=' + display.getImgIdx() +
                 '&noCache=' + new Date().getTime();

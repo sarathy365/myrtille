@@ -135,6 +135,8 @@ function XmlHttp(base, config, dialog, display, network)
 
             xhr.open('GET', config.getHttpServerUrl() + 'SendInputs.aspx' +
                 '?clientId=' + network.getClientId() +
+                '&connectionId=' + network.getConnectionId() +  
+                '&gid=' + network.getGuestId() +
                 '&data=' + (data == null ? '' : encodeURIComponent(data)) +
                 '&imgIdx=' + display.getImgIdx() +
                 '&latency=' + network.getRoundtripDurationAvg() +
