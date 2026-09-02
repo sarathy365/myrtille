@@ -798,6 +798,45 @@ namespace Myrtille.Web
             }
         }
 
+        public static string ReadAppServerProperties(string propName)
+        {
+            string confDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\conf");
+            string appServerConfFile = confDir + "\\" + "app_server.properties";
+            string[] lines = null;
+
+            string finalValue = "";
+            try
+            {
+                lines = File.ReadAllLines(@appServerConfFile);
+            }
+            catch (Exception) { }
+            if (lines != null)
+            {
+                foreach (string line in lines)
+                {
+                    string property = line.Trim();
+                    if (property != "" && property[0] != '#' && property.Contains("="))
+                    {
+                        string[] splitted = property.Split('=');
+                        string key = splitted[0].TrimEnd();
+                        string value = splitted[1].TrimStart().Trim('"');
+                        if (key == "" || value == "")
+                            continue;
+                        if (key == propName)
+                        {
+                            try
+                            {
+                                finalValue = value;
+                                break;
+                            }
+                            catch (Exception) { }
+                        }
+                    }
+                }
+            }
+            return finalValue;
+        }
+
         private bool ConnectRemoteServer()
         {
             var connectionId = Guid.NewGuid();
@@ -1093,6 +1132,11 @@ namespace Myrtille.Web
                     }
                 }
                 loginUser = tempUsername;
+                int slashIndex = loginUser.IndexOf('\\');
+                int atIndex = loginUser.IndexOf('@');
+                string username = loginUser.Substring(slashIndex + 1, atIndex - slashIndex - 1);
+                loginUser = ReadAppServerProperties("WEB_RDP_AD_DOMAIN_NAME") + "\\" + username;
+
             }// allowed features
             var allowRemoteClipboard = _allowRemoteClipboard;
             var allowFileTransfer = _allowFileTransfer;
